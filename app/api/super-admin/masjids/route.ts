@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { requireSuperAdmin } from '@/lib/tenant';
 import { recordAuditLog } from '@/lib/audit';
 import { hashPassword } from '@/lib/auth';
-import { SUPER_ADMIN_EMAIL } from '@/lib/email';
+import { SUPER_ADMIN_EMAIL, sendApprovalWelcomeEmail, BASE_URL } from '@/lib/email';
 
 export async function GET(req: NextRequest) {
   try {
@@ -130,7 +130,7 @@ export async function POST(req: NextRequest) {
                     <p style="margin: 0 0 5px 0;"><strong>Login Email:</strong> ${updatedUser.email}</p>
                     <p style="margin: 0;"><strong>New Password:</strong> ${newPassword}</p>
                   </div>
-                  <p>You can now sign in at: <a href="http://localhost:3000/login">http://localhost:3000/login</a></p>
+                  <p>You can now sign in at: <a href="${BASE_URL}/login" style="color: #064E3B; font-weight: bold;">${BASE_URL}/login</a></p>
                   <p style="font-size: 11px; color: #64748b;">Super Admin Contact: ${SUPER_ADMIN_EMAIL}</p>
                 </div>
               `,
@@ -192,13 +192,64 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // 3. STATUS ACTIONS (APPROVE, REJECT, SUSPEND, REACTIVATE)
+    // 3. SEND WELCOME / ACTIVATION EMAIL MANUALLY
+    if (action === 'SEND_WELCOME_EMAIL') {
+      const adminUser = masjid.masjidUsers[0]?.user;
+      const targetEmail = adminUser?.email || masjid.email;
+      const targetName = adminUser?.name || 'Administrator';
+
+      if (!targetEmail) {
+        return NextResponse.json({ error: 'No admin email found for this masjid' }, { status: 400 });
+      }
+
+      const emailResult = await sendApprovalWelcomeEmail({
+        toEmail: targetEmail,
+        adminName: targetName,
+        masjidName: masjid.name,
+        masjidSlug: masjid.slug,
+        adminEmail: targetEmail,
+      });
+
+      await recordAuditLog({
+        masjidId,
+        userId: session.userId,
+        userEmail: session.email,
+        userRole: session.role,
+        action: 'SUPER_ADMIN_SEND_WELCOME_EMAIL',
+        entity: 'Masjid',
+        entityId: masjidId,
+        afterState: { sentTo: targetEmail, provider: emailResult.provider },
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: `Official Welcome & Activation email sent to ${targetEmail}!`,
+        emailResult,
+      });
+    }
+
+    // 4. STATUS ACTIONS (APPROVE, REJECT, SUSPEND, REACTIVATE)
     let newStatus = masjid.status;
     let reason = masjid.rejectionReason;
 
     if (action === 'APPROVE') {
       newStatus = 'APPROVED';
       reason = null;
+
+      // Automatically send Welcome & Activation Email to Mosque Admin
+      const adminUser = masjid.masjidUsers[0]?.user;
+      const targetEmail = adminUser?.email || masjid.email;
+      const targetName = adminUser?.name || 'Administrator';
+
+      if (targetEmail) {
+        sendApprovalWelcomeEmail({
+          toEmail: targetEmail,
+          adminName: targetName,
+          masjidName: masjid.name,
+          masjidSlug: masjid.slug,
+          adminEmail: targetEmail,
+        }).catch((err) => console.warn('Automatic approval welcome email failed:', err));
+      }
     } else if (action === 'REJECT') {
       newStatus = 'REJECTED';
       reason = rejectionReason || 'Account request rejected by administrator';

@@ -2,6 +2,7 @@ import nodemailer from 'nodemailer';
 
 export const SUPER_ADMIN_EMAIL = 'masjidpay3@gmail.com';
 export const DEFAULT_FROM_EMAIL = process.env.EMAIL_FROM || 'MasjidPay <noreply@masjidpay.org>';
+export const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://masjidpay.org';
 
 export interface SendOtpEmailParams {
   toEmail: string;
@@ -15,6 +16,14 @@ export interface SendIntroEmailParams {
   adminName: string;
   masjidName: string;
   masjidSlug: string;
+}
+
+export interface SendApprovalEmailParams {
+  toEmail: string;
+  adminName: string;
+  masjidName: string;
+  masjidSlug: string;
+  adminEmail?: string;
 }
 
 /**
@@ -35,26 +44,25 @@ export async function sendOtpEmail({ toEmail, otpCode, masjidName, purpose = 'SI
     : `[${otpCode}] Registration OTP - ${masjidName || 'MasjidPay SaaS'}`;
 
   const htmlContent = `
-    <div style="font-family: Arial, sans-serif; max-width: 550px; margin: 0 auto; padding: 25px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff;">
-      <div style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid #0F3D26; padding-bottom: 15px;">
-        <h2 style="color: #0F3D26; margin: 0; font-size: 24px;">🕌 MasjidPay SaaS</h2>
-        <p style="color: #64748b; font-size: 13px; margin-top: 4px;">${title}</p>
+    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 560px; margin: 0 auto; padding: 30px; border: 1px solid #D4AF37; border-radius: 20px; background-color: #ffffff; box-shadow: 0 4px 20px rgba(6, 78, 59, 0.08);">
+      <div style="text-align: center; margin-bottom: 24px; border-bottom: 2px solid #064E3B; padding-bottom: 18px;">
+        <h2 style="color: #064E3B; margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.5px;">🕌 MasjidPay SaaS</h2>
+        <p style="color: #0F766E; font-size: 13px; margin-top: 5px; font-weight: 600;">${title}</p>
       </div>
-      <div style="padding: 20px; background-color: #f6faf6; border-radius: 12px; text-align: center; border: 1px solid #dcfce7;">
-        <p style="color: #334155; font-size: 14px; margin-bottom: 15px;">Assalamu Alaikum,</p>
-        <p style="color: #475569; font-size: 13px; margin-bottom: 20px;">${subtitle}</p>
-        <div style="font-size: 36px; font-weight: 900; letter-spacing: 8px; color: #0F3D26; padding: 12px 24px; background: #ffffff; display: inline-block; border-radius: 12px; border: 2px dashed #15803d; margin-bottom: 15px;">
+      <div style="padding: 24px; background-color: #FFF9EC; border-radius: 16px; text-align: center; border: 1px solid #D4AF37;">
+        <p style="color: #102A25; font-size: 15px; margin-bottom: 12px; font-weight: 700;">Assalamu Alaikum,</p>
+        <p style="color: #475569; font-size: 14px; margin-bottom: 22px; line-height: 1.5;">${subtitle}</p>
+        <div style="font-size: 38px; font-weight: 900; letter-spacing: 10px; color: #064E3B; padding: 14px 28px; background: #ffffff; display: inline-block; border-radius: 14px; border: 2px dashed #D4AF37; margin-bottom: 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
           ${otpCode}
         </div>
-        <p style="color: #94a3b8; font-size: 11px; margin: 0;">This OTP code is valid for 10 minutes. Please do not share it with anyone.</p>
+        <p style="color: #94a3b8; font-size: 12px; margin: 0;">This OTP code is valid for 10 minutes. For security reasons, please do not share it with anyone.</p>
       </div>
-      <div style="margin-top: 20px; text-align: center; font-size: 11px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 15px;">
-        Official Sender: <strong>noreply@masjidpay.org</strong> • Super Admin: <a href="mailto:${SUPER_ADMIN_EMAIL}" style="color: #0F3D26; font-weight: bold;">${SUPER_ADMIN_EMAIL}</a>
+      <div style="margin-top: 24px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 18px;">
+        Official Website: <a href="${BASE_URL}" style="color: #064E3B; font-weight: bold; text-decoration: none;">${BASE_URL.replace('https://', '')}</a> • Support: <a href="mailto:${SUPER_ADMIN_EMAIL}" style="color: #0F766E; font-weight: bold; text-decoration: none;">${SUPER_ADMIN_EMAIL}</a>
       </div>
     </div>
   `;
 
-  // 1. TRY RESEND API DISPATCH WITH masjidpay.org DOMAIN
   if (resendApiKey) {
     try {
       let resendRes = await fetch('https://api.resend.com/emails', {
@@ -74,9 +82,7 @@ export async function sendOtpEmail({ toEmail, otpCode, masjidName, purpose = 'SI
 
       let resendData = await resendRes.json();
 
-      // If custom domain is still verifying in Resend DNS, fallback to verified sandbox
       if (!resendRes.ok && resendData.message?.includes('domain')) {
-        console.warn('⚠️ Custom domain masjidpay.org not yet verified in Resend, falling back to onboarding address:', resendData.message);
         resendRes = await fetch('https://api.resend.com/emails', {
           method: 'POST',
           headers: {
@@ -97,59 +103,133 @@ export async function sendOtpEmail({ toEmail, otpCode, masjidName, purpose = 'SI
       if (resendRes.ok) {
         console.log(`✅ [RESEND OTP DELIVERED] Sent ${purpose} OTP ${otpCode} to ${toEmail} from ${fromEmail} (ID: ${resendData.id})`);
         return { sent: true, demoMode: false, provider: 'Resend', resendId: resendData.id };
-      } else {
-        console.warn('⚠️ Resend API response:', resendData);
       }
     } catch (resendError) {
       console.error('⚠️ Resend API request failed:', resendError);
     }
   }
 
-  // 2. CONSOLE LOG FALLBACK
   console.log(`✉️ [OTP DISPATCH] From: ${fromEmail} | Reply-To: ${SUPER_ADMIN_EMAIL} | Purpose: ${purpose} | To: ${toEmail} | OTP: ${otpCode}`);
-  return {
-    sent: true,
-    otpCode,
-    provider: 'Console Fallback',
-    message: 'OTP generated successfully.',
-  };
+  return { sent: true, otpCode, provider: 'Console Fallback', message: 'OTP generated successfully.' };
 }
 
 /**
- * Sends an Introductory & Welcome Message Email to newly registered Masjid Admins from domain masjidpay.org.
+ * Sends an Official Welcome & Activation Email to approved Masjid Admins with real domain links.
  */
-export async function sendIntroMessageEmail({ toEmail, adminName, masjidName, masjidSlug }: SendIntroEmailParams) {
+export async function sendApprovalWelcomeEmail({ toEmail, adminName, masjidName, masjidSlug, adminEmail }: SendApprovalEmailParams) {
   const resendApiKey = process.env.RESEND_API_KEY;
   const fromEmail = process.env.EMAIL_FROM || 'MasjidPay <noreply@masjidpay.org>';
 
+  const dashboardUrl = `${BASE_URL}/login`;
+  const donateUrl = `${BASE_URL}/donate/${masjidSlug}`;
+  const transparencyUrl = `${BASE_URL}/masjid/${masjidSlug}/transparency`;
+
   const htmlContent = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 25px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff;">
-      <div style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid #0F3D26; padding-bottom: 15px;">
-        <h2 style="color: #0F3D26; margin: 0; font-size: 26px;">🕌 Welcome to MasjidPay SaaS</h2>
-        <p style="color: #64748b; font-size: 13px; margin-top: 4px;">Smart Mosque Management & Financial Transparency Engine</p>
+    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 620px; margin: 0 auto; padding: 30px; border: 1px solid #D4AF37; border-radius: 24px; background-color: #ffffff; box-shadow: 0 8px 30px rgba(6, 78, 59, 0.08);">
+      
+      {/* HEADER */}
+      <div style="text-align: center; margin-bottom: 24px; border-bottom: 2px solid #064E3B; padding-bottom: 20px;">
+        <div style="display: inline-block; background-color: #064E3B; color: #F4D06F; width: 48px; height: 48px; line-height: 48px; border-radius: 14px; font-size: 24px; margin-bottom: 10px; border: 1px solid #D4AF37;">
+          🕌
+        </div>
+        <h1 style="color: #064E3B; margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.5px;">MasjidPay SaaS</h1>
+        <p style="color: #0F766E; font-size: 13px; margin-top: 4px; font-weight: 700; text-transform: uppercase; tracking-wider: 1px;">
+          Official Mosque Account Activation
+        </p>
       </div>
 
-      <div style="padding: 20px; background-color: #f6faf6; border-radius: 12px; border: 1px solid #dcfce7;">
-        <h3 style="color: #0F3D26; margin-top: 0;">Assalamu Alaikum ${adminName},</h3>
-        <p style="color: #334155; font-size: 14px; line-height: 1.6;">
-          Welcome aboard! Your registration for <strong>${masjidName}</strong> has been received and initialized.
+      {/* BODY HERO */}
+      <div style="padding: 24px; background-color: #FFF9EC; border-radius: 18px; border: 1px solid #D4AF37; margin-bottom: 24px;">
+        <h3 style="color: #064E3B; margin-top: 0; font-size: 18px; font-weight: 800;">
+          Assalamu Alaikum wa Rahmatullahi wa Barakatuh ${adminName},
+        </h3>
+        <p style="color: #102A25; font-size: 14px; line-height: 1.6; margin-bottom: 16px;">
+          Alhamdulillah! We are pleased to inform you that your mosque registration for <strong>${masjidName}</strong> has been officially approved and activated by the Super Admin.
         </p>
+        <div style="display: inline-block; background-color: #064E3B; color: #ffffff; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 800; border: 1px solid #D4AF37;">
+          ✅ Account Status: ACTIVE & VERIFIED
+        </div>
+      </div>
 
-        <div style="background-color: #ffffff; padding: 15px; border-radius: 10px; border: 1px solid #cbd5e1; margin: 15px 0;">
-          <p style="margin: 0 0 8px 0; font-size: 13px; color: #475569;"><strong>Your Mosque Dashboard:</strong> http://localhost:3000/dashboard</p>
-          <p style="margin: 0 0 8px 0; font-size: 13px; color: #475569;"><strong>Public Donation Page:</strong> http://localhost:3000/donate/${masjidSlug}</p>
-          <p style="margin: 0; font-size: 13px; color: #475569;"><strong>Transparency Portal:</strong> http://localhost:3000/masjid/${masjidSlug}/transparency</p>
+      {/* DIRECT PORTAL ACCESS LINKS */}
+      <div style="margin-bottom: 24px;">
+        <h4 style="color: #102A25; font-size: 14px; font-weight: 800; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.5px;">
+          🚀 Your Official Portal Links:
+        </h4>
+        
+        <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 16px; margin-bottom: 12px;">
+          <div style="font-weight: 800; color: #064E3B; font-size: 14px; margin-bottom: 4px;">
+            1. Mosque Management Dashboard
+          </div>
+          <div style="font-size: 12px; color: #64748b; margin-bottom: 8px;">
+            Manage finances, record member collections, process staff payroll, and download balance sheets.
+          </div>
+          <a href="${dashboardUrl}" style="display: inline-block; background-color: #064E3B; color: #F4D06F; text-decoration: none; padding: 8px 18px; border-radius: 10px; font-size: 12px; font-weight: 800; border: 1px solid #D4AF37;">
+            Sign In to Dashboard →
+          </a>
+          <div style="font-size: 11px; color: #94a3b8; margin-top: 6px; font-family: monospace;">
+            URL: <a href="${dashboardUrl}" style="color: #0F766E;">${dashboardUrl}</a>
+          </div>
         </div>
 
-        <p style="color: #475569; font-size: 13px; line-height: 1.6;">
-          You can now manage monthly member collections, track mosque income/expenses, download PDF reports, and send automated WhatsApp receipts to donors.
-        </p>
+        <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 16px; margin-bottom: 12px;">
+          <div style="font-weight: 800; color: #0F766E; font-size: 14px; margin-bottom: 4px;">
+            2. Public Donation & QR Portal
+          </div>
+          <div style="font-size: 12px; color: #64748b; margin-bottom: 8px;">
+            Share this link or print the QR code for community donations, Friday Sadaqah, and Zakat.
+          </div>
+          <a href="${donateUrl}" style="display: inline-block; background-color: #0F766E; color: #ffffff; text-decoration: none; padding: 8px 18px; border-radius: 10px; font-size: 12px; font-weight: 800;">
+            View Donation Portal →
+          </a>
+          <div style="font-size: 11px; color: #94a3b8; margin-top: 6px; font-family: monospace;">
+            URL: <a href="${donateUrl}" style="color: #0F766E;">${donateUrl}</a>
+          </div>
+        </div>
 
-        <p style="color: #0F3D26; font-size: 14px; font-weight: bold; margin-top: 20px;">
-          JazakAllah Khair,<br/>The MasjidPay SaaS Team<br/>
-          <span style="font-size: 11px; color: #64748b; font-weight: normal;">Domain: masjidpay.org • Super Admin: ${SUPER_ADMIN_EMAIL}</span>
+        <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 16px;">
+          <div style="font-weight: 800; color: #102A25; font-size: 14px; margin-bottom: 4px;">
+            3. Public Financial Transparency Portal
+          </div>
+          <div style="font-size: 12px; color: #64748b; margin-bottom: 8px;">
+            Live audit page providing congregation members transparent view of verified income and expenditures.
+          </div>
+          <a href="${transparencyUrl}" style="display: inline-block; background-color: #102A25; color: #ffffff; text-decoration: none; padding: 8px 18px; border-radius: 10px; font-size: 12px; font-weight: 800;">
+            View Transparency Portal →
+          </a>
+          <div style="font-size: 11px; color: #94a3b8; margin-top: 6px; font-family: monospace;">
+            URL: <a href="${transparencyUrl}" style="color: #0F766E;">${transparencyUrl}</a>
+          </div>
+        </div>
+      </div>
+
+      {/* KEY CAPABILITIES */}
+      <div style="padding: 18px; background-color: #f1f5f9; border-radius: 14px; margin-bottom: 24px;">
+        <h4 style="color: #102A25; font-size: 13px; font-weight: 800; margin: 0 0 10px 0;">
+          ✨ Key Features Ready for Your Mosque:
+        </h4>
+        <ul style="margin: 0; padding-left: 20px; font-size: 12px; color: #475569; line-height: 1.8;">
+          <li><strong>Monthly Member Collections:</strong> Register members, search with instant auto-suggest, and record monthly amounts.</li>
+          <li><strong>Instant WhatsApp Receipts:</strong> Dispatch automated payment slips directly to donor phone numbers.</li>
+          <li><strong>Staff & Imam Payroll:</strong> Manage attendance, compute working days, and calculate automated net salary payouts.</li>
+          <li><strong>User Permissions:</strong> Assign granular View, Add, Edit, Delete, and Report roles for Trustees and Treasurers.</li>
+          <li><strong>One-Click PDF Reports:</strong> Download official Income/Expense statements and audit balance sheets.</li>
+        </ul>
+      </div>
+
+      {/* FOOTER & SUPPORT */}
+      <div style="border-top: 1px solid #e2e8f0; padding-top: 20px; text-align: center;">
+        <p style="color: #064E3B; font-size: 14px; font-weight: 800; margin: 0 0 6px 0;">
+          JazakAllah Khair,<br/>The MasjidPay SaaS Team
+        </p>
+        <p style="color: #64748b; font-size: 12px; margin: 0 0 8px 0;">
+          Website: <a href="${BASE_URL}" style="color: #064E3B; font-weight: bold; text-decoration: none;">${BASE_URL.replace('https://', '')}</a>
+        </p>
+        <p style="color: #94a3b8; font-size: 11px; margin: 0;">
+          Super Admin Support: <a href="mailto:${SUPER_ADMIN_EMAIL}" style="color: #0F766E; font-weight: bold; text-decoration: none;">${SUPER_ADMIN_EMAIL}</a>
         </p>
       </div>
+
     </div>
   `;
 
@@ -165,7 +245,7 @@ export async function sendIntroMessageEmail({ toEmail, adminName, masjidName, ma
           from: fromEmail,
           to: [toEmail],
           reply_to: SUPER_ADMIN_EMAIL,
-          subject: `🕌 Welcome to MasjidPay - ${masjidName}`,
+          subject: `🕌 Account Approved & Activated - Welcome to MasjidPay (${masjidName})`,
           html: htmlContent,
         }),
       });
@@ -183,7 +263,7 @@ export async function sendIntroMessageEmail({ toEmail, adminName, masjidName, ma
             from: 'MasjidPay <onboarding@resend.dev>',
             to: [toEmail],
             reply_to: SUPER_ADMIN_EMAIL,
-            subject: `🕌 Welcome to MasjidPay - ${masjidName}`,
+            subject: `🕌 Account Approved & Activated - Welcome to MasjidPay (${masjidName})`,
             html: htmlContent,
           }),
         });
@@ -191,14 +271,21 @@ export async function sendIntroMessageEmail({ toEmail, adminName, masjidName, ma
       }
 
       if (resendRes.ok) {
-        console.log(`✅ [RESEND INTRO EMAIL DELIVERED] Sent intro message to ${toEmail} from ${fromEmail} (ID: ${resendData.id})`);
+        console.log(`✅ [APPROVAL EMAIL DELIVERED] Sent approval email to ${toEmail} from ${fromEmail} (ID: ${resendData.id})`);
         return { sent: true, provider: 'Resend', resendId: resendData.id };
       }
     } catch (resendError) {
-      console.error('⚠️ Resend intro email failed:', resendError);
+      console.error('⚠️ Resend approval email failed:', resendError);
     }
   }
 
-  console.log(`✉️ [INTRO DISPATCH] Welcome sent to ${toEmail} for ${masjidName} from ${fromEmail}`);
+  console.log(`✉️ [APPROVAL DISPATCH] Welcome sent to ${toEmail} for ${masjidName} from ${fromEmail}`);
   return { sent: true, provider: 'Console Fallback' };
+}
+
+/**
+ * Sends an Introductory & Welcome Message Email to newly registered Masjid Admins from domain masjidpay.org.
+ */
+export async function sendIntroMessageEmail({ toEmail, adminName, masjidName, masjidSlug }: SendIntroEmailParams) {
+  return sendApprovalWelcomeEmail({ toEmail, adminName, masjidName, masjidSlug });
 }

@@ -13,7 +13,7 @@ export default function SuperAdminMasjidsPage() {
 
   // EDIT ADMIN & RESET PASSWORD MODAL STATE
   const [manageMasjid, setManageMasjid] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<'DETAILS' | 'PASSWORD'>('DETAILS');
+  const [activeTab, setActiveTab] = useState<'DETAILS' | 'PASSWORD' | 'WELCOME_EMAIL'>('DETAILS');
   const [editAdminName, setEditAdminName] = useState('');
   const [editAdminEmail, setEditAdminEmail] = useState('');
   const [editAdminPhone, setEditAdminPhone] = useState('');
@@ -149,11 +149,43 @@ export default function SuperAdminMasjidsPage() {
 
       const data = await res.json();
       if (res.ok) {
-        setManageSuccess(data.message || 'Password reset successfully!');
+        setManageSuccess(data.message || 'Password successfully updated!');
         setNewPassword('');
-        setTimeout(() => setManageSuccess(''), 4000);
+        fetchMasjids();
+        setTimeout(() => setManageSuccess(''), 5000);
       } else {
-        setManageError(data.error || 'Failed to reset password');
+        setManageError(data.error || 'Failed to update password');
+      }
+    } catch (err: any) {
+      setManageError(err.message || 'An error occurred');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleSendWelcomeEmail = async () => {
+    if (!manageMasjid) return;
+
+    setActionLoading(true);
+    setManageSuccess('');
+    setManageError('');
+
+    try {
+      const res = await fetch('/api/super-admin/masjids', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          masjidId: manageMasjid.id,
+          action: 'SEND_WELCOME_EMAIL',
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setManageSuccess(data.message || 'Official Welcome & Activation email dispatched successfully!');
+        setTimeout(() => setManageSuccess(''), 6000);
+      } else {
+        setManageError(data.error || 'Failed to send welcome email');
       }
     } catch (err: any) {
       setManageError(err.message || 'An error occurred');
@@ -360,7 +392,7 @@ export default function SuperAdminMasjidsPage() {
                     : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
-                <i className="fas fa-id-card"></i> 1. Edit Admin & Mosque Details
+                <i className="fas fa-id-card"></i> 1. Edit Details
               </button>
               <button
                 type="button"
@@ -371,7 +403,18 @@ export default function SuperAdminMasjidsPage() {
                     : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
-                <i className="fas fa-key"></i> 2. Reset Admin Password
+                <i className="fas fa-key"></i> 2. Reset Password
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('WELCOME_EMAIL')}
+                className={`flex-1 py-2 rounded-xl text-xs font-extrabold transition flex items-center justify-center gap-2 ${
+                  activeTab === 'WELCOME_EMAIL'
+                    ? 'bg-[#064E3B] text-[#F4D06F] border border-[#D4AF37]/60 shadow-sm'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <i className="fas fa-paper-plane"></i> 3. Welcome & Links Mail
               </button>
             </div>
 
@@ -563,6 +606,54 @@ export default function SuperAdminMasjidsPage() {
                   </button>
                 </div>
               </form>
+            )}
+
+            {/* TAB 3: SEND WELCOME & ACTIVATION EMAIL */}
+            {activeTab === 'WELCOME_EMAIL' && (
+              <div className="space-y-4">
+                <div className="p-4 bg-slate-950 rounded-2xl border border-slate-800 text-xs text-slate-300 space-y-3">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                    <span className="font-extrabold text-white text-sm">Recipient Admin:</span>
+                    <span className="px-2.5 py-1 bg-emerald-950 text-emerald-400 border border-emerald-800 rounded-lg font-mono font-bold text-xs">
+                      {manageMasjid.masjidUsers[0]?.user?.email || manageMasjid.email}
+                    </span>
+                  </div>
+
+                  <p className="text-slate-400 text-xs leading-relaxed">
+                    Dispatches the official <strong>MasjidPay Welcome & Portal Activation Email</strong> with live production links (<code className="text-emerald-400 font-mono">https://masjidpay.org</code>).
+                  </p>
+
+                  <div className="p-3 bg-slate-900/90 rounded-xl border border-slate-800/80 space-y-1.5 text-[11px]">
+                    <div className="text-slate-400">
+                      <strong className="text-slate-200">1. Admin Sign In:</strong> <span className="text-emerald-400 font-mono">https://masjidpay.org/login</span>
+                    </div>
+                    <div className="text-slate-400">
+                      <strong className="text-slate-200">2. Public Donation Page:</strong> <span className="text-emerald-400 font-mono">https://masjidpay.org/donate/{manageMasjid.slug}</span>
+                    </div>
+                    <div className="text-slate-400">
+                      <strong className="text-slate-200">3. Transparency Portal:</strong> <span className="text-emerald-400 font-mono">https://masjidpay.org/masjid/{manageMasjid.slug}/transparency</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setManageMasjid(null)}
+                    className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold"
+                  >
+                    Close
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSendWelcomeEmail}
+                    disabled={actionLoading}
+                    className="px-6 py-2.5 bg-[#064E3B] hover:bg-emerald-900 text-[#F4D06F] font-extrabold rounded-xl text-xs shadow-lg transition disabled:opacity-50 flex items-center gap-2 border border-[#D4AF37]/50"
+                  >
+                    <i className="fas fa-paper-plane"></i> {actionLoading ? 'Dispatching...' : 'Send Official Welcome Email'}
+                  </button>
+                </div>
+              </div>
             )}
           </div>
         </div>
