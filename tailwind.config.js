@@ -8,32 +8,44 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        masjid: {
-          50: '#f2f9f4',
-          100: '#e1f2e5',
-          200: '#c5e4cd',
-          300: '#9bcfaa',
-          400: '#6bb381',
-          500: '#46965f',
-          600: '#347a4b',
-          700: '#2b613e',
-          800: '#254e34',
-          900: '#1e412c',
-          950: '#0e2418',
+        // EXACT BRAND COLOR PALETTE REQUESTED BY USER
+        emerald: {
+          950: '#102A25', // Dark
+          900: '#064E3B', // Primary Deep Emerald
+          800: '#0B5E48',
+          700: '#0F766E', // Secondary Teal
         },
+        primary: '#064E3B',
+        secondary: '#0F766E',
         gold: {
-          50: '#fbf8eb',
-          100: '#f5eecc',
-          200: '#ecdc99',
-          300: '#e1c45f',
-          400: '#d7ab32',
-          500: '#be8f25',
-          600: '#a06e1d',
-          700: '#7f501b',
-        }
+          DEFAULT: '#D4AF37', // Royal Gold
+          light: '#F4D06F', // Light Gold
+          dark: '#B8860B',
+          50: '#FDFBF4',
+          100: '#FAF4DC',
+          200: '#F4E7B4',
+          300: '#F4D06F',
+          400: '#D4AF37',
+          500: '#C59E27',
+          600: '#B8860B',
+        },
+        ivory: {
+          DEFAULT: '#FFF9EC',
+          50: '#FFFFFF',
+          100: '#FFFDF7',
+          200: '#FFF9EC',
+          300: '#FBF2DD',
+          400: '#F5E6C4',
+        },
+        dark: '#102A25',
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
+      },
+      boxShadow: {
+        'gold-sm': '0 2px 10px rgba(212, 175, 55, 0.18)',
+        'gold-md': '0 4px 20px rgba(212, 175, 55, 0.25)',
+        'gold-lg': '0 12px 30px rgba(212, 175, 55, 0.3)',
       }
     },
   },

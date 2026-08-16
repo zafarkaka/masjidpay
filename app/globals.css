@@ -3,63 +3,69 @@
 @import 'tailwindcss/utilities';
 
 :root {
-  --primary: #164e31;
-  --primary-dark: #0f2a1d;
-  --primary-light: #2b613e;
-  --accent-gold: #d7ab32;
-  --surface: #ffffff;
-  --bg-subtle: #f6faf6;
+  /* Color Palette requested by User */
+  --color-primary: #064e3b; /* Deep Emerald */
+  --color-secondary: #0f766e; /* Teal */
+  --color-gold: #d4af37; /* Royal Gold */
+  --color-gold-light: #f4d06f; /* Light Gold */
+  --color-bg-ivory: #fff9ec; /* Warm Ivory */
+  --color-dark: #102a25; /* Dark Emerald */
+
+  --color-ink: #1c2e28;
+  --color-muted: #5e736a;
+  --color-hairline: #e6dec9;
 }
 
 body {
-  background-color: var(--bg-subtle);
-  color: #1a202c;
+  background-color: var(--color-bg-ivory);
+  color: var(--color-ink);
   font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
-.masjid-card {
+/* Islamic Geometric & Arabesque Pattern Utilities */
+.bg-islamic-pattern {
+  background-image: radial-gradient(rgba(212, 175, 55, 0.12) 1px, transparent 1px),
+    radial-gradient(rgba(6, 78, 59, 0.08) 1px, transparent 1px);
+  background-size: 24px 24px;
+  background-position: 0 0, 12px 12px;
+}
+
+.gold-gradient-text {
+  background: linear-gradient(135deg, #d4af37 0%, #f4d06f 50%, #b8860b 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.gold-border {
+  border-color: rgba(212, 175, 55, 0.35);
+}
+
+.gold-border-glow:hover {
+  border-color: #d4af37;
+  box-shadow: 0 0 20px rgba(212, 175, 55, 0.25);
+}
+
+.masjid-card-luxury {
   background: #ffffff;
-  border-radius: 16px;
-  border: 1px solid #e2ece3;
-  box-shadow: 0 4px 20px -2px rgba(15, 42, 29, 0.05);
-  transition: all 0.2s ease;
+  border-radius: 20px;
+  border: 1px solid rgba(212, 175, 55, 0.22);
+  box-shadow: 0 10px 30px -5px rgba(16, 42, 37, 0.06);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.masjid-card:hover {
-  box-shadow: 0 8px 30px -4px rgba(15, 42, 29, 0.08);
+.masjid-card-luxury:hover {
+  transform: translateY(-3px);
+  border-color: rgba(212, 175, 55, 0.5);
+  box-shadow: 0 16px 36px -4px rgba(16, 42, 37, 0.12);
 }
 
-.masjid-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 12px;
+/* Search Pill Component from design.md */
+.search-pill {
+  background: #ffffff;
   border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.masjid-badge-success {
-  background-color: #e1f2e5;
-  color: #1e412c;
-}
-
-.masjid-badge-warning {
-  background-color: #fef3c7;
-  color: #92400e;
-}
-
-.masjid-badge-danger {
-  background-color: #fee2e2;
-  color: #991b1b;
-}
-
-.masjid-badge-info {
-  background-color: #e0f2fe;
-  color: #075985;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  box-shadow: 0 12px 32px -4px rgba(16, 42, 37, 0.12);
 }
 
 /* Custom Scrollbars */
@@ -69,47 +75,14 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f5f2;
+  background: #f5eedb;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #c5d8c8;
+  background: #d4af37;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #9bb79e;
-}
-
-/* Table styling */
-.masjid-table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-}
-
-.masjid-table th {
-  background: #f4f8f4;
-  color: #3b5240;
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  padding: 14px 18px;
-  border-bottom: 1px solid #e1ebe2;
-}
-
-.masjid-table td {
-  padding: 16px 18px;
-  border-bottom: 1px solid #edf4ee;
-  color: #2d3748;
-  font-size: 0.875rem;
-}
-
-.masjid-table tr:last-child td {
-  border-bottom: none;
-}
-
-.masjid-table tr:hover td {
-  background-color: #f9fdfa;
+  background: #b8860b;
 }
