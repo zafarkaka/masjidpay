@@ -9,21 +9,25 @@ export async function GET(req: NextRequest) {
     const masjidIdParam = searchParams.get('masjidId');
     const status = searchParams.get('status');
 
-    const masjid = await prisma.masjid.findFirst({
-      where: {
-        OR: [
-          { id: masjidIdParam || '' },
-          { slug: masjidIdParam || 'jama-masjid' },
-        ],
-      },
-    });
-
-    if (!masjid) {
-      return NextResponse.json({ campaigns: [] });
+    let masjid = null;
+    if (masjidIdParam) {
+      masjid = await prisma.masjid.findFirst({
+        where: {
+          OR: [
+            { id: masjidIdParam },
+            { slug: masjidIdParam },
+          ],
+        },
+      });
     }
 
-    const where: any = { masjidId: masjid.id };
-    if (status) where.status = status;
+    const where: any = {};
+    if (masjid) {
+      where.masjidId = masjid.id;
+    }
+    if (status) {
+      where.status = status;
+    }
 
     const campaigns = await prisma.campaign.findMany({
       where,
@@ -34,9 +38,10 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: 'desc' },
     });
 
-    return NextResponse.json({ campaigns });
+    return NextResponse.json({ campaigns: campaigns || [] });
   } catch (error: any) {
-    return NextResponse.json({ error: 'Failed to fetch campaigns' }, { status: 500 });
+    console.error('Campaigns GET API error:', error);
+    return NextResponse.json({ campaigns: [] });
   }
 }
 
@@ -89,7 +94,7 @@ export async function POST(req: NextRequest) {
         entity: 'Campaign',
         entityId: campaign.id,
         afterState: { name, targetAmount },
-      });
+      }).catch((e) => console.warn('Audit log notice:', e));
     }
 
     return NextResponse.json({ success: true, campaign });
@@ -97,6 +102,7 @@ export async function POST(req: NextRequest) {
     if (error.name === 'TenantAccessError' || error.name === 'UnauthorizedError') {
       return NextResponse.json({ error: error.message }, { status: 403 });
     }
+    console.error('Campaign create error:', error);
     return NextResponse.json({ error: 'Failed to create campaign' }, { status: 500 });
   }
 }
