@@ -10,6 +10,7 @@ export interface WhatsAppInvoiceInput {
   paymentMethod?: string;
   monthlyAmount?: number;
   statusText?: string;
+  transparencyUrl?: string;
 }
 
 export function generateWhatsAppInvoiceUrl({
@@ -23,6 +24,7 @@ export function generateWhatsAppInvoiceUrl({
   masjidName = 'NEWTOWN MASJID',
   monthlyAmount,
   statusText = '✅ Fully Paid',
+  transparencyUrl,
 }: WhatsAppInvoiceInput): string {
   // Clean phone number (strip non-digits)
   const cleanPhone = phone.replace(/[^0-9]/g, '');
@@ -30,7 +32,7 @@ export function generateWhatsAppInvoiceUrl({
 
   const displayMonthlyAmount = monthlyAmount || (monthsCount > 1 ? Math.round(amount / monthsCount) : amount);
 
-  const message = `━━━━━━━━━━━━━━━━━━━━━
+  let message = `━━━━━━━━━━━━━━━━━━━━━
 🕌 *${masjidName.toUpperCase()}*
 ━━━━━━━━━━━━━━━━━━━━━
 
@@ -45,13 +47,13 @@ Joining Date: ${paymentDate}
 Monthly Amount: IN ₹ ${displayMonthlyAmount.toLocaleString('en-IN')}
 
 *Status:* ${statusText}
-You have no pending payments. JazakAllah Khair for your contributions!
+You have no pending payments. JazakAllah Khair for your contributions!`;
 
-━━━━━━━━━━━━━━━━━━━━━
-May Allah accept your donations.
+  if (transparencyUrl) {
+    message += `\n\n🔍 *Live Transparency Portal:*\n${transparencyUrl}`;
+  }
 
-JazakAllah Khair!
-━━━━━━━━━━━━━━━━━━━━━`;
+  message += `\n\n━━━━━━━━━━━━━━━━━━━━━\nMay Allah accept your donations.\n\nJazakAllah Khair!\n━━━━━━━━━━━━━━━━━━━━━`;
 
   return `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
 }

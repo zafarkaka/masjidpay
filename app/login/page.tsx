@@ -49,10 +49,10 @@ export default function LoginPage() {
       // Automatically redirect based on authenticated user role
       if (data.user.role === 'SUPER_ADMIN') {
         router.push('/super-admin/masjids');
-      } else if (data.user.masjidStatus === 'APPROVED') {
-        router.push('/dashboard');
-      } else {
+      } else if (data.user.masjidStatus === 'PENDING') {
         router.push('/status');
+      } else {
+        router.push('/dashboard');
       }
     } catch (err: any) {
       setError(err.message);

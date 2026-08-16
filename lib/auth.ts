@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import { cookies } from 'next/headers';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'masjidpay_super_secret_jwt_key_2026';
-const TOKEN_NAME = 'masjidpay_token';
+export const TOKEN_NAME = 'masjidpay_token';
 
 export interface UserSession {
   userId: string;
@@ -35,31 +35,42 @@ export function verifyToken(token: string): UserSession | null {
   }
 }
 
+export const AUTH_COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'lax' as const,
+  path: '/',
+  maxAge: 7 * 24 * 60 * 60, // 7 days
+};
+
 export function setAuthCookie(token: string) {
-  const cookieStore = cookies();
-  cookieStore.set(TOKEN_NAME, token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    path: '/',
-    maxAge: 7 * 24 * 60 * 60, // 7 days
-  });
+  try {
+    const cookieStore = cookies();
+    cookieStore.set(TOKEN_NAME, token, AUTH_COOKIE_OPTIONS);
+  } catch (e) {
+    // Non-fatal if in streaming context
+  }
 }
 
 export function clearAuthCookie() {
-  const cookieStore = cookies();
-  cookieStore.set(TOKEN_NAME, '', {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    path: '/',
-    maxAge: 0,
-  });
+  try {
+    const cookieStore = cookies();
+    cookieStore.set(TOKEN_NAME, '', {
+      ...AUTH_COOKIE_OPTIONS,
+      maxAge: 0,
+    });
+  } catch (e) {
+    // Non-fatal
+  }
 }
 
 export function getCurrentSession(): UserSession | null {
-  const cookieStore = cookies();
-  const token = cookieStore.get(TOKEN_NAME)?.value;
-  if (!token) return null;
-  return verifyToken(token);
+  try {
+    const cookieStore = cookies();
+    const token = cookieStore.get(TOKEN_NAME)?.value;
+    if (!token) return null;
+    return verifyToken(token);
+  } catch (e) {
+    return null;
+  }
 }

@@ -24,8 +24,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         if (!data.user) {
           router.push('/login');
         } else if (data.user.role === 'SUPER_ADMIN') {
-          router.push('/super-admin');
-        } else if (data.user.masjidStatus !== 'APPROVED') {
+          router.push('/super-admin/masjids');
+        } else if (data.user.masjidStatus && data.user.masjidStatus === 'PENDING') {
           router.push('/status');
         } else {
           setUser(data.user);
