@@ -89,19 +89,10 @@ export default function MosqueIncomePage() {
   return (
     <div className="space-y-6 max-w-5xl mx-auto text-slate-800 font-sans">
       {/* HEADER */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 block">FINANCE</span>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Add Mosque Income</h1>
-          <p className="text-slate-500 text-xs sm:text-sm mt-0.5">Record income from various sources</p>
-        </div>
-
-        <Link
-          href="/dashboard/reports"
-          className="px-4 py-2.5 bg-[#0F3D26] hover:bg-emerald-950 text-white font-extrabold text-xs rounded-2xl shadow-md transition flex items-center gap-2"
-        >
-          <i className="fas fa-file-invoice-dollar"></i> View Financial Reports →
-        </Link>
+      <div>
+        <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 block">FINANCE</span>
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Add Mosque Income</h1>
+        <p className="text-slate-500 text-xs sm:text-sm mt-0.5">Record income from various sources</p>
       </div>
 
       {/* INFO CALLOUT BOX */}
