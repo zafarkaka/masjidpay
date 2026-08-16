@@ -243,6 +243,12 @@ export default function LoginPage() {
                 <i className="fab fa-whatsapp text-sm text-[#25D366]"></i> +91 98949 77003
               </a>
             </div>
+
+            <div className="pt-2 text-center">
+              <Link href="/super-admin/login" className="text-[11px] font-extrabold text-slate-400 hover:text-[#064E3B] transition flex items-center justify-center gap-1">
+                <i className="fas fa-shield-halved text-[10px]"></i> Super Admin Portal Login →
+              </Link>
+            </div>
           </div>
         </div>
       </div>

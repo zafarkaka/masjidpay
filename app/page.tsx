@@ -588,10 +588,11 @@ export default function HomePage() {
           <div className="space-y-2">
             <span className="text-xs font-black uppercase tracking-widest text-[#D4AF37] block">Mosque Portals</span>
             <ul className="space-y-1.5 text-slate-400">
-              <li><Link href="/donate/jama-masjid" className="hover:text-white transition">Public Donation Demo</Link></li>
+              <li><Link href="/donate/jama-masjid" className="hover:text-white transition">Public Contribution Portal</Link></li>
               <li><Link href="/masjid/jama-masjid/transparency" className="hover:text-white transition">Transparency Dashboard</Link></li>
               <li><Link href="/register" className="hover:text-white transition">Register New Mosque</Link></li>
               <li><Link href="/login" className="hover:text-white transition">Committee Admin Login</Link></li>
+              <li><Link href="/super-admin/login" className="hover:text-[#F4D06F] text-slate-400 font-semibold transition">Super Admin Console →</Link></li>
             </ul>
           </div>
 

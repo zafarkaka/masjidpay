@@ -10,23 +10,34 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
+  const isLoginPage = pathname === '/super-admin/login';
+
   useEffect(() => {
+    if (isLoginPage) {
+      setLoading(false);
+      return;
+    }
+
     fetch('/api/auth/me')
       .then((res) => res.json())
       .then((data) => {
         if (!data.user || data.user.role !== 'SUPER_ADMIN') {
-          router.push('/login');
+          router.push('/super-admin/login');
         } else {
           setUser(data.user);
           setLoading(false);
         }
       })
-      .catch(() => router.push('/login'));
-  }, [router]);
+      .catch(() => router.push('/super-admin/login'));
+  }, [router, isLoginPage]);
+
+  if (isLoginPage) {
+    return <>{children}</>;
+  }
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-900 text-white">
+      <div className="min-h-screen flex items-center justify-center bg-slate-950 text-white">
         <div className="text-center">
           <i className="fas fa-shield-halved fa-spin text-3xl text-emerald-400 mb-3"></i>
           <p className="text-sm text-slate-400">Verifying Super Admin Authorization...</p>
@@ -37,7 +48,7 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
 
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
-    router.push('/login');
+    router.push('/super-admin/login');
   };
 
   const navItems = [
