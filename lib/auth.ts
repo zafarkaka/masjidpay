@@ -13,6 +13,7 @@ export interface UserSession {
   masjidId?: string;
   masjidSlug?: string;
   masjidStatus?: string;
+  masjidName?: string;
 }
 
 export async function hashPassword(password: string): Promise<string> {

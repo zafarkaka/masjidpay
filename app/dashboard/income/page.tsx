@@ -24,7 +24,7 @@ export default function MosqueIncomePage() {
 
   const loadIncomes = () => {
     setLoading(true);
-    fetch('/api/income?masjidId=jama-masjid')
+    fetch('/api/income')
       .then((res) => res.json())
       .then((data) => {
         setIncomes(data.incomes || []);
@@ -39,8 +39,8 @@ export default function MosqueIncomePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !mobileNumber || !address || !amount || Number(amount) <= 0) {
-      setErrorMsg('Please fill in all required fields (Name, Mobile Number, Address, and Amount).');
+    if (!name.trim() || !amount || Number(amount) <= 0) {
+      setErrorMsg('Please enter a valid Name and Amount.');
       return;
     }
 
@@ -49,33 +49,25 @@ export default function MosqueIncomePage() {
     setSuccessMsg('');
 
     try {
-      // Find or resolve category and fund IDs dynamically via backend
       const titleText = incomeSource ? `${incomeSource} (${name})` : `${categoryName} from ${name}`;
-
-      // Fetch default categories & funds if needed
-      const catRes = await fetch('/api/dashboard/stats?masjidId=jama-masjid').then((r) => r.json());
-      const categoryId = catRes.categories?.[0]?.id || 'cat-1';
-      const fundId = catRes.funds?.[0]?.id || 'fund-1';
 
       const res = await fetch('/api/income', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          masjidId: 'jama-masjid',
           title: titleText,
           amount: Number(amount),
-          categoryId,
-          fundId,
-          payer: `${name} (${mobileNumber})`,
+          categoryName,
+          payer: mobileNumber ? `${name} (${mobileNumber})` : name,
           paymentMethod: paymentMode.toUpperCase().replace(/\s+/g, '_'),
-          description: `${incomeSource ? `Source: ${incomeSource}. ` : ''}Address: ${address}. ${description}`,
+          description: `${incomeSource ? `Source: ${incomeSource}. ` : ''}${address ? `Address: ${address}. ` : ''}${description}`.trim(),
           date,
         }),
       });
 
       const data = await res.json();
       if (res.ok) {
-        setSuccessMsg(`Income record for ${name} (IN ₹${Number(amount).toLocaleString('en-IN')}) saved and reflected in Financial Reports!`);
+        setSuccessMsg(`Income record for "${name}" (IN ₹${Number(amount).toLocaleString('en-IN')}) successfully saved to Financial Ledger!`);
         setName('');
         setMobileNumber('');
         setAddress('');
@@ -83,11 +75,12 @@ export default function MosqueIncomePage() {
         setAmount('0');
         setDescription('');
         loadIncomes();
+        setTimeout(() => setSuccessMsg(''), 6000);
       } else {
         setErrorMsg(data.error || 'Failed to record mosque income.');
       }
-    } catch (err) {
-      setErrorMsg('An error occurred while saving income.');
+    } catch (err: any) {
+      setErrorMsg(err.message || 'An error occurred while saving income.');
     } finally {
       setSubmitting(false);
     }
@@ -169,28 +162,26 @@ export default function MosqueIncomePage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div>
               <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
-                MOBILE NUMBER <span className="text-rose-500">*</span>
+                MOBILE NUMBER <span className="text-slate-400 font-normal">(OPTIONAL)</span>
               </label>
               <input
                 type="text"
-                required
                 value={mobileNumber}
                 onChange={(e) => setMobileNumber(e.target.value)}
-                placeholder="Enter mobile number"
+                placeholder="e.g. +91 98765 43210"
                 className="w-full px-4 py-3 bg-slate-50/70 border border-slate-200 rounded-2xl text-xs font-mono font-semibold text-slate-900 outline-none focus:border-emerald-700 focus:bg-white transition"
               />
             </div>
 
             <div>
               <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
-                ADDRESS <span className="text-rose-500">*</span>
+                ADDRESS <span className="text-slate-400 font-normal">(OPTIONAL)</span>
               </label>
               <input
                 type="text"
-                required
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
-                placeholder="Enter address"
+                placeholder="e.g. Shop #1, Market Complex"
                 className="w-full px-4 py-3 bg-slate-50/70 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-900 outline-none focus:border-emerald-700 focus:bg-white transition"
               />
             </div>

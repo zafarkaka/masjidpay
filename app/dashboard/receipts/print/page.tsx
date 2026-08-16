@@ -26,7 +26,7 @@ export default function UniversalPrintableReceiptPage() {
         })
         .catch(() => setLoading(false));
     } else if (type === 'income' && id) {
-      fetch('/api/income?masjidId=jama-masjid')
+      fetch('/api/income')
         .then((r) => r.json())
         .then((data) => {
           const match = data.incomes?.find((i: any) => i.id === id);

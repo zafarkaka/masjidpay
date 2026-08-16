@@ -86,7 +86,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className="min-h-screen flex items-center justify-center bg-[#f6faf6]">
         <div className="text-center text-slate-500 font-sans">
           <i className="fas fa-mosque fa-spin text-3xl text-emerald-700 mb-3"></i>
-          <p className="text-sm font-semibold">Loading Fort Masjid Financial Dashboard...</p>
+          <p className="text-sm font-semibold">Loading Mosque Financial Dashboard...</p>
         </div>
       </div>
     );
@@ -163,15 +163,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {/* BRANDING */}
           <div className="p-6 border-b border-slate-100 flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-emerald-700 text-white flex items-center justify-center text-lg shadow-md shadow-emerald-700/20">
+              <div className="w-10 h-10 rounded-2xl bg-emerald-700 text-white flex items-center justify-center text-lg shadow-md shadow-emerald-700/20 shrink-0">
                 <i className="fas fa-mosque"></i>
               </div>
-              <div>
-                <span className="font-extrabold text-lg text-slate-900 block leading-tight">
-                  Fort <span className="text-emerald-700">Masjid</span>
+              <div className="overflow-hidden">
+                <span className="font-extrabold text-sm text-slate-900 block leading-tight truncate" title={user?.masjidName || 'Mosque Dashboard'}>
+                  {user?.masjidName || 'Mosque Dashboard'}
                 </span>
-                <span className="text-[10px] font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                  Verified Tenant
+                <span className="text-[10px] font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 inline-block mt-0.5">
+                  Verified Mosque
                 </span>
               </div>
             </div>
@@ -218,27 +218,30 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             className="w-full flex items-center justify-between px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200/60 rounded-xl transition"
           >
             <span className="flex items-center gap-2.5">
-              <i className="fas fa-moon text-slate-600"></i> Dark Mode
+              <i className={`fas ${darkMode ? 'fa-sun text-amber-500' : 'fa-moon text-slate-500'}`}></i>
+              <span>{darkMode ? 'Light Theme' : 'Dark Theme'}</span>
             </span>
-            <div className={`w-8 h-4 rounded-full p-0.5 transition ${darkMode ? 'bg-emerald-700' : 'bg-slate-300'}`}>
-              <div className={`w-3 h-3 rounded-full bg-white transition transform ${darkMode ? 'translate-x-4' : ''}`}></div>
-            </div>
+            <span className={`text-[10px] px-2 py-0.5 rounded-md font-extrabold ${darkMode ? 'bg-amber-950 text-amber-400' : 'bg-slate-200 text-slate-600'}`}>
+              {darkMode ? 'ON' : 'OFF'}
+            </span>
           </button>
 
           {/* LANGUAGE SELECTOR */}
-          <div>
-            <div className="px-3 mb-1 text-[9px] font-extrabold uppercase tracking-widest text-slate-400">LANGUAGE</div>
-            <div className="relative">
+          <div className="px-3 py-1.5 bg-slate-100/80 rounded-xl">
+            <div className="relative flex items-center">
               <select
                 value={selectedLanguage}
                 onChange={(e) => setSelectedLanguage(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:border-emerald-700 shadow-xs appearance-none"
+                aria-label="Language selection"
+                className="w-full pl-7 pr-4 py-1 bg-transparent text-xs font-bold text-slate-700 outline-none appearance-none cursor-pointer"
               >
-                <option value="en">🌐 English (English)</option>
-                <option value="ta">🌐 Tamil (தமிழ்)</option>
-                <option value="ur">🌐 Urdu (اردو)</option>
+                <option value="en">English (US)</option>
+                <option value="ur">Urdu (اردو)</option>
+                <option value="ta">Tamil (தமிழ்)</option>
+                <option value="hi">Hindi (हिन्दी)</option>
+                <option value="ar">Arabic (العربية)</option>
               </select>
-              <i className="fas fa-globe absolute left-3 top-2.5 text-slate-400 text-xs pointer-events-none"></i>
+              <i className="fas fa-globe absolute left-0 top-1.5 text-slate-400 text-xs pointer-events-none"></i>
             </div>
           </div>
 
@@ -282,7 +285,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <i className="fas fa-bars"></i>
             </button>
             <span className="font-extrabold text-slate-900 text-sm hidden sm:inline">
-              Jama Masjid Vaniyambadi
+              {user?.masjidName || 'Mosque Financial Control Center'}
             </span>
           </div>
 

@@ -9,18 +9,35 @@ export async function GET() {
       return NextResponse.json({ user: null });
     }
 
-    // Refresh masjid status from DB if applicable
+    // Refresh masjid details from DB if applicable
     if (session.masjidId) {
       try {
         const masjid = await prisma.masjid.findUnique({
           where: { id: session.masjidId },
-          select: { status: true, rejectionReason: true, name: true, logoUrl: true, currency: true },
+          select: { id: true, status: true, rejectionReason: true, name: true, slug: true, logoUrl: true, currency: true },
         });
         if (masjid) {
           session.masjidStatus = masjid.status;
+          session.masjidName = masjid.name;
+          session.masjidSlug = masjid.slug;
         }
       } catch (dbErr) {
         console.warn('Non-fatal masjid lookup in /api/auth/me:', dbErr);
+      }
+    } else if (session.role !== 'SUPER_ADMIN') {
+      try {
+        const mu = await prisma.masjidUser.findFirst({
+          where: { userId: session.userId },
+          include: { masjid: true },
+        });
+        if (mu?.masjid) {
+          session.masjidId = mu.masjid.id;
+          session.masjidName = mu.masjid.name;
+          session.masjidSlug = mu.masjid.slug;
+          session.masjidStatus = mu.masjid.status;
+        }
+      } catch (err) {
+        console.warn('Non-fatal masjidUser lookup in /api/auth/me:', err);
       }
     }
 

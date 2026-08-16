@@ -22,7 +22,7 @@ export default function DashboardPage() {
     return (
       <div className="p-12 text-center text-slate-500">
         <i className="fas fa-circle-notch fa-spin text-emerald-700 text-3xl mb-3"></i>
-        <p className="text-sm font-semibold">Loading Fort Masjid Financial Control Center...</p>
+        <p className="text-sm font-semibold">Loading Mosque Financial Control Center...</p>
       </div>
     );
   }
