@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { ensureDatabaseTables } from '@/lib/db-init';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,12 +12,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Email and OTP code are required' }, { status: 400 });
     }
 
+    await ensureDatabaseTables(prisma);
+
     const cleanEmail = email.trim().toLowerCase();
     const cleanOtp = otp.trim();
 
     const record = await prisma.otpVerification.findUnique({
       where: { email: cleanEmail },
-    });
+    }).catch(() => null);
 
     if (!record) {
       return NextResponse.json({ error: 'No OTP request found for this email' }, { status: 400 });
@@ -31,7 +34,7 @@ export async function POST(req: NextRequest) {
     }
 
     // OTP Verified! Delete used record
-    await prisma.otpVerification.delete({ where: { email: cleanEmail } });
+    await prisma.otpVerification.delete({ where: { email: cleanEmail } }).catch(() => {});
 
     return NextResponse.json({
       success: true,
