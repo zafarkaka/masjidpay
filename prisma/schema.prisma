@@ -87,11 +87,14 @@ model Masjid {
 }
 
 model MasjidUser {
-  id        String   @id @default(uuid())
-  masjidId  String
-  userId    String
-  role      String   @default("MASJID_ADMIN")
-  createdAt DateTime @default(now())
+  id          String   @id @default(uuid())
+  masjidId    String
+  userId      String
+  role        String   @default("MASJID_ADMIN")
+  customTitle String?
+  permissions String?  @default("{}")
+  status      String   @default("ACTIVE")
+  createdAt   DateTime @default(now())
 
   masjid    Masjid   @relation(fields: [masjidId], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)

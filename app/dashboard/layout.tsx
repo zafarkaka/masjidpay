@@ -138,6 +138,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     {
       group: 'SYSTEM',
       items: [
+        { label: 'Users & Permissions', href: '/dashboard/users', icon: 'fa-user-shield' },
         { label: 'Mosque Profile', href: '/dashboard/settings', icon: 'fa-gear' },
         { label: 'Payment Gateway (Razorpay & UPI)', href: '/dashboard/payment-gateway', icon: 'fa-credit-card' },
         { label: 'Data Backup', href: '/dashboard/backup', icon: 'fa-database' },
