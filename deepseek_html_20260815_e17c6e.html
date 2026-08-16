@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>MasjidPay · PWA</title>
+  <!-- PWA manifest link -->
+  <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIk1hc2ppZFBheSIsCiAgInNob3J0X25hbWUiOiAiTWFzamlkUGF5IiwKICAiZGVzY3JpcHRpb24iOiAiUHJvZmVzc2lvbmFsIG1vc3F1ZSBtYW5hZ2VtZW50IiwKICAic3RhcnRfdXJsIjogIi4iLAogICJkaXNwbGF5IjogInN0YW5kYWxvbmUiLAogICJiYWNrZ3JvdW5kX2NvbG9yIjogIiNmNWY4ZjUiLAogICJ0aGVtZV9jb2xvciI6ICIjMWU2YTNhIiwKICAiaWNvbnMiOiBbCiAgICB7CiAgICAgICJzcmMiOiAiZGF0YTppbWFnZS9zdmcreG1sLCUzQ3N2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCA1MTIgNTEyJyUzRSUzQ3JlY3Qgd2lkdGg9JzUxMicgaGVpZ2h0PSc1MTInIHJ4PSc1MCcgZmlsbD0nJTIzMWU2YTNhJy8lM0UlM0N0ZXh0IHg9JzI1NicgeT0nMzIwJyBmb250LXNpemU9JzE1MCcgdGV4dC1hbmNob3I9J21pZGRsZScgZmlsbD0nd2hpdGUnIGZvbnQtZmFtaWx5PSdzYW5zLXNlcmlmJyUzRSUyNUN1MDEzRCUyNTIwUEFZJTNDL3RleHQlM0UlM0Mvc3ZnJTNFIiwKICAgICAgInNpemVzIjogIjUxMng1MTIiLAogICAgICAidHlwZSI6ICJpbWFnZS9zdmcreG1sIgogICAgfQogIF0KfQ==">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='50' fill='%231e6a3a'/%3E%3Ctext x='256' y='320' font-size='150' text-anchor='middle' fill='white' font-family='sans-serif'%3E%26%23x1F3D5;%26%23xFE0F;%3C/text%3E%3C/svg%3E">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    body {
+      background: #eef5ee;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .app-container {
+      max-width: 1300px;
+      width: 100%;
+      background: rgba(255,255,255,0.78);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-radius: 48px;
+      box-shadow: 0 30px 60px -20px rgba(20,50,30,0.25);
+      border: 1px solid rgba(255,255,255,0.5);
+      padding: 28px 32px 36px;
+      transition: all 0.2s;
+    }
+
+    .top-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px 20px;
+      margin-bottom: 20px;
+    }
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .logo-area i {
+      font-size: 28px;
+      color: #1e6a3a;
+      background: rgba(200,225,195,0.5);
+      padding: 10px;
+      border-radius: 18px;
+    }
+    .logo-area h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #0f2a18;
+    }
+    .logo-area h1 span { font-weight: 300; color: #2a5a3a; }
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .install-btn {
+      background: #1e6a3a;
+      color: white;
+      border: none;
+      padding: 8px 22px;
+      border-radius: 40px;
+      font-weight: 600;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: 0.15s;
+      box-shadow: 0 4px 12px rgba(30,106,58,0.2);
+    }
+    .install-btn:hover { background: #15582e; }
+    .install-btn i { font-size: 16px; }
+    .back-link {
+      color: #1e6a3a;
+      font-weight: 500;
+      text-decoration: none;
+      background: rgba(220,240,215,0.4);
+      padding: 6px 18px;
+      border-radius: 40px;
+      border: 1px solid rgba(255,255,255,0.3);
+    }
+
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      border-bottom: 2px solid rgba(200,220,195,0.3);
+      padding-bottom: 4px;
+      margin-bottom: 24px;
+    }
+    .tab-btn {
+      padding: 10px 24px;
+      border-radius: 40px 40px 0 0;
+      font-weight: 600;
+      font-size: 14px;
+      color: #3a6045;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      transition: 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .tab-btn:hover { background: rgba(200,225,195,0.3); }
+    .tab-btn.active {
+      background: #1e6a3a;
+      color: white;
+    }
+
+    .tab-content {
+      display: none;
+      animation: fadeUp 0.25s ease;
+    }
+    .tab-content.active { display: block; }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .auth-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 36px;
+    }
+    @media (max-width: 880px) { .auth-grid { grid-template-columns: 1fr; gap: 28px; } }
+
+    .panel {
+      background: rgba(255,255,255,0.5);
+      backdrop-filter: blur(4px);
+      border-radius: 36px;
+      padding: 28px 26px;
+      border: 1px solid rgba(255,255,255,0.6);
+    }
+    .panel h3 { font-size: 22px; font-weight: 700; color: #0f2a18; margin-bottom: 2px; }
+    .panel .sub { color: #3a6045; margin-bottom: 20px; font-size: 15px; }
+
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-weight: 500; font-size: 14px; color: #1a4025; margin-bottom: 4px; }
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 12px 16px;
+      border-radius: 60px;
+      border: 1px solid #d0e0ce;
+      background: rgba(255,255,255,0.5);
+      font-size: 15px;
+      outline: none;
+      transition: 0.15s;
+    }
+    .form-group input:focus, .form-group select:focus {
+      border-color: #1e6a3a;
+      box-shadow: 0 0 0 3px rgba(30,106,58,0.08);
+    }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 500px) { .form-row { grid-template-columns: 1fr; } }
+
+    .btn-primary {
+      background: #1e6a3a;
+      color: white;
+      border: none;
+      width: 100%;
+      padding: 14px;
+      border-radius: 60px;
+      font-weight: 700;
+      font-size: 16px;
+      cursor: pointer;
+      transition: 0.15s;
+      margin-top: 6px;
+    }
+    .btn-primary:hover { background: #15582e; }
+    .btn-primary i { margin-right: 8px; }
+    .btn-outline {
+      background: transparent;
+      border: 1.5px solid #1e6a3a;
+      color: #1e6a3a;
+      padding: 10px;
+      border-radius: 60px;
+      font-weight: 600;
+      text-align: center;
+      display: inline-block;
+      cursor: pointer;
+      transition: 0.15s;
+    }
+    .btn-outline:hover { background: rgba(30,106,58,0.04); }
+    .divider-text {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 16px 0 12px;
+      color: #5a7a5a;
+      font-size: 14px;
+    }
+    .divider-text hr { flex: 1; border: none; border-top: 1px solid #c8dcc8; }
+    .social-row { display: flex; gap: 12px; }
+    .social-row .btn-outline { flex: 1; text-align: center; }
+    .code-hint {
+      background: rgba(220,240,215,0.4);
+      padding: 6px 16px;
+      border-radius: 40px;
+      font-size: 13px;
+      color: #1e6a3a;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    .dash-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px,1fr));
+      gap: 14px;
+      margin: 16px 0 24px;
+    }
+    .stat-card {
+      background: rgba(255,255,255,0.6);
+      border-radius: 24px;
+      padding: 16px 18px;
+      border: 1px solid rgba(255,255,255,0.5);
+    }
+    .stat-card .label { font-size: 14px; color: #3a6045; }
+    .stat-card .amount { font-size: 26px; font-weight: 700; color: #0f2a18; }
+    .stat-card .sub { font-size: 13px; color: #5a7a5a; }
+
+    .footer-note {
+      margin-top: 28px;
+      text-align: center;
+      font-size: 14px;
+      color: #5a7a5a;
+      border-top: 1px solid rgba(200,220,195,0.3);
+      padding-top: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 12px 24px;
+    }
+    .footer-note i { color: #1e6a3a; }
+
+    .pwa-banner {
+      background: rgba(30,106,58,0.06);
+      border-radius: 40px;
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px 20px;
+      border: 1px solid rgba(30,106,58,0.1);
+      margin-bottom: 16px;
+    }
+    .pwa-banner span { font-weight: 500; color: #1a4025; }
+    .pwa-banner i { color: #1e6a3a; font-size: 18px; }
+
+    @media (max-width: 600px) {
+      .app-container { padding: 16px; }
+      .panel { padding: 20px 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-container">
+
+  <!-- TOP BAR -->
+  <div class="top-bar">
+    <div class="logo-area">
+      <i class="fas fa-mosque"></i>
+      <h1>Masjid<span>Pay</span></h1>
+    </div>
+    <div class="top-actions">
+      <a href="#" class="back-link"><i class="fas fa-arrow-left"></i> Home</a>
+      <button id="installAppBtn" class="install-btn"><i class="fas fa-download"></i> Download App</button>
+    </div>
+  </div>
+
+  <!-- PWA BANNER -->
+  <div class="pwa-banner" id="pwaBanner">
+    <i class="fas fa-mobile-alt"></i>
+    <span>Install MasjidPay as an app for faster access</span>
+    <button id="pwaInstallBtn" class="install-btn" style="padding:6px 18px; font-size:13px;"><i class="fas fa-plus-circle"></i> Install</button>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="loginTab"><i class="fas fa-sign-in-alt"></i> Login</button>
+    <button class="tab-btn" data-tab="registerTab"><i class="fas fa-user-plus"></i> Register Mosque</button>
+    <button class="tab-btn" data-tab="dashboardTab"><i class="fas fa-chart-pie"></i> Dashboard</button>
+  </div>
+
+  <!-- ===== TAB 1: LOGIN ===== -->
+  <div id="loginTab" class="tab-content active">
+    <div class="auth-grid">
+      <div class="panel">
+        <h3>Owner Login</h3>
+        <div class="sub">Access your mosque dashboard</div>
+        <div class="form-group"><label><i class="fas fa-envelope"></i> Email</label><input type="email" placeholder="admin@masjidpay.online" value="admin@masjidpay.online"></div>
+        <div class="form-group"><label><i class="fas fa-lock"></i> Password</label><input type="password" placeholder="••••••••" value="password123"></div>
+        <button class="btn-primary"><i class="fas fa-sign-in-alt"></i> Login</button>
+        <div class="divider-text"><hr> OR <hr></div>
+        <div class="social-row"><span class="btn-outline"><i class="fab fa-google"></i> Google</span><span class="btn-outline"><i class="fab fa-apple"></i> Apple</span></div>
+        <div style="display:flex; justify-content:space-between; margin-top:16px; font-size:14px; color:#1e6a3a; flex-wrap:wrap;">
+          <a href="#" style="color:#1e6a3a; text-decoration:none;"><i class="fas fa-key"></i> Forgot Password?</a>
+          <a href="#" style="color:#1e6a3a; text-decoration:none;"><i class="fas fa-user-plus"></i> Register</a>
+        </div>
+      </div>
+      <div class="panel" style="display:flex; flex-direction:column; justify-content:center; background:rgba(220,240,215,0.2);">
+        <i class="fas fa-mosque" style="font-size:64px; color:#1e6a3a; opacity:0.3; text-align:center;"></i>
+        <h3 style="text-align:center; margin-top:8px;">Welcome to MasjidPay</h3>
+        <p style="text-align:center; color:#3a6045;">Manage members, track finances, and streamline operations.</p>
+        <div style="display:flex; gap:16px; justify-content:center; margin-top:20px;">
+          <span class="btn-outline" style="padding:8px 24px;"><i class="fas fa-eye"></i> Guest View</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TAB 2: REGISTER ===== -->
+  <div id="registerTab" class="tab-content">
+    <div class="auth-grid">
+      <div class="panel">
+        <h3>Register Mosque</h3>
+        <div class="sub">Set up your mosque profile on MasjidPay</div>
+        <div class="form-group"><label><i class="fas fa-mosque"></i> Mosque Name</label><input type="text" placeholder="e.g. Jama Masjid" value="MasjidPay Demo"></div>
+        <div class="form-group"><label><i class="fas fa-map-pin"></i> Address</label><input type="text" placeholder="Mosque Location" value="Vaniyambadi, TN"></div>
+        <div class="form-row">
+          <div class="form-group"><label><i class="fas fa-globe"></i> Country</label><select><option selected>IN India (₹)</option><option>PK Pakistan (₨)</option><option>BD Bangladesh (৳)</option></select></div>
+          <div class="form-group"><label><i class="fas fa-phone"></i> Phone</label><input type="text" placeholder="+91 98765 43210" value="+91 98765 43210"></div>
+        </div>
+        <div class="form-group">
+          <label><i class="fas fa-key"></i> Secret Code (Guest)</label>
+          <input type="text" placeholder="e.g. 7860" value="masjidpay786">
+          <div class="code-hint"><i class="fas fa-info-circle"></i> Share for read-only access</div>
+        </div>
+        <div class="form-group"><label><i class="fas fa-envelope"></i> Email</label><input type="email" placeholder="admin@masjidpay.online" value="admin@masjidpay.online"></div>
+        <div class="form-row">
+          <div class="form-group"><label><i class="fas fa-lock"></i> Password</label><input type="password" placeholder="••••••••" value="password123"></div>
+          <div class="form-group"><label><i class="fas fa-check-circle"></i> Confirm</label><input type="password" placeholder="Confirm" value="password123"></div>
+        </div>
+        <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:8px;">
+          <button class="btn-primary" style="flex:2;"><i class="fas fa-paper-plane"></i> Send Code</button>
+          <span class="btn-outline" style="flex:1; text-align:center; padding:12px;"><i class="fas fa-arrow-right"></i> Continue</span>
+        </div>
+      </div>
+      <div class="panel" style="background:rgba(220,240,215,0.2);">
+        <i class="fas fa-hand-holding-usd" style="font-size:48px; color:#1e6a3a; opacity:0.3;"></i>
+        <h3 style="margin-top:8px;">Why MasjidPay?</h3>
+        <ul style="list-style:none; color:#2a5535; line-height:2;">
+          <li><i class="fas fa-check-circle" style="color:#1e6a3a;"></i> Track donations & expenses</li>
+          <li><i class="fas fa-check-circle" style="color:#1e6a3a;"></i> Manage member records</li>
+          <li><i class="fas fa-check-circle" style="color:#1e6a3a;"></i> Generate PDF receipts</li>
+          <li><i class="fas fa-check-circle" style="color:#1e6a3a;"></i> Staff & payroll management</li>
+          <li><i class="fas fa-check-circle" style="color:#1e6a3a;"></i> Guest access with Secret Code</li>
+        </ul>
+        <div style="margin-top:20px;"><span class="btn-outline" style="width:100%; text-align:center;"><i class="fas fa-eye"></i> View as Guest</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TAB 3: DASHBOARD ===== -->
+  <div id="dashboardTab" class="tab-content">
+    <h3 style="font-size:24px; color:#0f2a18;"><i class="fas fa-chart-pie" style="color:#1e6a3a;"></i> Dashboard</h3>
+    <p style="color:#3a6045; margin-bottom:16px;">Welcome back, MasjidPay Admin</p>
+    <div class="dash-stats">
+      <div class="stat-card"><div class="label">Total Balance</div><div class="amount">₹6,50,000</div><div class="sub">INR</div></div>
+      <div class="stat-card"><div class="label">Monthly Income</div><div class="amount">₹62,500</div><div class="sub">+12% vs last month</div></div>
+      <div class="stat-card"><div class="label">Active Members</div><div class="amount">142</div><div class="sub">+8 this month</div></div>
+      <div class="stat-card"><div class="label">Staff</div><div class="amount">5</div><div class="sub">3 active · 2 pending</div></div>
+    </div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:8px;">
+      <div class="panel" style="padding:20px;"><i class="fas fa-hand-holding-usd" style="color:#1e6a3a;"></i> <strong>Recent Donation</strong><br><span style="color:#3a6045;">Ahmed Hassan · ₹500</span></div>
+      <div class="panel" style="padding:20px;"><i class="fas fa-wallet" style="color:#1e6a3a;"></i> <strong>Latest Expense</strong><br><span style="color:#3a6045;">Electricity Bill · ₹5,200</span></div>
+    </div>
+    <div style="margin-top:20px; display:flex; gap:12px; flex-wrap:wrap;">
+      <span class="btn-primary" style="width:auto; padding:10px 28px;"><i class="fas fa-plus-circle"></i> Add Income</span>
+      <span class="btn-outline" style="padding:10px 28px;"><i class="fas fa-plus-circle"></i> Add Expense</span>
+      <span class="btn-outline" style="padding:10px 28px;"><i class="fas fa-user-plus"></i> Add Member</span>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer-note">
+    <span><i class="fas fa-mosque"></i> MasjidPay · Professional Mosque Management</span>
+    <span><i class="fas fa-shield-alt"></i> Secure & Transparent</span>
+    <span><i class="fas fa-download" id="footerInstallLink" style="cursor:pointer;"></i> Download App</span>
+  </div>
+</div>
+
+<script>
+  (function() {
+    // ----- TAB SWITCHING -----
+    const tabs = document.querySelectorAll('.tab-btn');
+    const contents = document.querySelectorAll('.tab-content');
+    tabs.forEach(tab => {
+      tab.addEventListener('click', function() {
+        tabs.forEach(t => t.classList.remove('active'));
+        this.classList.add('active');
+        contents.forEach(c => c.classList.remove('active'));
+        document.getElementById(this.dataset.tab).classList.add('active');
+      });
+    });
+
+    // ----- PWA INSTALL (simulated) -----
+    let deferredPrompt = null;
+    const installBtn = document.getElementById('installAppBtn');
+    const pwaInstallBtn = document.getElementById('pwaInstallBtn');
+    const footerInstallLink = document.getElementById('footerInstallLink');
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      installBtn.style.display = 'flex';
+      pwaInstallBtn.style.display = 'inline-flex';
+    });
+
+    function hideInstallButtons() {
+      installBtn.style.display = 'none';
+      pwaInstallBtn.style.display = 'none';
+    }
+
+    function triggerInstall() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then((choiceResult) => {
+          if (choiceResult.outcome === 'accepted') {
+            console.log('PWA installed');
+            hideInstallButtons();
+          } else {
+            console.log('PWA installation declined');
+          }
+          deferredPrompt = null;
+        });
+      } else {
+        alert('📲 To install MasjidPay as an app, use "Add to Home Screen" in your browser.\n\nChrome: Menu → Add to Home Screen\nSafari: Share → Add to Home Screen');
+      }
+    }
+
+    installBtn.addEventListener('click', triggerInstall);
+    pwaInstallBtn.addEventListener('click', triggerInstall);
+    footerInstallLink.addEventListener('click', triggerInstall);
+
+    window.addEventListener('appinstalled', () => {
+      hideInstallButtons();
+    });
+
+    if (!('serviceWorker' in navigator)) {
+      installBtn.addEventListener('click', () => {
+        alert('📱 To use MasjidPay as an app, use a modern browser and select "Add to Home Screen".');
+      });
+    }
+
+    console.log('MasjidPay PWA ready');
+  })();
+</script>
+
+</body>
+</html>

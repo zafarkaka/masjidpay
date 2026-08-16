@@ -1,0 +1,115 @@
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+:root {
+  --primary: #164e31;
+  --primary-dark: #0f2a1d;
+  --primary-light: #2b613e;
+  --accent-gold: #d7ab32;
+  --surface: #ffffff;
+  --bg-subtle: #f6faf6;
+}
+
+body {
+  background-color: var(--bg-subtle);
+  color: #1a202c;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.masjid-card {
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #e2ece3;
+  box-shadow: 0 4px 20px -2px rgba(15, 42, 29, 0.05);
+  transition: all 0.2s ease;
+}
+
+.masjid-card:hover {
+  box-shadow: 0 8px 30px -4px rgba(15, 42, 29, 0.08);
+}
+
+.masjid-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.masjid-badge-success {
+  background-color: #e1f2e5;
+  color: #1e412c;
+}
+
+.masjid-badge-warning {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.masjid-badge-danger {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.masjid-badge-info {
+  background-color: #e0f2fe;
+  color: #075985;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f2;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c5d8c8;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9bb79e;
+}
+
+/* Table styling */
+.masjid-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.masjid-table th {
+  background: #f4f8f4;
+  color: #3b5240;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 14px 18px;
+  border-bottom: 1px solid #e1ebe2;
+}
+
+.masjid-table td {
+  padding: 16px 18px;
+  border-bottom: 1px solid #edf4ee;
+  color: #2d3748;
+  font-size: 0.875rem;
+}
+
+.masjid-table tr:last-child td {
+  border-bottom: none;
+}
+
+.masjid-table tr:hover td {
+  background-color: #f9fdfa;
+}

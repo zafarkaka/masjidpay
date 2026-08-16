@@ -1,0 +1,559 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id                 String       @id @default(uuid())
+  name               String
+  email              String       @unique
+  password           String
+  phone              String?
+  role               String       @default("MASJID_ADMIN") // SUPER_ADMIN, MASJID_OWNER, MASJID_ADMIN, TREASURER, ACCOUNTANT, VIEWER
+  mustChangePassword Boolean      @default(false)
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  masjidUsers        MasjidUser[]
+  auditLogs          AuditLog[]
+}
+
+model OtpVerification {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  otp       String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model Masjid {
+  id              String       @id @default(uuid())
+  name            String
+  slug            String       @unique
+  address         String?
+  city            String?
+  state           String?
+  country         String       @default("IN")
+  zipCode         String?
+  phone           String?
+  email           String?
+  website         String?
+  logoUrl         String?
+  regNumber       String?
+  currency        String       @default("INR")
+  timezone        String       @default("Asia/Kolkata")
+  status          String       @default("PENDING") // PENDING, APPROVED, REJECTED, SUSPENDED, ACTIVE, ARCHIVED
+  rejectionReason String?
+  openingBalance  Float        @default(0)
+  bankName        String?
+  bankAccNo       String?
+  bankIfsc        String?
+  upiId           String?
+  financialYear   String       @default("2026-2027")
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  masjidUsers         MasjidUser[]
+  donors              Donor[]
+  donationCategories  DonationCategory[]
+  expenseCategories   ExpenseCategory[]
+  incomeCategories    IncomeCategory[]
+  funds               Fund[]
+  donations           Donation[]
+  recurringDonations  RecurringDonation[]
+  expenses            Expense[]
+  recurringExpenses   RecurringExpense[]
+  incomes             Income[]
+  fundTransfers       FundTransfer[]
+  budgets             Budget[]
+  campaigns           Campaign[]
+  paymentLinks        PaymentLink[]
+  paymentTransactions PaymentTransaction[]
+  receipts            Receipt[]
+  auditLogs           AuditLog[]
+  notifications       Notification[]
+  settings            Setting[]
+  members             Member[]
+  memberCollections   MemberCollection[]
+  staff               Staff[]
+  payrolls            Payroll[]
+  rentalShops         RentalShop[]
+  rentalPayments      RentalPayment[]
+  documents           Document[]
+}
+
+model MasjidUser {
+  id        String   @id @default(uuid())
+  masjidId  String
+  userId    String
+  role      String   @default("MASJID_ADMIN")
+  createdAt DateTime @default(now())
+
+  masjid    Masjid   @relation(fields: [masjidId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([masjidId, userId])
+}
+
+model Donor {
+  id            String   @id @default(uuid())
+  masjidId      String
+  name          String
+  phone         String?
+  email         String?
+  address       String?
+  totalDonated  Float    @default(0)
+  status        String   @default("ACTIVE")
+  createdAt     DateTime @default(now())
+
+  masjid             Masjid              @relation(fields: [masjidId], references: [id], onDelete: Cascade)
+  donations          Donation[]
+  recurringDonations RecurringDonation[]
+}
+
+model DonationCategory {
+  id        String   @id @default(uuid())
+  masjidId  String
+  name      String
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  masjid             Masjid              @relation(fields: [masjidId], references: [id], onDelete: Cascade)
+  donations          Donation[]
+  recurringDonations RecurringDonation[]
+  campaigns          Campaign[]
+  paymentLinks       PaymentLink[]
+}
+
+model ExpenseCategory {
+  id        String   @id @default(uuid())
+  masjidId  String
+  name      String
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  masjid            Masjid             @relation(fields: [masjidId], references: [id], onDelete: Cascade)
+  expenses          Expense[]
+  recurringExpenses RecurringExpense[]
+  budgets           Budget[]
+}
+
+model IncomeCategory {
+  id        String   @id @default(uuid())
+  masjidId  String
+  name      String
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  masjid   Masjid   @relation(fields: [masjidId], references: [id], onDelete: Cascade)
+  incomes  Income[]
+}
+
+model Fund {
+  id             String   @id @default(uuid())
+  masjidId       String
+  name           String
+  description    String?
+  openingBalance Float    @default(0)
+  currentBalance Float    @default(0)
+  isRestricted   Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  masjid             Masjid              @relation(fields: [masjidId], references: [id], onDelete: Cascade)
+  donations          Donation[]
+  expenses           Expense[]
+  incomes            Income[]
+  sourceTransfers    FundTransfer[]      @relation("SourceFund")
+  destTransfers      FundTransfer[]      @relation("DestFund")
+  budgets            Budget[]
+  recurringDonations RecurringDonation[]
+  recurringExpenses  RecurringExpense[]
+}
+
+model Donation {
+  id            String   @id @default(uuid())
+  masjidId      String
+  donorId       String?
+  categoryId    String
+  fundId        String
+  campaignId    String?
+  recurringId   String?
+  amount        Float
+  date          DateTime @default(now())
+  paymentMethod String   @default("CASH")
+  referenceNo   String?
+  notes         String?
+  isAnonymous   Boolean  @default(false)
+  isVoided      Boolean  @default(false)
+  voidReason    String?
+  receiptNo     String?
+  createdAt     DateTime @default(now())
+
+  masjid            Masjid             @relation(fields: [masjidId], references: [id], onDelete: Cascade)
+  donor             Donor?             @relation(fields: [donorId], references: [id], onDelete: SetNull)
+  category          DonationCategory   @relation(fields: [categoryId], references: [id])
+  fund              Fund               @relation(fields: [fundId], references: [id])
+  campaign          Campaign?          @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  recurringDonation RecurringDonation? @relation(fields: [recurringId], references: [id], onDelete: SetNull)
+  receipts          Receipt[]
+}
+
+model RecurringDonation {
+  id                     String    @id @default(uuid())
+  masjidId               String
+  donorId                String
+  categoryId             String
+  fundId                 String
+  amount                 Float
+  frequency              String    @default("MONTHLY")
+  startDate              DateTime  @default(now())
+  endDate                DateTime?
+  cyclesCount            Int       @default(0)
+  status                 String    @default("ACTIVE")
+  paymentMethod          String    @default("RAZORPAY")
+  razorpaySubscriptionId String?
+  nextPaymentDate        DateTime
+  lastPaymentDate        DateTime?
+  totalCollected         Float     @default(0)
+  createdAt              DateTime  @default(now())
+
+  masjid    Masjid           @relation(fields: [masjidId], references: [id], onDelete: Cascade)
+  donor     Donor            @relation(fields: [donorId], references: [id], onDelete: Cascade)
+  category  DonationCategory @relation(fields: [categoryId], references: [id])
+  fund      Fund             @relation(fields: [fundId], references: [id])
+  donations Donation[]
+}
+
+model Member {
+  id             String   @id @default(uuid())
+  masjidId       String
+  memberNo       String?
+  name           String
+  phone          String
+  email          String?
+  address        String?
+  monthlyAmount  Float    @default(500)
+  status         String   @default("ACTIVE")
+  canViewReports Boolean  @default(true) // Admin tick option for report & collection view access
+  createdAt      DateTime @default(now())
+
+  masjid            Masjid             @relation(fields: [masjidId], references: [id], onDelete: Cascade)
+  memberCollections MemberCollection[]
+}
+
+model MemberCollection {
+  id            String   @id @default(uuid())
+  masjidId      String
+  memberId      String?
+  memberName    String
+  memberPhone   String
+  memberAddress String?
+  amount        Float
+  paymentType   String   @default("MONTHLY")
+  monthsCount   Int      @default(1)
+  forMonths     String?
+  paymentDate   DateTime @default(now())
+  paymentMethod String   @default("CASH")
+  referenceNo   String?
+  receiptNo     String?
+  notes         String?
+  createdAt     DateTime @default(now())
+
+  masjid Masjid  @relation(fields: [masjidId], references: [id], onDelete: Cascade)
+  member Member? @relation(fields: [memberId], references: [id], onDelete: SetNull)
+}
+
+model Staff {
+  id            String   @id @default(uuid())
+  masjidId      String
+  name          String
+  roleTitle     String
+  phone         String?
+  email         String?
+  monthlySalary Float
+  status        String   @default("ACTIVE")
+  createdAt     DateTime @default(now())
+
+  masjid   Masjid    @relation(fields: [masjidId], references: [id], onDelete: Cascade)
+  payrolls Payroll[]
+}
+
+model Payroll {
+  id            String   @id @default(uuid())
+  masjidId      String
+  staffId       String
+  staffName     String
+  amount        Float
+  monthPaid     String
+  paymentDate   DateTime @default(now())
+  paymentMethod String   @default("CASH")
+  status        String   @default("PAID")
+  receiptNo     String?
+  notes         String?
+  createdAt     DateTime @default(now())
+
+  masjid Masjid @relation(fields: [masjidId], references: [id], onDelete: Cascade)
+  staff  Staff  @relation(fields: [staffId], references: [id], onDelete: Cascade)
+}
+
+model RentalShop {
+  id          String   @id @default(uuid())
+  masjidId    String
+  shopNo      String
+  tenantName  String
+  tenantPhone String
+  monthlyRent Float
+  status      String   @default("OCCUPIED")
+  createdAt   DateTime @default(now())
+
+  masjid         Masjid          @relation(fields: [masjidId], references: [id], onDelete: Cascade)
+  rentalPayments RentalPayment[]
+}
+
+model RentalPayment {
+  id            String   @id @default(uuid())
+  masjidId      String
+  shopId        String
+  shopNo        String
+  tenantName    String
+  amount        Float
+  forMonth      String
+  paymentDate   DateTime @default(now())
+  paymentMethod String   @default("BANK_TRANSFER")
+  receiptNo     String?
+  createdAt     DateTime @default(now())
+
+  masjid Masjid     @relation(fields: [masjidId], references: [id], onDelete: Cascade)
+  shop   RentalShop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+}
+
+model Document {
+  id         String   @id @default(uuid())
+  masjidId   String
+  title      String
+  category   String
+  fileUrl    String
+  fileSize   String?
+  uploadedBy String?
+  createdAt  DateTime @default(now())
+
+  masjid Masjid @relation(fields: [masjidId], references: [id], onDelete: Cascade)
+}
+
+model Expense {
+  id                 String   @id @default(uuid())
+  masjidId           String
+  categoryId         String
+  fundId             String
+  recurringExpenseId String?
+  title              String
+  amount             Float
+  date               DateTime @default(now())
+  vendor             String?
+  paymentMethod      String   @default("CASH")
+  referenceNo        String?
+  description        String?
+  attachmentUrl      String?
+  isVoided           Boolean  @default(false)
+  voidReason         String?
+  createdAt          DateTime @default(now())
+
+  masjid           Masjid            @relation(fields: [masjidId], references: [id], onDelete: Cascade)
+  category         ExpenseCategory   @relation(fields: [categoryId], references: [id])
+  fund             Fund              @relation(fields: [fundId], references: [id])
+  recurringExpense RecurringExpense? @relation(fields: [recurringExpenseId], references: [id], onDelete: SetNull)
+}
+
+model RecurringExpense {
+  id          String    @id @default(uuid())
+  masjidId    String
+  categoryId  String
+  fundId      String
+  title       String
+  amount      Float
+  frequency   String    @default("MONTHLY")
+  startDate   DateTime  @default(now())
+  endDate     DateTime?
+  status      String    @default("ACTIVE")
+  nextDueDate DateTime
+  createdAt   DateTime  @default(now())
+
+  masjid   Masjid          @relation(fields: [masjidId], references: [id], onDelete: Cascade)
+  category ExpenseCategory @relation(fields: [categoryId], references: [id])
+  fund     Fund            @relation(fields: [fundId], references: [id])
+  expenses Expense[]
+}
+
+model Income {
+  id            String   @id @default(uuid())
+  masjidId      String
+  categoryId    String
+  fundId        String
+  title         String
+  amount        Float
+  date          DateTime @default(now())
+  payer         String?
+  paymentMethod String   @default("BANK_TRANSFER")
+  referenceNo   String?
+  description   String?
+  isVoided      Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  masjid   Masjid         @relation(fields: [masjidId], references: [id], onDelete: Cascade)
+  category IncomeCategory @relation(fields: [categoryId], references: [id])
+  fund     Fund           @relation(fields: [fundId], references: [id])
+}
+
+model FundTransfer {
+  id              String   @id @default(uuid())
+  masjidId        String
+  sourceFundId    String
+  destFundId      String
+  amount          Float
+  date            DateTime @default(now())
+  reason          String
+  reference       String?
+  createdByUserId String?
+  createdAt       DateTime @default(now())
+
+  masjid     Masjid @relation(fields: [masjidId], references: [id], onDelete: Cascade)
+  sourceFund Fund   @relation("SourceFund", fields: [sourceFundId], references: [id])
+  destFund   Fund   @relation("DestFund", fields: [destFundId], references: [id])
+}
+
+model Budget {
+  id             String   @id @default(uuid())
+  masjidId       String
+  categoryId     String?
+  fundId         String?
+  period         String   @default("MONTHLY")
+  year           Int
+  month          Int?
+  budgetedAmount Float
+  actualAmount   Float    @default(0)
+  createdAt      DateTime @default(now())
+
+  masjid          Masjid            @relation(fields: [masjidId], references: [id], onDelete: Cascade)
+  expenseCategory ExpenseCategory?  @relation(fields: [categoryId], references: [id])
+  fund            Fund?             @relation(fields: [fundId], references: [id])
+}
+
+model Campaign {
+  id              String    @id @default(uuid())
+  masjidId        String
+  name            String
+  description     String?
+  targetAmount    Float
+  collectedAmount Float     @default(0)
+  startDate       DateTime  @default(now())
+  endDate         DateTime?
+  categoryId      String?
+  imageUrl        String?
+  status          String    @default("ACTIVE")
+  createdAt       DateTime  @default(now())
+
+  masjid       Masjid            @relation(fields: [masjidId], references: [id], onDelete: Cascade)
+  category     DonationCategory? @relation(fields: [categoryId], references: [id])
+  donations    Donation[]
+  paymentLinks PaymentLink[]
+}
+
+model PaymentLink {
+  id             String   @id @default(uuid())
+  masjidId       String
+  razorpayLinkId String?
+  linkUrl        String?
+  title          String
+  amount         Float?
+  categoryId     String
+  campaignId     String?
+  isCustomAmount Boolean  @default(true)
+  status         String   @default("ACTIVE")
+  totalCollected Float    @default(0)
+  paymentsCount  Int      @default(0)
+  createdAt      DateTime @default(now())
+
+  masjid   Masjid           @relation(fields: [masjidId], references: [id], onDelete: Cascade)
+  category DonationCategory @relation(fields: [categoryId], references: [id])
+  campaign Campaign?        @relation(fields: [campaignId], references: [id])
+}
+
+model PaymentTransaction {
+  id                String   @id @default(uuid())
+  masjidId          String
+  razorpayPaymentId String   @unique
+  razorpayOrderId   String?
+  amount            Float
+  status            String   @default("CAPTURED")
+  paymentMethod     String   @default("UPI")
+  donorName         String?
+  donorEmail        String?
+  donorPhone        String?
+  rawPayload        String?
+  createdAt         DateTime @default(now())
+
+  masjid Masjid @relation(fields: [masjidId], references: [id], onDelete: Cascade)
+}
+
+model Receipt {
+  id           String   @id @default(uuid())
+  masjidId     String
+  receiptNo    String   @unique
+  donationId   String
+  donorName    String
+  amount       Float
+  date         DateTime @default(now())
+  categoryName String
+  pdfUrl       String?
+  createdAt    DateTime @default(now())
+
+  masjid   Masjid   @relation(fields: [masjidId], references: [id], onDelete: Cascade)
+  donation Donation @relation(fields: [donationId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  masjidId    String?
+  userId      String?
+  userEmail   String?
+  userRole    String?
+  action      String
+  entity      String
+  entityId    String?
+  beforeState String?
+  afterState  String?
+  ipAddress   String?
+  createdAt   DateTime @default(now())
+
+  masjid Masjid? @relation(fields: [masjidId], references: [id], onDelete: SetNull)
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  masjidId  String
+  userId    String?
+  title     String
+  message   String
+  type      String   @default("INFO")
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  masjid Masjid @relation(fields: [masjidId], references: [id], onDelete: Cascade)
+}
+
+model Setting {
+  id        String   @id @default(uuid())
+  masjidId  String
+  key       String
+  value     String
+  createdAt DateTime @default(now())
+
+  masjid Masjid @relation(fields: [masjidId], references: [id], onDelete: Cascade)
+
+  @@unique([masjidId, key])
+}
