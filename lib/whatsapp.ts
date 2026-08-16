@@ -36,18 +36,21 @@ export function generateWhatsAppInvoiceUrl({
 🕌 *${masjidName.toUpperCase()}*
 ━━━━━━━━━━━━━━━━━━━━━
 
-📝 *PAYMENT STATUS*
+📝 *MEMBER DONATION RECEIPT*
 
 Assalamu Alaikum ${memberName},
 
-*Your Details:*
-Name: ${memberName}
-Phone: ${phone}
-Joining Date: ${paymentDate}
-Monthly Amount: IN ₹ ${displayMonthlyAmount.toLocaleString('en-IN')}
+*Payment Details:*
+• *Donor Name:* ${memberName}
+• *Phone:* ${phone}
+• *Receipt No:* ${receiptNo || 'N/A'}
+• *Date:* ${paymentDate}
+• *Total Paid:* IN ₹ ${amount.toLocaleString('en-IN')}
+${forMonths ? `• *Period Covered:* ${forMonths}` : ''}
+${monthsCount > 1 ? `• *Months Count:* ${monthsCount} Months (Bulk Payment)` : ''}
 
 *Status:* ${statusText}
-You have no pending payments. JazakAllah Khair for your contributions!`;
+Alhamdulillah, your contribution has been recorded in the mosque financial ledger.`;
 
   if (transparencyUrl) {
     message += `\n\n🔍 *Live Transparency Portal:*\n${transparencyUrl}`;

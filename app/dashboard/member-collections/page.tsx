@@ -28,6 +28,13 @@ export default function AllCollectionsPage() {
   const [forMonths, setForMonths] = useState('August 2026');
   const [paymentMethod, setPaymentMethod] = useState('CASH');
 
+  // BULK & SEVERAL MONTHS PENDING STATE
+  const [baseMonthlyRate, setBaseMonthlyRate] = useState<number>(100);
+  const [selectedMonthsList, setSelectedMonthsList] = useState<string[]>(['August 2026']);
+  const [pendingMonthsDetected, setPendingMonthsDetected] = useState<string[]>([]);
+  const [bulkPresetCount, setBulkPresetCount] = useState<number | null>(1);
+  const [showMonthGrid, setShowMonthGrid] = useState(false);
+
   // Edit Modal State
   const [editingItem, setEditingItem] = useState<any | null>(null);
   const [editName, setEditName] = useState('');
@@ -42,6 +49,17 @@ export default function AllCollectionsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [statusMsg, setStatusMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+
+  const CURRENT_YEAR = new Date().getFullYear();
+  const MONTH_NAMES = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+
+  const AVAILABLE_MONTHS = [
+    ...MONTH_NAMES.map((m) => `${m} ${CURRENT_YEAR}`),
+    ...MONTH_NAMES.slice(0, 6).map((m) => `${m} ${CURRENT_YEAR + 1}`),
+  ];
 
   const loadData = () => {
     setLoading(true);
@@ -62,6 +80,105 @@ export default function AllCollectionsPage() {
     loadData();
   }, []);
 
+  // AUTO-DETECT PENDING MONTHS FOR A MEMBER
+  const detectPendingMonths = (member: any, allCols: any[]) => {
+    const memberMonthlyRate = Number(member.monthlyAmount || 100);
+    setBaseMonthlyRate(memberMonthlyRate);
+
+    const memberPaidMonths: string[] = [];
+    allCols.forEach((c) => {
+      if (
+        (member.phone && c.memberPhone && c.memberPhone.replace(/[^0-9]/g, '') === member.phone.replace(/[^0-9]/g, '')) ||
+        (member.name && c.memberName?.toLowerCase().trim() === member.name?.toLowerCase().trim())
+      ) {
+        if (c.forMonths) {
+          AVAILABLE_MONTHS.forEach((m) => {
+            if (c.forMonths.includes(m)) {
+              memberPaidMonths.push(m);
+            }
+          });
+        }
+      }
+    });
+
+    const curMonthIdx = new Date().getMonth();
+    const monthsUpToCurrent = MONTH_NAMES.slice(0, curMonthIdx + 1).map((m) => `${m} ${CURRENT_YEAR}`);
+    const unPaidMonths = monthsUpToCurrent.filter((m) => !memberPaidMonths.includes(m));
+    setPendingMonthsDetected(unPaidMonths);
+
+    if (unPaidMonths.length > 0) {
+      setSelectedMonthsList(unPaidMonths);
+      setAmount(String(unPaidMonths.length * memberMonthlyRate));
+      setForMonths(unPaidMonths.length === 1 ? unPaidMonths[0] : `${unPaidMonths.join(', ')} (${unPaidMonths.length} Months Pending)`);
+      setBulkPresetCount(unPaidMonths.length);
+    } else {
+      const currentMonthStr = `${MONTH_NAMES[curMonthIdx]} ${CURRENT_YEAR}`;
+      setSelectedMonthsList([currentMonthStr]);
+      setAmount(String(memberMonthlyRate));
+      setForMonths(currentMonthStr);
+      setBulkPresetCount(1);
+    }
+  };
+
+  const handleToggleMonthSelection = (mStr: string) => {
+    let updated: string[];
+    if (selectedMonthsList.includes(mStr)) {
+      updated = selectedMonthsList.filter((x) => x !== mStr);
+    } else {
+      updated = [...selectedMonthsList, mStr];
+    }
+    updated.sort((a, b) => AVAILABLE_MONTHS.indexOf(a) - AVAILABLE_MONTHS.indexOf(b));
+    setSelectedMonthsList(updated);
+
+    const count = updated.length;
+    const rate = baseMonthlyRate || 100;
+    const newAmt = count * rate;
+    setAmount(String(newAmt));
+
+    if (count === 0) {
+      setForMonths('');
+      setBulkPresetCount(null);
+    } else if (count === 1) {
+      setForMonths(updated[0]);
+      setBulkPresetCount(1);
+    } else {
+      setForMonths(`${updated.join(', ')} (${count} Months Bulk)`);
+      setBulkPresetCount(count);
+    }
+  };
+
+  const handleApplyPresetCount = (count: number) => {
+    setBulkPresetCount(count);
+    const curIdx = new Date().getMonth();
+    const startIdx = pendingMonthsDetected.length > 0 ? AVAILABLE_MONTHS.indexOf(pendingMonthsDetected[0]) : curIdx;
+    const safeStart = startIdx >= 0 ? startIdx : curIdx;
+    const newMonths = AVAILABLE_MONTHS.slice(safeStart, safeStart + count);
+
+    setSelectedMonthsList(newMonths);
+    const rate = baseMonthlyRate || 100;
+    const newAmt = count * rate;
+    setAmount(String(newAmt));
+
+    if (count === 1) {
+      setForMonths(newMonths[0] || `${MONTH_NAMES[curIdx]} ${CURRENT_YEAR}`);
+    } else if (count === 12) {
+      setForMonths(`${newMonths[0]} - ${newMonths[newMonths.length - 1]} (1 Year Full Bulk)`);
+    } else {
+      setForMonths(`${newMonths[0]} - ${newMonths[newMonths.length - 1]} (${count} Months Bulk)`);
+    }
+  };
+
+  const handleClearAllPending = () => {
+    if (pendingMonthsDetected.length === 0) return;
+    setSelectedMonthsList(pendingMonthsDetected);
+    const count = pendingMonthsDetected.length;
+    const rate = baseMonthlyRate || 100;
+    const newAmt = count * rate;
+    setAmount(String(newAmt));
+    setForMonths(`${pendingMonthsDetected.join(', ')} (${count} Months Pending Cleared)`);
+    setBulkPresetCount(count);
+  };
+
   const handleMemberSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const mId = e.target.value;
     setSelectedMemberId(mId);
@@ -72,7 +189,7 @@ export default function AllCollectionsPage() {
       setMemberName(member.name);
       setMemberPhone(member.phone);
       setMemberAddress(member.address || '');
-      setAmount(String(member.monthlyAmount || 100));
+      detectPendingMonths(member, collections);
     }
   };
 
@@ -92,12 +209,13 @@ export default function AllCollectionsPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          masjidId: 'jama-masjid',
+          memberId: selectedMemberId || undefined,
           memberName,
           memberPhone,
           memberAddress,
           amount: Number(amount),
-          paymentType,
+          monthsCount: selectedMonthsList.length || 1,
+          paymentType: selectedMonthsList.length > 1 ? 'BULK' : paymentType,
           forMonths,
           paymentMethod,
         }),
@@ -110,6 +228,8 @@ export default function AllCollectionsPage() {
         setMemberName('');
         setMemberPhone('');
         setMemberAddress('');
+        setSelectedMonthsList(['August 2026']);
+        setPendingMonthsDetected([]);
         loadData();
         if (data.whatsappUrl) {
           window.open(data.whatsappUrl, '_blank');
@@ -259,9 +379,9 @@ JazakAllah Khair!
     setMemberName(member.name);
     setMemberPhone(member.phone);
     setMemberAddress(member.address || '');
-    setAmount(String(member.monthlyAmount || 100));
     setModalMemberSearch(member.name);
     setShowModalSuggestions(false);
+    detectPendingMonths(member, collections);
   };
 
   // FILTERED COLLECTIONS
@@ -691,14 +811,138 @@ JazakAllah Khair!
                 </div>
               </div>
 
+              {/* SEVERAL MONTHS PENDING ALERT BANNER */}
+              {pendingMonthsDetected.length > 0 && (
+                <div className="p-3.5 bg-amber-50/90 border border-amber-300/80 rounded-2xl text-xs space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 font-extrabold text-amber-900">
+                      <i className="fas fa-triangle-exclamation text-amber-600"></i>
+                      <span>{pendingMonthsDetected.length} Unpaid / Pending Months Detected</span>
+                    </div>
+                    <span className="px-2 py-0.5 bg-amber-200/80 text-amber-900 font-extrabold rounded-lg text-[10px]">
+                      Total Due: IN ₹{(pendingMonthsDetected.length * (baseMonthlyRate || 100)).toLocaleString('en-IN')}
+                    </span>
+                  </div>
+
+                  <div className="flex flex-wrap gap-1.5 pt-0.5">
+                    {pendingMonthsDetected.map((pm) => (
+                      <span key={pm} className="px-2 py-0.5 bg-white border border-amber-300 text-amber-900 rounded-md text-[10px] font-bold">
+                        {pm}
+                      </span>
+                    ))}
+                  </div>
+
+                  <div className="pt-1 flex items-center justify-between">
+                    <span className="text-[11px] text-amber-800">Clear all pending dues at once:</span>
+                    <button
+                      type="button"
+                      onClick={handleClearAllPending}
+                      className="px-3 py-1.5 bg-amber-700 hover:bg-amber-800 text-white font-extrabold rounded-xl text-[11px] transition shadow-xs flex items-center gap-1.5"
+                    >
+                      <i className="fas fa-bolt"></i> ⚡ Clear All Pending ({pendingMonthsDetected.length} Months)
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* BULK PAYMENT PRESETS */}
+              <div className="space-y-2 bg-slate-50/80 p-3.5 rounded-2xl border border-slate-200/80">
+                <div className="flex items-center justify-between">
+                  <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">
+                    ⚡ Quick Bulk Amount Presets:
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowMonthGrid(!showMonthGrid)}
+                    className="text-[11px] font-bold text-emerald-800 hover:text-emerald-950 flex items-center gap-1"
+                  >
+                    <i className={`fas ${showMonthGrid ? 'fa-chevron-up' : 'fa-calendar-days'}`}></i>
+                    {showMonthGrid ? 'Hide Month Picker' : 'Select Specific Months'}
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-5 gap-1.5">
+                  {[
+                    { label: '1 Mo', count: 1 },
+                    { label: '2 Mo', count: 2 },
+                    { label: '3 Mo (Qtr)', count: 3 },
+                    { label: '6 Mo (Half)', count: 6 },
+                    { label: '12 Mo (1 Yr)', count: 12 },
+                  ].map((preset) => {
+                    const isSelected = bulkPresetCount === preset.count && !showMonthGrid;
+                    const calculatedCost = preset.count * (baseMonthlyRate || 100);
+                    return (
+                      <button
+                        key={preset.count}
+                        type="button"
+                        onClick={() => {
+                          handleApplyPresetCount(preset.count);
+                          setShowMonthGrid(false);
+                        }}
+                        className={`py-2 px-1 rounded-xl text-center transition border ${
+                          isSelected
+                            ? 'bg-[#064E3B] text-[#F4D06F] border-[#D4AF37] shadow-sm font-extrabold'
+                            : 'bg-white text-slate-700 border-slate-200 hover:bg-emerald-50 hover:border-emerald-300 font-bold'
+                        }`}
+                      >
+                        <span className="block text-[11px] leading-tight">{preset.label}</span>
+                        <span className="block text-[9px] opacity-80 font-mono mt-0.5">₹{calculatedCost}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* INTERACTIVE MULTI-MONTH CHECKBOX GRID */}
+                {showMonthGrid && (
+                  <div className="pt-2 border-t border-slate-200 mt-2 space-y-1.5">
+                    <span className="text-[10px] font-extrabold uppercase text-slate-500 block">
+                      Select Custom Months (Click to Toggle):
+                    </span>
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5 max-h-36 overflow-y-auto p-1.5 bg-white rounded-xl border border-slate-200">
+                      {AVAILABLE_MONTHS.map((mStr) => {
+                        const isChecked = selectedMonthsList.includes(mStr);
+                        const isPending = pendingMonthsDetected.includes(mStr);
+                        return (
+                          <button
+                            key={mStr}
+                            type="button"
+                            onClick={() => handleToggleMonthSelection(mStr)}
+                            className={`p-1.5 rounded-lg text-[10px] font-bold text-left transition flex items-center justify-between border ${
+                              isChecked
+                                ? 'bg-emerald-800 text-white border-emerald-900 shadow-xs'
+                                : isPending
+                                ? 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100'
+                                : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                            }`}
+                          >
+                            <span className="truncate">{mStr}</span>
+                            {isChecked && <i className="fas fa-check text-[9px] shrink-0 ml-1"></i>}
+                            {!isChecked && isPending && <span className="text-[8px] bg-amber-200 px-1 rounded text-amber-900 font-extrabold shrink-0 ml-0.5">DUE</span>}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1">
+                      <span>Selected: <strong className="text-emerald-800">{selectedMonthsList.length} Months</strong></span>
+                      <span>Rate: <strong className="text-slate-800">₹{baseMonthlyRate}/mo</strong></span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div>
-                <label className="block text-[11px] font-extrabold text-slate-700 uppercase mb-1">Amount (IN ₹) *</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-[11px] font-extrabold text-slate-700 uppercase">Amount (IN ₹) *</label>
+                  <span className="text-[10px] font-bold text-emerald-800 font-mono">
+                    ({selectedMonthsList.length} Month{selectedMonthsList.length > 1 ? 's' : ''} × ₹{baseMonthlyRate})
+                  </span>
+                </div>
                 <input type="number" required value={amount} onChange={(e) => setAmount(e.target.value)} className="w-full p-3 bg-slate-50 border rounded-2xl text-xs font-extrabold" />
               </div>
 
               <div>
-                <label className="block text-[11px] font-extrabold text-slate-700 uppercase mb-1">Period / Month</label>
-                <input type="text" value={forMonths} onChange={(e) => setForMonths(e.target.value)} placeholder="e.g. August 2026" className="w-full p-3 bg-slate-50 border rounded-2xl text-xs font-semibold" />
+                <label className="block text-[11px] font-extrabold text-slate-700 uppercase mb-1">Period / Month(s)</label>
+                <input type="text" value={forMonths} onChange={(e) => setForMonths(e.target.value)} placeholder="e.g. August 2026, September 2026 (2 Months Bulk)" className="w-full p-3 bg-slate-50 border rounded-2xl text-xs font-semibold" />
               </div>
 
               <div className="flex justify-end gap-3 pt-3 border-t">
