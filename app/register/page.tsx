@@ -144,6 +144,7 @@ export default function RegisterPage() {
       setOtpModalError('Connection error while resending OTP.');
     } finally {
       setSendingOtp(false);
+    }
   };
 
   // REGISTRATION SUCCESSFUL - SENT TO SUPER ADMIN FOR APPROVAL

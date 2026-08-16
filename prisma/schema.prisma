@@ -288,6 +288,15 @@ model Payroll {
   staffId       String
   staffName     String
   amount        Float
+  workingDays   Int?     @default(30)
+  presentDays   Int?     @default(30)
+  absentDays    Int?     @default(0)
+  baseSalary    Float?   @default(0)
+  perDaySalary  Float?   @default(0)
+  earnedSalary  Float?   @default(0)
+  allowance     Float?   @default(0)
+  deduction     Float?   @default(0)
+  netSalary     Float?   @default(0)
   monthPaid     String
   paymentDate   DateTime @default(now())
   paymentMethod String   @default("CASH")
