@@ -222,6 +222,48 @@ JazakAllah Khair!
     window.open(`https://wa.me/${phoneWithCountry}?text=${encoded}`, '_blank');
   };
 
+  // Autocomplete state
+  const [showSearchSuggestions, setShowSearchSuggestions] = useState(false);
+  const [modalMemberSearch, setModalMemberSearch] = useState('');
+  const [showModalSuggestions, setShowModalSuggestions] = useState(false);
+
+  // Suggestions filtered for the main search box
+  const searchSuggestions = members.filter((m) => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      m.name?.toLowerCase().includes(q) ||
+      m.phone?.includes(q) ||
+      m.memberNo?.toLowerCase().includes(q)
+    );
+  }).slice(0, 6);
+
+  // Suggestions for modal search
+  const modalSuggestions = members.filter((m) => {
+    if (!modalMemberSearch) return true;
+    const q = modalMemberSearch.toLowerCase();
+    return (
+      m.name?.toLowerCase().includes(q) ||
+      m.phone?.includes(q) ||
+      m.memberNo?.toLowerCase().includes(q)
+    );
+  }).slice(0, 6);
+
+  const handleSelectSearchSuggestion = (member: any) => {
+    setSearchQuery(member.name);
+    setShowSearchSuggestions(false);
+  };
+
+  const handleSelectModalMember = (member: any) => {
+    setSelectedMemberId(member.id);
+    setMemberName(member.name);
+    setMemberPhone(member.phone);
+    setMemberAddress(member.address || '');
+    setAmount(String(member.monthlyAmount || 100));
+    setModalMemberSearch(member.name);
+    setShowModalSuggestions(false);
+  };
+
   // FILTERED COLLECTIONS
   const filteredCollections = collections.filter((col) => {
     const matchesSearch =
@@ -245,7 +287,10 @@ JazakAllah Khair!
         </div>
 
         <button
-          onClick={() => setShowAddModal(true)}
+          onClick={() => {
+            setModalMemberSearch('');
+            setShowAddModal(true);
+          }}
           className="px-5 py-3 bg-[#0F3D26] hover:bg-emerald-950 text-white font-extrabold text-xs rounded-2xl shadow-md transition flex items-center gap-2"
         >
           <i className="fas fa-plus"></i> Record New Payment
@@ -269,18 +314,79 @@ JazakAllah Khair!
       <div className="masjid-card p-6 bg-[#faf8f5] border border-slate-200/80 shadow-sm rounded-3xl space-y-4">
         {/* ROW 1: SEARCH & CATEGORY */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="md:col-span-3">
-            <label className="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">SEARCH</label>
+          <div className="md:col-span-3 relative">
+            <label className="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">
+              SEARCH MEMBER NAME (AUTO-SUGGEST)
+            </label>
             <div className="relative">
               <i className="fas fa-search absolute left-4 top-3.5 text-slate-400 text-xs"></i>
               <input
                 type="text"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search by source, name or phone.."
-                className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs font-semibold text-slate-900 outline-none focus:border-emerald-700 transition"
+                onFocus={() => setShowSearchSuggestions(true)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setShowSearchSuggestions(true);
+                }}
+                placeholder="Type member name, phone or number to auto-suggest..."
+                className="w-full pl-10 pr-10 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs font-semibold text-slate-900 outline-none focus:border-emerald-700 transition"
               />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 p-1 text-xs"
+                >
+                  <i className="fas fa-times"></i>
+                </button>
+              )}
             </div>
+
+            {/* AUTOCOMPLETE DROPDOWN */}
+            {showSearchSuggestions && searchSuggestions.length > 0 && (
+              <div
+                className="absolute left-0 right-0 top-full mt-1.5 bg-white border border-emerald-200 rounded-2xl shadow-xl z-30 overflow-hidden divide-y divide-slate-100"
+                onMouseLeave={() => setShowSearchSuggestions(false)}
+              >
+                <div className="p-2 bg-emerald-50/70 text-[10px] font-extrabold uppercase tracking-wider text-emerald-800 flex items-center justify-between">
+                  <span>✨ Registered Members (Click to select)</span>
+                  <button
+                    type="button"
+                    onClick={() => setShowSearchSuggestions(false)}
+                    className="text-slate-400 hover:text-slate-600"
+                  >
+                    <i className="fas fa-times"></i>
+                  </button>
+                </div>
+                {searchSuggestions.map((m) => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => handleSelectSearchSuggestion(m)}
+                    className="w-full px-4 py-2.5 text-left hover:bg-emerald-50 transition flex items-center justify-between text-xs group"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-7 h-7 rounded-lg bg-emerald-700 text-white flex items-center justify-center font-bold text-xs">
+                        {m.name?.charAt(0)}
+                      </div>
+                      <div>
+                        <span className="font-extrabold text-slate-900 group-hover:text-emerald-800 block">
+                          {m.name}
+                        </span>
+                        <span className="text-[11px] text-slate-400 font-mono">
+                          {m.memberNo || 'MBR'} • 📞 {m.phone}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[11px] font-bold text-emerald-800 bg-emerald-100/60 px-2 py-0.5 rounded-md">
+                        IN ₹{m.monthlyAmount || 100}/mo
+                      </span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           <div>
@@ -501,14 +607,77 @@ JazakAllah Khair!
             </div>
 
             <form onSubmit={handleCreateCollection} className="space-y-4">
-              <div>
-                <label className="block text-[11px] font-extrabold text-slate-700 uppercase mb-1">Select Member (Auto-Fill)</label>
-                <select onChange={handleMemberSelect} value={selectedMemberId} className="w-full p-3 bg-slate-50 border rounded-2xl text-xs font-semibold">
-                  <option value="">-- Choose Member or Type Below --</option>
-                  {members.map((m) => (
-                    <option key={m.id} value={m.id}>{m.name} ({m.phone}) - IN ₹{m.monthlyAmount}</option>
-                  ))}
-                </select>
+              {/* SMART AUTO-SUGGEST MEMBER SEARCH */}
+              <div className="relative">
+                <label className="block text-[11px] font-extrabold text-slate-700 uppercase mb-1">
+                  Search & Auto-Fill Member *
+                </label>
+                <div className="relative">
+                  <i className="fas fa-user-magnifying-glass absolute left-3.5 top-3.5 text-slate-400 text-xs"></i>
+                  <input
+                    type="text"
+                    value={modalMemberSearch}
+                    onFocus={() => setShowModalSuggestions(true)}
+                    onChange={(e) => {
+                      setModalMemberSearch(e.target.value);
+                      setShowModalSuggestions(true);
+                      setMemberName(e.target.value);
+                    }}
+                    placeholder="Type name, phone or member number..."
+                    className="w-full pl-9 pr-8 py-2.5 bg-[#FFF9EC] border border-[#D4AF37]/50 rounded-2xl text-xs font-bold text-slate-900 outline-none focus:border-[#064E3B]"
+                  />
+                  {modalMemberSearch && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setModalMemberSearch('');
+                        setSelectedMemberId('');
+                      }}
+                      className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 text-xs"
+                    >
+                      <i className="fas fa-times"></i>
+                    </button>
+                  )}
+                </div>
+
+                {/* MODAL AUTOCOMPLETE SUGGESTIONS */}
+                {showModalSuggestions && modalSuggestions.length > 0 && (
+                  <div
+                    className="absolute left-0 right-0 top-full mt-1 bg-white border border-emerald-300 rounded-2xl shadow-2xl z-50 overflow-hidden divide-y divide-slate-100 max-h-48 overflow-y-auto"
+                    onMouseLeave={() => setShowModalSuggestions(false)}
+                  >
+                    <div className="p-1.5 bg-emerald-50 text-[10px] font-black uppercase text-emerald-800 flex justify-between items-center">
+                      <span>✨ Select Member to Auto-Fill</span>
+                      <button
+                        type="button"
+                        onClick={() => setShowModalSuggestions(false)}
+                        className="text-slate-400 hover:text-slate-600 px-1"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    {modalSuggestions.map((m) => (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => handleSelectModalMember(m)}
+                        className="w-full px-3 py-2 text-left hover:bg-emerald-50 transition flex items-center justify-between text-xs group"
+                      >
+                        <div>
+                          <span className="font-extrabold text-slate-900 group-hover:text-emerald-800 block">
+                            {m.name}
+                          </span>
+                          <span className="text-[10px] text-slate-400 font-mono">
+                            {m.memberNo || 'MBR'} • 📞 {m.phone}
+                          </span>
+                        </div>
+                        <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md">
+                          IN ₹{m.monthlyAmount || 100}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
