@@ -151,54 +151,24 @@ export async function sendApprovalWelcomeEmail({ toEmail, adminName, masjidName,
         </div>
       </div>
 
-      {/* DIRECT PORTAL ACCESS LINKS */}
+      {/* DIRECT PORTAL ACCESS LINK */}
       <div style="margin-bottom: 24px;">
         <h4 style="color: #102A25; font-size: 14px; font-weight: 800; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.5px;">
-          🚀 Your Official Portal Links:
+          🚀 Your Official Portal Link:
         </h4>
         
-        <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 16px; margin-bottom: 12px;">
-          <div style="font-weight: 800; color: #064E3B; font-size: 14px; margin-bottom: 4px;">
-            1. Mosque Management Dashboard
+        <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px;">
+          <div style="font-weight: 800; color: #064E3B; font-size: 16px; margin-bottom: 6px;">
+            Mosque Management Financial Dashboard
           </div>
-          <div style="font-size: 12px; color: #64748b; margin-bottom: 8px;">
-            Manage finances, record member collections, process staff payroll, and download balance sheets.
+          <div style="font-size: 13px; color: #64748b; margin-bottom: 14px; line-height: 1.5;">
+            Sign in to manage finances, record monthly member collections, calculate staff payroll, and generate audit balance sheets.
           </div>
-          <a href="${dashboardUrl}" style="display: inline-block; background-color: #064E3B; color: #F4D06F; text-decoration: none; padding: 8px 18px; border-radius: 10px; font-size: 12px; font-weight: 800; border: 1px solid #D4AF37;">
+          <a href="${dashboardUrl}" style="display: inline-block; background-color: #064E3B; color: #F4D06F; text-decoration: none; padding: 12px 26px; border-radius: 12px; font-size: 14px; font-weight: 800; border: 1px solid #D4AF37; box-shadow: 0 4px 12px rgba(6, 78, 59, 0.15);">
             Sign In to Dashboard →
           </a>
-          <div style="font-size: 11px; color: #94a3b8; margin-top: 6px; font-family: monospace;">
-            URL: <a href="${dashboardUrl}" style="color: #0F766E;">${dashboardUrl}</a>
-          </div>
-        </div>
-
-        <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 16px; margin-bottom: 12px;">
-          <div style="font-weight: 800; color: #0F766E; font-size: 14px; margin-bottom: 4px;">
-            2. Public Donation & QR Portal
-          </div>
-          <div style="font-size: 12px; color: #64748b; margin-bottom: 8px;">
-            Share this link or print the QR code for community donations, Friday Sadaqah, and Zakat.
-          </div>
-          <a href="${donateUrl}" style="display: inline-block; background-color: #0F766E; color: #ffffff; text-decoration: none; padding: 8px 18px; border-radius: 10px; font-size: 12px; font-weight: 800;">
-            View Donation Portal →
-          </a>
-          <div style="font-size: 11px; color: #94a3b8; margin-top: 6px; font-family: monospace;">
-            URL: <a href="${donateUrl}" style="color: #0F766E;">${donateUrl}</a>
-          </div>
-        </div>
-
-        <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 16px;">
-          <div style="font-weight: 800; color: #102A25; font-size: 14px; margin-bottom: 4px;">
-            3. Public Financial Transparency Portal
-          </div>
-          <div style="font-size: 12px; color: #64748b; margin-bottom: 8px;">
-            Live audit page providing congregation members transparent view of verified income and expenditures.
-          </div>
-          <a href="${transparencyUrl}" style="display: inline-block; background-color: #102A25; color: #ffffff; text-decoration: none; padding: 8px 18px; border-radius: 10px; font-size: 12px; font-weight: 800;">
-            View Transparency Portal →
-          </a>
-          <div style="font-size: 11px; color: #94a3b8; margin-top: 6px; font-family: monospace;">
-            URL: <a href="${transparencyUrl}" style="color: #0F766E;">${transparencyUrl}</a>
+          <div style="font-size: 12px; color: #64748b; margin-top: 12px; font-family: monospace;">
+            URL: <a href="${dashboardUrl}" style="color: #064E3B; font-weight: bold;">${dashboardUrl}</a>
           </div>
         </div>
       </div>

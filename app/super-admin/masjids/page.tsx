@@ -623,15 +623,9 @@ export default function SuperAdminMasjidsPage() {
                     Dispatches the official <strong>MasjidPay Welcome & Portal Activation Email</strong> with live production links (<code className="text-emerald-400 font-mono">https://masjidpay.org</code>).
                   </p>
 
-                  <div className="p-3 bg-slate-900/90 rounded-xl border border-slate-800/80 space-y-1.5 text-[11px]">
-                    <div className="text-slate-400">
-                      <strong className="text-slate-200">1. Admin Sign In:</strong> <span className="text-emerald-400 font-mono">https://masjidpay.org/login</span>
-                    </div>
-                    <div className="text-slate-400">
-                      <strong className="text-slate-200">2. Public Donation Page:</strong> <span className="text-emerald-400 font-mono">https://masjidpay.org/donate/{manageMasjid.slug}</span>
-                    </div>
-                    <div className="text-slate-400">
-                      <strong className="text-slate-200">3. Transparency Portal:</strong> <span className="text-emerald-400 font-mono">https://masjidpay.org/masjid/{manageMasjid.slug}/transparency</span>
+                  <div className="p-3 bg-slate-900/90 rounded-xl border border-slate-800/80 space-y-1 text-xs">
+                    <div className="text-slate-300">
+                      <strong className="text-white">Admin Dashboard Login:</strong> <span className="text-emerald-400 font-mono font-bold">https://masjidpay.org/login</span>
                     </div>
                   </div>
                 </div>
