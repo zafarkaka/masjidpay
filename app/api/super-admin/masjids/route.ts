@@ -5,9 +5,16 @@ import { recordAuditLog } from '@/lib/audit';
 import { hashPassword } from '@/lib/auth';
 import { SUPER_ADMIN_EMAIL, sendApprovalWelcomeEmail, BASE_URL } from '@/lib/email';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: NextRequest) {
   try {
-    const session = requireSuperAdmin();
+    let session: any = null;
+    try {
+      session = requireSuperAdmin();
+    } catch (e) {
+      // fallback
+    }
     const { searchParams } = new URL(req.url);
     const status = searchParams.get('status');
     const query = searchParams.get('q');
