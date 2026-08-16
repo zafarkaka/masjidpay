@@ -18,6 +18,7 @@ export default function RegisterPage() {
   // 2. OTP MODAL & SUBMISSION STATE
   const [showOtpModal, setShowOtpModal] = useState(false);
   const [otpCode, setOtpCode] = useState('');
+  const [otpToken, setOtpToken] = useState('');
   const [sendingOtp, setSendingOtp] = useState(false);
   const [verifyingOtp, setVerifyingOtp] = useState(false);
   const [error, setError] = useState('');
@@ -50,6 +51,7 @@ export default function RegisterPage() {
 
       const data = await res.json();
       if (res.ok) {
+        if (data.otpToken) setOtpToken(data.otpToken);
         setShowOtpModal(true);
       } else {
         setError(data.error || 'Failed to send OTP verification email. Please verify your email address.');
@@ -77,7 +79,7 @@ export default function RegisterPage() {
       const verifyRes = await fetch('/api/auth/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim().toLowerCase(), otp: otpCode.trim() }),
+        body: JSON.stringify({ email: email.trim().toLowerCase(), otp: otpCode.trim(), otpToken }),
       });
 
       const verifyData = await verifyRes.json();
@@ -133,6 +135,7 @@ export default function RegisterPage() {
 
       const data = await res.json();
       if (res.ok) {
+        if (data.otpToken) setOtpToken(data.otpToken);
         alert(`A new 6-digit verification code has been dispatched to ${email}.`);
       } else {
         setOtpModalError(data.error || 'Failed to resend code.');
@@ -141,7 +144,6 @@ export default function RegisterPage() {
       setOtpModalError('Connection error while resending OTP.');
     } finally {
       setSendingOtp(false);
-    }
   };
 
   // REGISTRATION SUCCESSFUL - SENT TO SUPER ADMIN FOR APPROVAL

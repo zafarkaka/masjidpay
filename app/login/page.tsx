@@ -6,28 +6,23 @@ import Link from 'next/link';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState('admin@jamamasjid.org');
-  const [password, setPassword] = useState('password123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // FORGOT PASSWORD MODAL STATE
+  // FORGOT PASSWORD STATE
   const [showForgotModal, setShowForgotModal] = useState(false);
   const [forgotStep, setForgotStep] = useState<1 | 2>(1);
   const [forgotEmail, setForgotEmail] = useState('');
   const [otpCode, setOtpCode] = useState('');
+  const [otpToken, setOtpToken] = useState('');
   const [newPassword, setNewPassword] = useState('');
 
   const [sendingOtp, setSendingOtp] = useState(false);
   const [resettingPassword, setResettingPassword] = useState(false);
   const [forgotSuccess, setForgotSuccess] = useState('');
   const [forgotError, setForgotError] = useState('');
-
-  const fillMasjidAdmin = () => {
-    setEmail('admin@jamamasjid.org');
-    setPassword('password123');
-    setError('');
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,6 +37,7 @@ export default function LoginPage() {
       });
 
       const data = await res.json();
+
       if (!res.ok) {
         throw new Error(data.error || 'Login failed');
       }
@@ -82,6 +78,7 @@ export default function LoginPage() {
 
       const data = await res.json();
       if (res.ok) {
+        if (data.otpToken) setOtpToken(data.otpToken);
         setForgotSuccess(`Password reset OTP sent to ${forgotEmail} via Resend!`);
         setForgotStep(2);
       } else {
@@ -110,7 +107,7 @@ export default function LoginPage() {
       const res = await fetch('/api/auth/reset-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: forgotEmail.trim().toLowerCase(), otp: otpCode.trim(), newPassword }),
+        body: JSON.stringify({ email: forgotEmail.trim().toLowerCase(), otp: otpCode.trim(), newPassword, otpToken }),
       });
 
       const data = await res.json();
@@ -133,13 +130,13 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center bg-[#f6faf6] py-12 sm:px-6 lg:px-8 font-sans text-slate-800">
+    <div className="min-h-screen flex flex-col justify-center bg-[#FFF9EC] py-12 sm:px-6 lg:px-8 font-sans text-slate-800">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
         <Link href="/" className="inline-flex items-center gap-3 text-2xl font-bold text-slate-900 mb-2">
-          <div className="w-10 h-10 rounded-2xl bg-[#0F3D26] text-white flex items-center justify-center shadow-lg shadow-emerald-950/20">
+          <div className="w-10 h-10 rounded-2xl bg-[#064E3B] text-[#F4D06F] border border-[#D4AF37]/50 flex items-center justify-center shadow-lg shadow-emerald-950/20">
             <i className="fas fa-mosque text-lg"></i>
           </div>
-          <span>Masjid<span className="text-emerald-700">Pay</span></span>
+          <span>Masjid<span className="text-[#064E3B]">Pay</span></span>
         </Link>
         <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
           Account Login
@@ -150,7 +147,7 @@ export default function LoginPage() {
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="masjid-card p-6 sm:p-8 bg-white shadow-xl border border-slate-200 rounded-3xl space-y-6">
+        <div className="masjid-card p-6 sm:p-8 bg-white shadow-xl border border-[#D4AF37]/30 rounded-3xl space-y-6">
           {error && (
             <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-2">
               <i className="fas fa-exclamation-circle text-rose-500 shrink-0"></i>
@@ -172,7 +169,7 @@ export default function LoginPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 rounded-2xl border border-slate-300 focus:border-emerald-700 text-xs font-semibold outline-none transition"
+                  className="w-full pl-10 pr-4 py-3 rounded-2xl border border-[#D4AF37]/40 bg-[#FFF9EC] focus:border-[#064E3B] text-xs font-semibold outline-none transition"
                   placeholder="admin@jamamasjid.org"
                 />
               </div>
@@ -189,7 +186,7 @@ export default function LoginPage() {
                     setForgotEmail(email);
                     setShowForgotModal(true);
                   }}
-                  className="text-xs font-bold text-emerald-800 hover:underline"
+                  className="text-xs font-bold text-[#064E3B] hover:underline"
                 >
                   Forgot Password?
                 </button>
@@ -203,7 +200,7 @@ export default function LoginPage() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 rounded-2xl border border-slate-300 focus:border-emerald-700 text-xs font-semibold outline-none transition"
+                  className="w-full pl-10 pr-4 py-3 rounded-2xl border border-[#D4AF37]/40 bg-[#FFF9EC] focus:border-[#064E3B] text-xs font-semibold outline-none transition"
                   placeholder="••••••••"
                 />
               </div>
@@ -212,7 +209,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3.5 px-4 bg-[#0F3D26] hover:bg-emerald-950 text-white font-extrabold rounded-2xl shadow-lg shadow-emerald-950/20 transition disabled:opacity-50 flex items-center justify-center gap-2 text-xs"
+              className="w-full py-3.5 px-4 bg-[#064E3B] hover:bg-[#102A25] text-white font-extrabold rounded-2xl shadow-lg transition disabled:opacity-50 flex items-center justify-center gap-2 text-xs"
             >
               {loading ? (
                 <>
@@ -230,7 +227,7 @@ export default function LoginPage() {
           <div className="border-t border-slate-100 pt-4 space-y-3 text-center">
             <div className="text-xs text-slate-500">
               Need to register a new masjid?{' '}
-              <Link href="/register" className="font-bold text-emerald-700 hover:underline">
+              <Link href="/register" className="font-bold text-[#064E3B] hover:underline">
                 Register Here
               </Link>
             </div>
@@ -278,12 +275,15 @@ export default function LoginPage() {
               </div>
             )}
 
-            {/* STEP 1: REQUEST OTP */}
-            {forgotStep === 1 && (
+            {forgotStep === 1 ? (
               <form onSubmit={handleSendResetOtp} className="space-y-4">
+                <p className="text-xs text-slate-600">
+                  Enter your registered official email address. A 6-digit verification code will be dispatched to your inbox.
+                </p>
+
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                    Registered Email Address *
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                    Official Admin Email
                   </label>
                   <input
                     type="email"
@@ -291,36 +291,32 @@ export default function LoginPage() {
                     value={forgotEmail}
                     onChange={(e) => setForgotEmail(e.target.value)}
                     placeholder="admin@jamamasjid.org"
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-900 outline-none focus:border-emerald-700"
+                    className="w-full px-4 py-3 rounded-2xl border border-slate-300 focus:border-emerald-700 text-xs font-semibold outline-none"
                   />
-                  <p className="text-[11px] text-slate-400 mt-1">We will send a 6-digit reset OTP code to your email via Resend.</p>
                 </div>
 
-                <div className="flex justify-end gap-2 pt-2 border-t">
+                <div className="flex gap-2">
                   <button
                     type="button"
                     onClick={() => setShowForgotModal(false)}
-                    className="px-4 py-2.5 bg-slate-100 text-slate-700 font-bold rounded-xl text-xs"
+                    className="w-1/2 py-3 bg-slate-100 text-slate-700 font-bold rounded-2xl text-xs"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={sendingOtp}
-                    className="px-5 py-2.5 bg-[#0F3D26] hover:bg-emerald-950 text-white font-extrabold rounded-xl text-xs shadow-md transition disabled:opacity-50 flex items-center gap-2"
+                    className="w-1/2 py-3 bg-[#064E3B] text-white font-extrabold rounded-2xl text-xs shadow-md disabled:opacity-50"
                   >
-                    <i className="fas fa-paper-plane"></i> {sendingOtp ? 'Sending Reset Code...' : 'Send Reset OTP'}
+                    {sendingOtp ? 'Sending...' : 'Send OTP'}
                   </button>
                 </div>
               </form>
-            )}
-
-            {/* STEP 2: ENTER OTP & NEW PASSWORD */}
-            {forgotStep === 2 && (
+            ) : (
               <form onSubmit={handleResetPassword} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                    6-Digit Reset OTP Code *
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                    6-Digit Verification Code
                   </label>
                   <input
                     type="text"
@@ -329,13 +325,13 @@ export default function LoginPage() {
                     value={otpCode}
                     onChange={(e) => setOtpCode(e.target.value)}
                     placeholder="123456"
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-mono font-black text-center tracking-widest text-emerald-950 outline-none focus:border-emerald-700"
+                    className="w-full px-4 py-3 text-center tracking-widest text-lg font-bold rounded-2xl border border-slate-300 focus:border-emerald-700 outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                    New Password *
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                    New Secure Password
                   </label>
                   <input
                     type="password"
@@ -343,25 +339,25 @@ export default function LoginPage() {
                     minLength={6}
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="Enter new password"
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-900 outline-none focus:border-emerald-700"
+                    placeholder="Minimum 6 characters"
+                    className="w-full px-4 py-3 rounded-2xl border border-slate-300 focus:border-emerald-700 text-xs font-semibold outline-none"
                   />
                 </div>
 
-                <div className="flex justify-between items-center pt-2 border-t">
+                <div className="flex gap-2">
                   <button
                     type="button"
                     onClick={() => setForgotStep(1)}
-                    className="text-xs font-bold text-slate-500 hover:text-slate-800"
+                    className="w-1/2 py-3 bg-slate-100 text-slate-700 font-bold rounded-2xl text-xs"
                   >
-                    ← Back to Email
+                    Back
                   </button>
                   <button
                     type="submit"
                     disabled={resettingPassword}
-                    className="px-5 py-2.5 bg-[#0F3D26] hover:bg-emerald-950 text-white font-extrabold rounded-xl text-xs shadow-md transition disabled:opacity-50 flex items-center gap-2"
+                    className="w-1/2 py-3 bg-[#064E3B] text-white font-extrabold rounded-2xl text-xs shadow-md disabled:opacity-50"
                   >
-                    <i className="fas fa-check"></i> {resettingPassword ? 'Resetting Password...' : 'Reset Password & Sign In'}
+                    {resettingPassword ? 'Resetting...' : 'Reset Password'}
                   </button>
                 </div>
               </form>

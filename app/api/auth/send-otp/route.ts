@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { sendOtpEmail, SUPER_ADMIN_EMAIL } from '@/lib/email';
 import { ensureDatabaseTables } from '@/lib/db-init';
+import { signOtpToken } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,9 +32,12 @@ export async function POST(req: NextRequest) {
 
     // Generate Secure Real 6-Digit Code
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
-    // Upsert into OtpVerification table
+    // Create Stateless Signed Cryptographic Token
+    const otpToken = signOtpToken({ email: cleanEmail, otp: otpCode, purpose });
+
+    // Store in DB if available
     try {
       await prisma.otpVerification.upsert({
         where: { email: cleanEmail },
@@ -51,7 +55,7 @@ export async function POST(req: NextRequest) {
       console.warn('Fallback OTP storage:', dbErr);
     }
 
-    // Send Real Email via Resend API from Super Admin
+    // Send Real Email via Resend API
     await sendOtpEmail({
       toEmail: cleanEmail,
       otpCode,
@@ -61,7 +65,8 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: `A 6-digit verification OTP has been sent to ${cleanEmail} from Super Admin (${SUPER_ADMIN_EMAIL}). Please check your inbox.`,
+      otpToken,
+      message: `A 6-digit verification OTP has been sent to ${cleanEmail}. Please check your inbox.`,
     });
   } catch (error: any) {
     console.error('Send OTP error:', error);

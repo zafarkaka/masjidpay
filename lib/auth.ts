@@ -35,6 +35,18 @@ export function verifyToken(token: string): UserSession | null {
   }
 }
 
+export function signOtpToken(payload: { email: string; otp: string; purpose?: string }): string {
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: '15m' });
+}
+
+export function verifyOtpToken(token: string): { email: string; otp: string; purpose?: string } | null {
+  try {
+    return jwt.verify(token, JWT_SECRET) as { email: string; otp: string; purpose?: string };
+  } catch (error) {
+    return null;
+  }
+}
+
 export const AUTH_COOKIE_OPTIONS = {
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
@@ -48,7 +60,7 @@ export function setAuthCookie(token: string) {
     const cookieStore = cookies();
     cookieStore.set(TOKEN_NAME, token, AUTH_COOKIE_OPTIONS);
   } catch (e) {
-    // Non-fatal if in streaming context
+    // Non-fatal
   }
 }
 

@@ -96,7 +96,7 @@ export default function HomePage() {
               href="/donate/jama-masjid"
               className="px-4 py-2 text-[#0F766E] hover:text-[#064E3B] rounded-full transition flex items-center gap-1.5"
             >
-              <i className="fas fa-heart text-rose-500"></i> Public Donation Demo
+              <i className="fas fa-heart text-rose-500"></i> Public Contribution Portal
             </Link>
             <Link
               href="/masjid/jama-masjid/transparency"
@@ -204,7 +204,7 @@ export default function HomePage() {
                   className="w-full sm:w-auto px-6 py-3.5 bg-[#D4AF37] hover:bg-[#B8860B] text-[#102A25] hover:text-white font-black rounded-full text-xs shadow-md transition flex items-center justify-center gap-2"
                 >
                   <i className="fas fa-magnifying-glass"></i>
-                  <span>Explore Demo Portal</span>
+                  <span>Find Mosque Portals</span>
                 </Link>
               </div>
             </div>
