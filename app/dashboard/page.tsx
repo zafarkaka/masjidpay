@@ -6,7 +6,6 @@ import Link from 'next/link';
 export default function DashboardPage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [reportPeriod, setReportPeriod] = useState<'Monthly' | 'Yearly' | 'Range' | 'All Time'>('Monthly');
 
   useEffect(() => {
     fetch('/api/dashboard/stats')
@@ -252,80 +251,6 @@ export default function DashboardPage() {
               <span className="text-xs text-slate-500 font-medium">Salary Pending <span className="text-[10px] text-slate-400 block">This month</span></span>
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* GENERATE REPORT FILTER WIDGET */}
-      <div className="masjid-card p-6 bg-white border border-slate-200 shadow-md space-y-6">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-800 flex items-center justify-center text-lg border border-emerald-200">
-            <i className="fas fa-[#20bd5a] fa-file-invoice"></i>
-          </div>
-          <div>
-            <h3 className="text-base font-bold text-slate-900">Generate Report</h3>
-            <p className="text-xs text-slate-500">Filter by period & category, download combined slip</p>
-          </div>
-        </div>
-
-        {/* PERIOD TABS */}
-        <div className="flex items-center gap-1 border-b pb-2 overflow-x-auto">
-          {(['Monthly', 'Yearly', 'Range', 'All Time'] as const).map((period) => (
-            <button
-              key={period}
-              onClick={() => setReportPeriod(period)}
-              className={`px-5 py-2 rounded-xl font-bold text-xs transition ${
-                reportPeriod === period
-                  ? 'bg-slate-100 text-slate-900 border border-slate-300 shadow-sm'
-                  : 'text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              {period}
-            </button>
-          ))}
-        </div>
-
-        {/* SELECTORS & RESULT CARDS */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Income Category</label>
-            <select className="w-full px-3 py-2 border rounded-xl text-xs outline-none focus:border-emerald-600">
-              <option value="">Select Category...</option>
-              <option value="cat1">General Donation</option>
-              <option value="cat2">Monthly Member Collection</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Expense Category</label>
-            <select className="w-full px-3 py-2 border rounded-xl text-xs outline-none focus:border-emerald-600">
-              <option value="">Select Category...</option>
-              <option value="exp1">Utilities & Electricity</option>
-              <option value="exp2">Staff Salaries</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
-          <div className="p-4 bg-emerald-50/60 border border-emerald-200 rounded-2xl">
-            <span className="text-[11px] font-bold text-emerald-800 block uppercase">Income</span>
-            <span className="text-base font-extrabold text-slate-900 block mt-1">IN ₹0</span>
-          </div>
-
-          <div className="p-4 bg-amber-50/60 border border-amber-200 rounded-2xl">
-            <span className="text-[11px] font-bold text-amber-800 block uppercase">Expense</span>
-            <span className="text-base font-extrabold text-slate-900 block mt-1">IN ₹0</span>
-          </div>
-
-          <div className="p-4 bg-teal-50/60 border border-teal-200 rounded-2xl">
-            <span className="text-[11px] font-bold text-teal-800 block uppercase">Balance</span>
-            <span className="text-base font-extrabold text-slate-900 block mt-1">IN ₹0</span>
-          </div>
-        </div>
-
-        <div className="text-center pt-2">
-          <button className="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs rounded-xl transition inline-flex items-center gap-2 border border-slate-300">
-            <i className="fas fa-download"></i> Download Report
-          </button>
         </div>
       </div>
 
