@@ -12,6 +12,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [darkMode, setDarkMode] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState('en');
   const [shareCopied, setShareCopied] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Close mobile drawer on route change
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [pathname]);
 
   // PWA INSTALL PROMPT STATE
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -284,27 +290,171 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       </aside>
 
+      {/* MOBILE DRAWER SIDEBAR WITH BACKDROP */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-50 md:hidden flex animate-in fade-in duration-200">
+          {/* BACKDROP OVERLAY */}
+          <div
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity"
+            onClick={() => setMobileMenuOpen(false)}
+            aria-hidden="true"
+          />
+
+          {/* SLIDE-OVER DRAWER CONTENT */}
+          <aside className="relative w-72 max-w-[85vw] bg-white h-full shadow-2xl flex flex-col justify-between z-10 overflow-y-auto animate-in slide-in-from-left duration-200">
+            <div>
+              {/* BRANDING & CLOSE BUTTON */}
+              <div className="p-5 border-b border-slate-100 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5 overflow-hidden">
+                  <div className="w-9 h-9 rounded-2xl bg-emerald-700 text-white flex items-center justify-center text-base shadow-sm shrink-0">
+                    <i className="fas fa-mosque"></i>
+                  </div>
+                  <div className="overflow-hidden">
+                    <span className="font-extrabold text-sm text-slate-900 block leading-tight truncate">
+                      {user?.masjidName || 'Mosque Dashboard'}
+                    </span>
+                    <span className="text-[10px] font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 inline-block mt-0.5">
+                      Verified Mosque
+                    </span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg text-base"
+                  aria-label="Close menu"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* NAVIGATION LINKS */}
+              <nav className="p-4 space-y-4">
+                {navGroups.map((group, idx) => (
+                  <div key={idx}>
+                    <div className="px-3 mb-1.5 text-[9px] font-extrabold uppercase tracking-widest text-slate-400">
+                      {group.group}
+                    </div>
+                    <div className="space-y-0.5">
+                      {group.items.map((item) => {
+                        const active = pathname === item.href || (item.href.includes('/dashboard/monthly-members') && pathname === '/dashboard/monthly-members');
+                        return (
+                          <Link
+                            key={item.href}
+                            href={item.href}
+                            onClick={() => setMobileMenuOpen(false)}
+                            target={item.external ? '_blank' : undefined}
+                            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition ${
+                              active
+                                ? 'bg-[#0F3D26] text-white shadow-sm'
+                                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
+                            }`}
+                          >
+                            <i className={`fas ${item.icon} text-xs w-4 text-center ${active ? 'text-white' : 'text-emerald-700'}`}></i>
+                            <span className="truncate">{item.label}</span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </nav>
+            </div>
+
+            {/* BOTTOM SIDEBAR CONTROLS */}
+            <div className="p-4 border-t border-slate-100 bg-slate-50/50 space-y-3 shrink-0">
+              {/* DARK MODE TOGGLE */}
+              <button
+                type="button"
+                onClick={() => setDarkMode(!darkMode)}
+                className="w-full flex items-center justify-between px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200/60 rounded-xl transition"
+              >
+                <span className="flex items-center gap-2.5">
+                  <i className={`fas ${darkMode ? 'fa-sun text-amber-500' : 'fa-moon text-slate-500'}`}></i>
+                  <span>{darkMode ? 'Light Theme' : 'Dark Theme'}</span>
+                </span>
+                <span className={`text-[10px] px-2 py-0.5 rounded-md font-extrabold ${darkMode ? 'bg-amber-950 text-amber-400' : 'bg-slate-200 text-slate-600'}`}>
+                  {darkMode ? 'ON' : 'OFF'}
+                </span>
+              </button>
+
+              {/* LANGUAGE SELECTOR */}
+              <div className="px-3 py-1.5 bg-slate-100/80 rounded-xl">
+                <div className="relative flex items-center">
+                  <select
+                    value={selectedLanguage}
+                    onChange={(e) => setSelectedLanguage(e.target.value)}
+                    aria-label="Language selection"
+                    className="w-full pl-7 pr-4 py-1 bg-transparent text-xs font-bold text-slate-700 outline-none appearance-none cursor-pointer"
+                  >
+                    <option value="en">English (US)</option>
+                    <option value="ur">Urdu (اردو)</option>
+                    <option value="ta">Tamil (தமிழ்)</option>
+                    <option value="hi">Hindi (हिन्दी)</option>
+                    <option value="ar">Arabic (العربية)</option>
+                  </select>
+                  <i className="fas fa-globe absolute left-0 top-1.5 text-slate-400 text-xs pointer-events-none"></i>
+                </div>
+              </div>
+
+              {/* SHARE APP BUTTON */}
+              <button
+                type="button"
+                onClick={handleShareApp}
+                className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200/60 rounded-xl transition"
+              >
+                <i className="fas fa-share-nodes text-slate-600"></i>
+                <span>{shareCopied ? '✓ Link Copied!' : 'Share App'}</span>
+              </button>
+
+              {/* USER PROFILE FOOTER */}
+              <div className="pt-2 border-t flex items-center justify-between">
+                <div className="flex items-center gap-2.5 overflow-hidden">
+                  <div className="w-7 h-7 rounded-full bg-emerald-800 text-white font-black text-[11px] flex items-center justify-center shrink-0">
+                    {user?.name?.[0] || 'M'}
+                  </div>
+                  <div className="overflow-hidden">
+                    <span className="text-[11px] font-extrabold text-slate-900 block truncate">{user?.name}</span>
+                  </div>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  title="Sign Out"
+                  className="text-slate-400 hover:text-rose-600 transition text-xs p-1 rounded-lg"
+                >
+                  <i className="fas fa-right-from-bracket"></i>
+                </button>
+              </div>
+            </div>
+          </aside>
+        </div>
+      )}
+
       {/* MAIN CONTENT AREA */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* TOP HEADER BAR */}
-        <header className="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between sticky top-0 z-30">
+        <header className="h-16 bg-white border-b border-slate-200 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-30">
           <div className="flex items-center gap-3">
-            <button className="md:hidden text-slate-600 text-lg">
+            <button
+              onClick={() => setMobileMenuOpen(true)}
+              className="md:hidden text-slate-600 hover:text-slate-900 p-2 rounded-xl hover:bg-slate-100 transition text-base flex items-center justify-center"
+              aria-label="Open navigation menu"
+            >
               <i className="fas fa-bars"></i>
             </button>
-            <span className="font-extrabold text-slate-900 text-sm hidden sm:inline">
+            <span className="font-extrabold text-slate-900 text-sm hidden sm:inline truncate max-w-[250px] lg:max-w-none">
               {user?.masjidName || 'Mosque Financial Control Center'}
             </span>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             {/* PWA TOP INSTALL BUTTON */}
             <button
               onClick={handleInstallPwa}
               className="px-3 py-1.5 bg-[#0F3D26] hover:bg-emerald-950 text-white rounded-full text-xs font-bold transition flex items-center gap-1.5 shadow-sm"
             >
-              <i className="fas fa-download"></i>
-              <span>{isPwaInstalled ? '✓ App Installed' : 'Install PWA App'}</span>
+              <i className="fas fa-download text-[11px]"></i>
+              <span className="hidden xs:inline">{isPwaInstalled ? '✓ App Installed' : 'Install PWA'}</span>
+              <span className="xs:hidden">App</span>
             </button>
 
             <div className="px-3 py-1 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-full text-xs font-extrabold flex items-center gap-1.5 hidden sm:flex">
@@ -315,7 +465,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </header>
 
         {/* PAGE BODY */}
-        <main className="p-6 md:p-8 flex-1 overflow-y-auto">{children}</main>
+        <main className="p-4 sm:p-6 md:p-8 flex-1 overflow-y-auto">{children}</main>
       </div>
     </div>
   );
