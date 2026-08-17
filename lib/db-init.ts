@@ -6,30 +6,35 @@ let isInitialized = false;
 
 export async function ensureDatabaseTables(prisma: PrismaClient) {
   if (isInitialized) return;
+  isInitialized = true;
 
   try {
-    // 1. Execute all table DDL statements
-    for (const sql of SCHEMA_SQL) {
+    const isPostgres = process.env.DATABASE_URL?.startsWith('postgres');
+
+    // 1. Only execute SQLite DDL when using local SQLite
+    if (!isPostgres) {
+      for (const sql of SCHEMA_SQL) {
+        try {
+          await prisma.$executeRawUnsafe(sql);
+        } catch (err: any) {
+          // Table may already exist
+        }
+      }
+
+      // Create indices if missing on SQLite
       try {
-        await prisma.$executeRawUnsafe(sql);
-      } catch (err: any) {
-        // Table may already exist
+        await prisma.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "User_email_key" ON "User"("email")`);
+        await prisma.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "Masjid_slug_key" ON "Masjid"("slug")`);
+        await prisma.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "OtpVerification_email_key" ON "OtpVerification"("email")`);
+        await prisma.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "Receipt_receiptNo_key" ON "Receipt"("receiptNo")`);
+        await prisma.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "MasjidUser_masjidId_userId_key" ON "MasjidUser"("masjidId", "userId")`);
+      } catch (e) {
+        // ignore
       }
     }
 
-    // 2. Create indices if missing
-    try {
-      await prisma.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "User_email_key" ON "User"("email")`);
-      await prisma.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "Masjid_slug_key" ON "Masjid"("slug")`);
-      await prisma.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "OtpVerification_email_key" ON "OtpVerification"("email")`);
-      await prisma.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "Receipt_receiptNo_key" ON "Receipt"("receiptNo")`);
-      await prisma.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "MasjidUser_masjidId_userId_key" ON "MasjidUser"("masjidId", "userId")`);
-    } catch (e) {
-      // ignore
-    }
-
-    // 3. Seed default Super Admin and Approved Masjid if missing
-    const userCount = await prisma.user.count().catch(() => 0);
+    // 2. Seed default Super Admin and Approved Masjid if completely empty
+    const userCount = await prisma.user.count().catch(() => -1);
     if (userCount === 0) {
       const superAdminPassword = await bcrypt.hash('admin123', 10);
       const superAdmin = await prisma.user.create({
@@ -40,7 +45,7 @@ export async function ensureDatabaseTables(prisma: PrismaClient) {
           role: 'SUPER_ADMIN',
           mustChangePassword: false,
         },
-      });
+      }).catch(() => null);
 
       const jamaMasjid = await prisma.masjid.create({
         data: {
@@ -63,69 +68,50 @@ export async function ensureDatabaseTables(prisma: PrismaClient) {
           bankIfsc: 'SBIN0000982',
           upiId: 'jamamasjid@sbi',
         },
-      });
+      }).catch(() => null);
 
-      const adminPassword = await bcrypt.hash('password123', 10);
-      const masjidAdmin = await prisma.user.create({
-        data: {
-          name: 'Abdul Rahman (Treasurer)',
-          email: 'admin@jamamasjid.org',
-          password: adminPassword,
-          role: 'MASJID_ADMIN',
-        },
-      });
+      if (jamaMasjid && superAdmin) {
+        const adminPassword = await bcrypt.hash('password123', 10);
+        const masjidAdmin = await prisma.user.create({
+          data: {
+            name: 'Abdul Rahman (Treasurer)',
+            email: 'admin@jamamasjid.org',
+            password: adminPassword,
+            role: 'MASJID_ADMIN',
+          },
+        }).catch(() => null);
 
-      await prisma.masjidUser.create({
-        data: {
-          masjidId: jamaMasjid.id,
-          userId: masjidAdmin.id,
-          role: 'MASJID_ADMIN',
-        },
-      });
+        if (masjidAdmin) {
+          await prisma.masjidUser.create({
+            data: {
+              masjidId: jamaMasjid.id,
+              userId: masjidAdmin.id,
+              role: 'MASJID_ADMIN',
+            },
+          }).catch(() => null);
+        }
 
-      // Default funds
-      const genFund = await prisma.fund.create({
-        data: {
-          masjidId: jamaMasjid.id,
-          name: 'General Operational Fund',
-          openingBalance: 50000,
-          currentBalance: 85000,
-        },
-      });
+        // Default funds
+        await prisma.fund.create({
+          data: {
+            masjidId: jamaMasjid.id,
+            name: 'General Operational Fund',
+            openingBalance: 50000,
+            currentBalance: 85000,
+          },
+        }).catch(() => null);
 
-      const zakatFund = await prisma.fund.create({
-        data: {
-          masjidId: jamaMasjid.id,
-          name: 'Zakat & Sadaqah Vault',
-          openingBalance: 20000,
-          currentBalance: 45000,
-          isRestricted: true,
-        },
-      });
-
-      // Default categories
-      await prisma.donationCategory.createMany({
-        data: [
-          { masjidId: jamaMasjid.id, name: 'General Donation', isDefault: true },
-          { masjidId: jamaMasjid.id, name: 'Zakat Fund' },
-          { masjidId: jamaMasjid.id, name: 'Sadaqah' },
-          { masjidId: jamaMasjid.id, name: 'Friday Collection' },
-          { masjidId: jamaMasjid.id, name: 'Construction & Renovation' },
-        ],
-      });
-
-      await prisma.expenseCategory.createMany({
-        data: [
-          { masjidId: jamaMasjid.id, name: 'Electricity & Utilities', isDefault: true },
-          { masjidId: jamaMasjid.id, name: 'Maintenance & Repairs' },
-          { masjidId: jamaMasjid.id, name: 'Staff & Imam Payroll' },
-          { masjidId: jamaMasjid.id, name: 'Ramadan & Iftar Expenses' },
-        ],
-      });
+        await prisma.fund.create({
+          data: {
+            masjidId: jamaMasjid.id,
+            name: 'Zakat & Sadaqah Vault',
+            openingBalance: 20000,
+            currentBalance: 32500,
+          },
+        }).catch(() => null);
+      }
     }
-
-    isInitialized = true;
-  } catch (initErr) {
-    console.warn('Database initialization note:', initErr);
+  } catch (globalErr) {
+    console.warn('Database initialization note:', globalErr);
   }
 }
