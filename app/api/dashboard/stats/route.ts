@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireTenantAccess } from '@/lib/tenant';
+import { requireTenantAccess, getOrResolveMasjid } from '@/lib/tenant';
 import { generateFinancialInsights } from '@/lib/insights';
 import { ensureDatabaseTables } from '@/lib/db-init';
 
@@ -21,20 +21,7 @@ export async function GET(req: NextRequest) {
       // fallback
     }
 
-    let masjid = await prisma.masjid.findFirst({
-      where: {
-        OR: [
-          { id: session?.masjidId || 'none' },
-          { id: masjidIdParam || 'none' },
-          { slug: masjidIdParam || 'none' },
-          { slug: 'jama-masjid' },
-        ],
-      },
-    });
-
-    if (!masjid) {
-      masjid = await prisma.masjid.findFirst();
-    }
+    const masjid = await getOrResolveMasjid(session?.masjidId, masjidIdParam);
 
     if (!masjid) {
       return NextResponse.json({

@@ -1,47 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireTenantAccess } from '@/lib/tenant';
+import { requireTenantAccess, getOrResolveMasjid } from '@/lib/tenant';
 
 export const dynamic = 'force-dynamic';
-
-async function getOrCreateMasjid(sessionMasjidId?: string, reqMasjidId?: string) {
-  let masjid = null;
-
-  try {
-    masjid = await prisma.masjid.findFirst({
-      where: {
-        OR: [
-          { id: sessionMasjidId || 'none' },
-          { id: reqMasjidId || 'none' },
-          { slug: reqMasjidId || 'none' },
-          { slug: 'jama-masjid' },
-        ],
-      },
-    });
-
-    if (!masjid) {
-      masjid = await prisma.masjid.findFirst();
-    }
-
-    if (!masjid) {
-      masjid = await prisma.masjid.create({
-        data: {
-          name: 'Jama Masjid Vaniyambadi',
-          slug: 'jama-masjid',
-          city: 'Vaniyambadi',
-          state: 'Tamil Nadu',
-          country: 'IN',
-          status: 'APPROVED',
-          currency: 'INR',
-        },
-      });
-    }
-  } catch (err) {
-    console.error('Error finding or creating masjid:', err);
-  }
-
-  return masjid;
-}
+export const revalidate = 0;
 
 export async function GET(req: NextRequest) {
   try {
@@ -55,7 +17,7 @@ export async function GET(req: NextRequest) {
       // Allow fallback for session
     }
 
-    const masjid = await getOrCreateMasjid(session?.masjidId, masjidIdParam || undefined);
+    const masjid = await getOrResolveMasjid(session?.masjidId, masjidIdParam || undefined);
 
     if (!masjid) {
       return NextResponse.json({ members: [], masjidSlug: 'jama-masjid' });
@@ -89,7 +51,7 @@ export async function POST(req: NextRequest) {
       // Allow fallback
     }
 
-    const masjid = await getOrCreateMasjid(session?.masjidId, reqMasjidId);
+    const masjid = await getOrResolveMasjid(session?.masjidId, reqMasjidId);
 
     if (!masjid) {
       return NextResponse.json({ error: 'Masjid record could not be initialized' }, { status: 500 });

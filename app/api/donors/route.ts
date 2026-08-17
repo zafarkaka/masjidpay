@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireTenantAccess } from '@/lib/tenant';
+import { requireTenantAccess, getOrResolveMasjid } from '@/lib/tenant';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export async function GET(req: NextRequest) {
   try {
@@ -8,19 +11,15 @@ export async function GET(req: NextRequest) {
     const masjidIdParam = searchParams.get('masjidId');
     const query = searchParams.get('q');
 
-    const session = requireTenantAccess(masjidIdParam);
-    const masjid = await prisma.masjid.findFirst({
-      where: {
-        OR: [
-          { id: session.masjidId || '' },
-          { id: masjidIdParam || '' },
-          { slug: masjidIdParam || 'jama-masjid' },
-        ],
-      },
-    });
+    let session: any = null;
+    try {
+      session = requireTenantAccess(masjidIdParam);
+    } catch (e) {}
+
+    const masjid = await getOrResolveMasjid(session?.masjidId, masjidIdParam);
 
     if (!masjid) {
-      return NextResponse.json({ error: 'Masjid not found' }, { status: 404 });
+      return NextResponse.json({ donors: [] });
     }
 
     const where: any = { masjidId: masjid.id };

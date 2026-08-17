@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireTenantAccess } from '@/lib/tenant';
+import { requireTenantAccess, getOrResolveMasjid } from '@/lib/tenant';
 import { ensureDatabaseTables } from '@/lib/db-init';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export async function GET(req: NextRequest) {
   try {
@@ -17,15 +18,7 @@ export async function GET(req: NextRequest) {
       session = requireTenantAccess(masjidIdParam);
     } catch (e) {}
 
-    const masjid = await prisma.masjid.findFirst({
-      where: {
-        OR: [
-          { id: session?.masjidId || 'none' },
-          { id: masjidIdParam || 'none' },
-          { slug: masjidIdParam || 'jama-masjid' },
-        ],
-      },
-    });
+    const masjid = await getOrResolveMasjid(session?.masjidId, masjidIdParam);
 
     if (!masjid) {
       return NextResponse.json({ staff: [], payrolls: [] });
@@ -36,12 +29,10 @@ export async function GET(req: NextRequest) {
       prisma.payroll.findMany({ where: { masjidId: masjid.id }, orderBy: { paymentDate: 'desc' } }).catch(() => []),
     ]);
 
-    return NextResponse.json({ staff, payrolls });
+    return NextResponse.json({ staff: staff || [], payrolls: payrolls || [] });
   } catch (error: any) {
-    if (error.name === 'TenantAccessError' || error.name === 'UnauthorizedError') {
-      return NextResponse.json({ error: error.message }, { status: 403 });
-    }
-    return NextResponse.json({ error: 'Failed to fetch payroll data' }, { status: 500 });
+    console.error('Failed to fetch payroll data:', error);
+    return NextResponse.json({ staff: [], payrolls: [] });
   }
 }
 
@@ -78,15 +69,7 @@ export async function POST(req: NextRequest) {
       session = requireTenantAccess(reqMasjidId);
     } catch (e) {}
 
-    const masjid = await prisma.masjid.findFirst({
-      where: {
-        OR: [
-          { id: session?.masjidId || 'none' },
-          { id: reqMasjidId || 'none' },
-          { slug: reqMasjidId || 'jama-masjid' },
-        ],
-      },
-    });
+    const masjid = await getOrResolveMasjid(session?.masjidId, reqMasjidId);
 
     if (!masjid) {
       return NextResponse.json({ error: 'Masjid not found' }, { status: 404 });

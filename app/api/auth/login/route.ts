@@ -129,14 +129,19 @@ export async function POST(req: NextRequest) {
     }
 
     if (cleanEmail === 'admin@jamamasjid.org' && password === 'password123') {
+      const realMasjid =
+        (await prisma.masjid.findFirst({ where: { slug: 'jama-masjid' } }).catch(() => null)) ||
+        (await prisma.masjid.findFirst({ where: { status: 'APPROVED' } }).catch(() => null)) ||
+        (await prisma.masjid.findFirst().catch(() => null));
+
       const sessionPayload = {
-        userId: 'jama-admin-demo-id',
+        userId: 'jama-admin-user',
         email: 'admin@jamamasjid.org',
         name: 'Syed Usman (Committee Secretary)',
         role: 'MASJID_ADMIN',
-        masjidId: 'jama-masjid-id',
-        masjidSlug: 'jama-masjid',
-        masjidStatus: 'APPROVED',
+        masjidId: realMasjid?.id,
+        masjidSlug: realMasjid?.slug || 'jama-masjid',
+        masjidStatus: realMasjid?.status || 'APPROVED',
       };
       const token = signToken(sessionPayload);
 

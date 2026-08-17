@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { getCurrentSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET() {
   try {
     const session = getCurrentSession();
@@ -10,34 +13,42 @@ export async function GET() {
     }
 
     // Refresh masjid details from DB if applicable
-    if (session.masjidId) {
+    if (session.role !== 'SUPER_ADMIN') {
       try {
-        const masjid = await prisma.masjid.findUnique({
-          where: { id: session.masjidId },
-          select: { id: true, status: true, rejectionReason: true, name: true, slug: true, logoUrl: true, currency: true },
-        });
+        let masjid = null;
+        if (session.masjidId) {
+          masjid = await prisma.masjid.findFirst({
+            where: {
+              OR: [
+                { id: session.masjidId },
+                { slug: session.masjidId },
+                { slug: session.masjidSlug || 'jama-masjid' },
+              ],
+            },
+            select: { id: true, status: true, rejectionReason: true, name: true, slug: true, logoUrl: true, currency: true },
+          });
+        }
+
+        if (!masjid && session.userId) {
+          const mu = await prisma.masjidUser.findFirst({
+            where: { userId: session.userId },
+            include: { masjid: true },
+          });
+          if (mu?.masjid) masjid = mu.masjid;
+        }
+
+        if (!masjid) {
+          masjid = await prisma.masjid.findFirst({ where: { status: 'APPROVED' } });
+        }
+
         if (masjid) {
+          session.masjidId = masjid.id;
           session.masjidStatus = masjid.status;
           session.masjidName = masjid.name;
           session.masjidSlug = masjid.slug;
         }
       } catch (dbErr) {
         console.warn('Non-fatal masjid lookup in /api/auth/me:', dbErr);
-      }
-    } else if (session.role !== 'SUPER_ADMIN') {
-      try {
-        const mu = await prisma.masjidUser.findFirst({
-          where: { userId: session.userId },
-          include: { masjid: true },
-        });
-        if (mu?.masjid) {
-          session.masjidId = mu.masjid.id;
-          session.masjidName = mu.masjid.name;
-          session.masjidSlug = mu.masjid.slug;
-          session.masjidStatus = mu.masjid.status;
-        }
-      } catch (err) {
-        console.warn('Non-fatal masjidUser lookup in /api/auth/me:', err);
       }
     }
 
