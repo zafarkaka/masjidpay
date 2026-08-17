@@ -123,28 +123,6 @@ export async function ensureDatabaseTables(prisma: PrismaClient) {
         ],
       });
 
-      // Seed initial members
-      await prisma.member.createMany({
-        data: [
-          {
-            masjidId: jamaMasjid.id,
-            memberNo: 'MBR-001',
-            name: 'Mohammed Irfan',
-            phone: '9840123456',
-            email: 'irfan@example.com',
-            monthlyAmount: 500,
-            canViewReports: true,
-          },
-          {
-            masjidId: jamaMasjid.id,
-            memberNo: 'MBR-002',
-            name: 'Haji Farooq Ahmed',
-            phone: '9840234567',
-            email: 'farooq@example.com',
-            monthlyAmount: 1000,
-            canViewReports: true,
-          },
-        ],
       });
     }
 
