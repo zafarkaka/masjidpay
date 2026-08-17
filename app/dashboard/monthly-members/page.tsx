@@ -237,7 +237,6 @@ export default function MonthlyMembersPage() {
         return;
       }
 
-      const headers = lines[0].split(',').map((h) => h.trim().toLowerCase());
       const rows: any[] = [];
 
       for (let i = 1; i < lines.length; i++) {
@@ -318,91 +317,88 @@ export default function MonthlyMembersPage() {
   });
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto text-slate-800 font-sans pb-12">
+    <div className="space-y-5 max-w-6xl mx-auto text-slate-800 font-sans pb-10">
       {/* NAVIGATION HEADER & TAB TOGGLE */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#0F766E] block">
-              COMMUNITY DIRECTORY
+            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">
+              Community Directory
             </span>
-            <span className="bg-emerald-100 text-emerald-800 text-[11px] font-extrabold px-2 py-0.5 rounded-full">
-              {members.length} Members Total
+            <span className="bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-semibold px-2 py-0.5 rounded-md">
+              {members.length} Registered Members
             </span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#102A25] tracking-tight">
+          <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight mt-0.5">
             Monthly Members
           </h1>
-          <p className="text-slate-500 text-xs sm:text-sm mt-0.5">
-            Register community members, manage subscriptions, upload Excel lists, and edit records
-          </p>
         </div>
 
         {/* TAB SWITCHER */}
-        <div className="flex items-center p-1.5 bg-slate-200/80 rounded-2xl gap-1 shrink-0">
+        <div className="flex items-center p-1 bg-slate-100 border border-slate-200/80 rounded-xl gap-1 shrink-0">
           <button
             onClick={() => setActiveTab('add')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition flex items-center gap-1.5 ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 ${
               activeTab === 'add'
-                ? 'bg-white text-slate-900 shadow-sm'
+                ? 'bg-white text-slate-900 shadow-sm border border-slate-200/50'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            <i className="fas fa-user-plus text-emerald-700"></i> Add Member
+            <i className="fas fa-user-plus text-emerald-700 text-[11px]"></i> Add Member
           </button>
           <button
             onClick={() => setActiveTab('import')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition flex items-center gap-1.5 ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 ${
               activeTab === 'import'
-                ? 'bg-white text-slate-900 shadow-sm'
+                ? 'bg-white text-slate-900 shadow-sm border border-slate-200/50'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            <i className="fas fa-file-excel text-emerald-600"></i> Import Excel / CSV
+            <i className="fas fa-file-excel text-emerald-600 text-[11px]"></i> Import Excel / CSV
           </button>
           <button
             onClick={() => setActiveTab('directory')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition flex items-center gap-1.5 ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 ${
               activeTab === 'directory'
                 ? 'bg-[#0F3D26] text-white shadow-sm'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            <i className="fas fa-address-book"></i> Directory ({members.length})
+            <i className="fas fa-address-book text-[11px]"></i> Directory ({members.length})
           </button>
         </div>
       </div>
 
       {/* 1. ADD MEMBER TAB */}
       {activeTab === 'add' && (
-        <div className="space-y-6">
-          <div className="p-4 bg-[#f0f7f2] border border-[#d3e9d7] rounded-2xl flex items-start gap-3 shadow-xs">
-            <div className="w-10 h-10 rounded-xl bg-emerald-100/80 border border-emerald-200 text-emerald-800 flex items-center justify-center text-lg shrink-0">
+        <div className="space-y-4">
+          <div className="p-3.5 bg-emerald-50/70 border border-emerald-200/80 rounded-xl flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center text-sm shrink-0">
               <i className="fas fa-user-plus"></i>
             </div>
-            <p className="text-xs text-slate-700 leading-relaxed font-medium pt-1">
-              Monthly members donate a fixed monthly contribution to support the Masjid&apos;s running expenses.
+            <p className="text-xs text-slate-700 font-medium">
+              Register monthly members to track their contributions and share financial transparency links.
             </p>
           </div>
 
           {successMsg && (
-            <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-xs font-bold text-emerald-800 flex items-center gap-2">
+            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs font-semibold text-emerald-800 flex items-center gap-2">
               <i className="fas fa-check-circle text-emerald-600"></i> {successMsg}
             </div>
           )}
 
           {errorMsg && (
-            <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl text-xs font-bold text-rose-800 flex items-center gap-2">
+            <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs font-semibold text-rose-800 flex items-center gap-2">
               <i className="fas fa-circle-exclamation text-rose-600"></i> {errorMsg}
             </div>
           )}
 
-          <div className="masjid-card p-6 sm:p-8 bg-white border border-slate-200 shadow-sm rounded-3xl space-y-6">
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <div className="bg-white border border-slate-200 shadow-sm rounded-2xl p-6 space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
-                    FULL NAME <span className="text-rose-500">*</span>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Full Name <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -410,13 +406,13 @@ export default function MonthlyMembersPage() {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="e.g. Yusuf Ali"
-                    className="w-full px-4 py-3 bg-slate-50/70 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-900 outline-none focus:border-emerald-700 focus:bg-white transition"
+                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 outline-none focus:border-emerald-700 focus:bg-white transition"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
-                    PHONE NUMBER <span className="text-rose-500">*</span>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Phone Number <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -424,85 +420,82 @@ export default function MonthlyMembersPage() {
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="e.g. 9876543210"
-                    className="w-full px-4 py-3 bg-slate-50/70 border border-slate-200 rounded-2xl text-xs font-mono font-semibold text-slate-900 outline-none focus:border-emerald-700 focus:bg-white transition"
+                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-semibold text-slate-900 outline-none focus:border-emerald-700 focus:bg-white transition"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
-                    MONTHLY DONATION (IN ₹) <span className="text-rose-500">*</span>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Monthly Contribution (₹) <span className="text-rose-500">*</span>
                   </label>
-                  <div className="relative">
-                    <span className="absolute left-4 top-3 text-xs font-bold text-slate-500">IN ₹</span>
-                    <input
-                      type="number"
-                      required
-                      value={monthlyAmount}
-                      onChange={(e) => setMonthlyAmount(e.target.value)}
-                      placeholder="100"
-                      className="w-full pl-14 pr-4 py-3 bg-slate-50/70 border border-slate-200 rounded-2xl text-xs font-extrabold text-slate-900 outline-none focus:border-emerald-700 focus:bg-white transition"
-                    />
-                  </div>
+                  <input
+                    type="number"
+                    required
+                    value={monthlyAmount}
+                    onChange={(e) => setMonthlyAmount(e.target.value)}
+                    placeholder="100"
+                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 outline-none focus:border-emerald-700 focus:bg-white transition"
+                  />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
-                    JOINING DATE
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Joining Date
                   </label>
                   <input
                     type="date"
                     value={joiningDate}
                     onChange={(e) => setJoiningDate(e.target.value)}
-                    className="w-full px-4 py-3 bg-slate-50/70 border border-slate-200 rounded-2xl text-xs font-mono font-bold text-slate-900 outline-none focus:border-emerald-700 focus:bg-white transition"
+                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-slate-900 outline-none focus:border-emerald-700 focus:bg-white transition"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
-                  EMAIL ADDRESS <span className="text-slate-400 font-normal">(Optional)</span>
+                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Email Address <span className="text-slate-400 font-normal">(Optional)</span>
                 </label>
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="e.g. yusuf@example.com"
-                  className="w-full px-4 py-3 bg-slate-50/70 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-900 outline-none focus:border-emerald-700 focus:bg-white transition"
+                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 outline-none focus:border-emerald-700 focus:bg-white transition"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
-                  ADDRESS
+                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Address
                 </label>
                 <textarea
-                  rows={3}
+                  rows={2}
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
-                  placeholder="Enter full address..."
-                  className="w-full px-4 py-3 bg-slate-50/70 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-900 outline-none focus:border-emerald-700 focus:bg-white transition"
+                  placeholder="Enter address..."
+                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 outline-none focus:border-emerald-700 focus:bg-white transition"
                 ></textarea>
               </div>
 
-              <div className="p-4 bg-emerald-50/80 border border-emerald-200 rounded-2xl space-y-2">
-                <label className="flex items-center gap-3 cursor-pointer">
+              <div className="p-3 bg-emerald-50/70 border border-emerald-200 rounded-xl">
+                <label className="flex items-center gap-2.5 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={canViewReports}
                     onChange={(e) => setCanViewReports(e.target.checked)}
-                    className="w-4 h-4 rounded text-emerald-700 focus:ring-emerald-600 accent-emerald-800"
+                    className="w-4 h-4 rounded text-emerald-700 accent-emerald-800"
                   />
-                  <span className="text-xs font-extrabold text-slate-900">
-                    ☑ Allow Member Transparency Access (View Collections & Financial Reports)
+                  <span className="text-xs font-semibold text-slate-900">
+                    Allow Member Transparency Access (View Collections & Financial Reports)
                   </span>
                 </label>
               </div>
 
-              <div className="flex items-center justify-start gap-3 pt-3 border-t">
+              <div className="flex items-center justify-start gap-3 pt-2 border-t border-slate-100">
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-6 py-3 bg-[#0F3D26] hover:bg-emerald-950 text-white font-extrabold rounded-2xl text-xs shadow-lg shadow-emerald-950/20 transition flex items-center gap-2 disabled:opacity-50"
+                  className="px-5 py-2 bg-[#0F3D26] hover:bg-emerald-950 text-white font-bold rounded-xl text-xs shadow-sm transition flex items-center gap-1.5 disabled:opacity-50"
                 >
                   <i className="fas fa-check"></i> {submitting ? 'Registering...' : 'Register Member'}
                 </button>
@@ -514,92 +507,90 @@ export default function MonthlyMembersPage() {
 
       {/* 2. EXCEL / CSV BULK IMPORT TAB */}
       {activeTab === 'import' && (
-        <div className="space-y-6">
-          <div className="masjid-card p-6 sm:p-8 bg-white border border-slate-200 shadow-sm rounded-3xl space-y-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+        <div className="space-y-4">
+          <div className="bg-white border border-slate-200 shadow-sm rounded-2xl p-6 space-y-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
               <div>
-                <h3 className="text-lg font-extrabold text-slate-900">Bulk Upload Existing Members</h3>
-                <p className="text-xs text-slate-500 mt-1">
-                  Upload an Excel (.xlsx/.xls) or CSV file with your mosque&apos;s member directory.
+                <h3 className="text-sm font-extrabold text-slate-900">Bulk Upload Members</h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Upload a CSV file containing your mosque&apos;s member list.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={handleDownloadTemplate}
-                className="px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold rounded-xl text-xs transition flex items-center gap-2 shrink-0"
+                className="px-3.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-semibold rounded-lg text-xs transition flex items-center gap-1.5 shrink-0"
               >
-                <i className="fas fa-download"></i> Download CSV Template
+                <i className="fas fa-download text-[11px]"></i> Download Template (.csv)
               </button>
             </div>
 
             {importMsg && (
-              <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-xs font-bold text-emerald-800 flex items-center gap-2">
+              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs font-semibold text-emerald-800 flex items-center gap-2">
                 <i className="fas fa-check-circle text-emerald-600"></i> {importMsg}
               </div>
             )}
 
             {errorMsg && (
-              <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl text-xs font-bold text-rose-800 flex items-center gap-2">
+              <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs font-semibold text-rose-800 flex items-center gap-2">
                 <i className="fas fa-circle-exclamation text-rose-600"></i> {errorMsg}
               </div>
             )}
 
-            <div className="border-2 border-dashed border-emerald-300 bg-emerald-50/40 hover:bg-emerald-50/70 transition rounded-3xl p-8 text-center cursor-pointer relative">
+            <div className="border-2 border-dashed border-emerald-200 bg-emerald-50/30 hover:bg-emerald-50/60 transition rounded-2xl p-6 text-center cursor-pointer relative">
               <input
                 type="file"
                 accept=".csv, .xlsx, .xls, text/csv"
                 onChange={handleFileUpload}
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
               />
-              <div className="w-14 h-14 mx-auto rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center text-2xl mb-3 shadow-inner">
+              <div className="w-10 h-10 mx-auto rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center text-lg mb-2">
                 <i className="fas fa-cloud-arrow-up"></i>
               </div>
-              <h4 className="text-sm font-extrabold text-slate-900">
-                {importFile ? importFile.name : 'Click to select or drag CSV / Excel file here'}
+              <h4 className="text-xs font-bold text-slate-900">
+                {importFile ? importFile.name : 'Click to select or drag CSV file here'}
               </h4>
-              <p className="text-xs text-slate-500 mt-1">
-                Supported format: CSV with headers <code className="bg-slate-100 px-1.5 py-0.5 rounded text-emerald-800 font-bold">Name, Phone, MonthlyAmount, Address, Email</code>
+              <p className="text-[11px] text-slate-500 mt-0.5">
+                Columns: <code className="bg-slate-100 px-1 py-0.5 rounded text-emerald-800 font-mono text-[10px]">Name, Phone, MonthlyAmount, Address, Email</code>
               </p>
             </div>
 
             {/* PREVIEW PARSED ROWS */}
             {parsedRows.length > 0 && (
-              <div className="space-y-4">
+              <div className="space-y-3 pt-2">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-xs font-extrabold uppercase text-slate-700 tracking-wider">
-                    Preview Members to Import ({parsedRows.length} rows found)
-                  </h4>
+                  <span className="text-xs font-bold text-slate-700">
+                    Preview: {parsedRows.length} members found
+                  </span>
                   <button
                     type="button"
                     onClick={handleConfirmImport}
                     disabled={importing}
-                    className="px-6 py-2.5 bg-[#0F3D26] hover:bg-emerald-950 text-white font-extrabold rounded-xl text-xs shadow-md transition flex items-center gap-2 disabled:opacity-50"
+                    className="px-4 py-1.5 bg-[#0F3D26] hover:bg-emerald-950 text-white font-bold rounded-lg text-xs shadow-sm transition flex items-center gap-1.5 disabled:opacity-50"
                   >
-                    <i className="fas fa-check-double"></i> {importing ? 'Importing...' : `Confirm & Save ${parsedRows.length} Members`}
+                    <i className="fas fa-check-double text-[11px]"></i> {importing ? 'Importing...' : `Import ${parsedRows.length} Members`}
                   </button>
                 </div>
 
-                <div className="border border-slate-200 rounded-2xl overflow-hidden max-h-64 overflow-y-auto">
-                  <table className="masjid-table w-full text-xs">
-                    <thead>
+                <div className="border border-slate-200 rounded-xl overflow-hidden max-h-56 overflow-y-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-slate-50 text-[11px] font-bold text-slate-500 uppercase border-b border-slate-200">
                       <tr>
-                        <th>#</th>
-                        <th>NAME</th>
-                        <th>PHONE</th>
-                        <th>MONTHLY (₹)</th>
-                        <th>ADDRESS</th>
-                        <th>EMAIL</th>
+                        <th className="py-2 px-3">#</th>
+                        <th className="py-2 px-3">Name</th>
+                        <th className="py-2 px-3">Phone</th>
+                        <th className="py-2 px-3">Monthly (₹)</th>
+                        <th className="py-2 px-3">Address</th>
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="divide-y divide-slate-100 text-xs">
                       {parsedRows.map((r, idx) => (
-                        <tr key={idx}>
-                          <td className="font-bold text-slate-400">{idx + 1}</td>
-                          <td className="font-bold text-slate-900">{r.name}</td>
-                          <td className="font-mono text-slate-700">{r.phone}</td>
-                          <td className="font-bold text-emerald-800">₹{r.monthlyAmount}</td>
-                          <td className="text-slate-500">{r.address || '-'}</td>
-                          <td className="text-slate-500">{r.email || '-'}</td>
+                        <tr key={idx} className="hover:bg-slate-50/50">
+                          <td className="py-2 px-3 text-slate-400 font-mono">{idx + 1}</td>
+                          <td className="py-2 px-3 font-semibold text-slate-900">{r.name}</td>
+                          <td className="py-2 px-3 font-mono text-slate-600">{r.phone}</td>
+                          <td className="py-2 px-3 font-bold text-emerald-800">₹{r.monthlyAmount}</td>
+                          <td className="py-2 px-3 text-slate-500 text-[11px]">{r.address || '-'}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -613,28 +604,28 @@ export default function MonthlyMembersPage() {
 
       {/* 3. DIRECTORY TAB VIEW */}
       {activeTab === 'directory' && (
-        <div className="masjid-card bg-white border border-slate-200 shadow-sm rounded-3xl overflow-hidden space-y-4">
-          <div className="p-5 border-b border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 font-bold text-slate-900 text-sm">
+        <div className="bg-white border border-slate-200 shadow-sm rounded-2xl overflow-hidden space-y-3">
+          <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
             <div>
               <div className="flex items-center gap-2">
-                <span>Registered Monthly Members</span>
-                <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-full text-xs font-extrabold">
+                <span className="text-xs font-bold text-slate-900">Registered Monthly Members</span>
+                <span className="px-2 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-200/60 rounded-md text-[10px] font-bold">
                   {filteredMembers.length} active
                 </span>
               </div>
-              <p className="text-xs text-slate-500 font-normal">
-                Edit phone/address, delete members, or toggle report transparency permissions
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                Use the checkbox to toggle report & collection transparency access per member
               </p>
             </div>
-            <span className="text-xs text-slate-500 font-normal">
-              Showing {filteredMembers.length} of {members.length} members
+            <span className="text-[11px] text-slate-400">
+              Total: {filteredMembers.length} of {members.length} members
             </span>
           </div>
 
           {/* SEARCH BOX WITH AUTO-SUGGESTIONS */}
-          <div className="px-5 pt-1 relative">
+          <div className="px-4 relative">
             <div className="relative">
-              <i className="fas fa-search absolute left-4 top-3.5 text-slate-400 text-xs"></i>
+              <i className="fas fa-search absolute left-3.5 top-3 text-slate-400 text-xs"></i>
               <input
                 type="text"
                 value={searchQuery}
@@ -643,14 +634,14 @@ export default function MonthlyMembersPage() {
                   setSearchQuery(e.target.value);
                   setShowSearchSuggestions(true);
                 }}
-                placeholder="Search by member name, phone or ID (auto-suggests as you type)..."
-                className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 outline-none focus:border-[#064E3B] focus:bg-white transition"
+                placeholder="Search by member name, phone or ID..."
+                className="w-full pl-9 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 outline-none focus:border-emerald-700 focus:bg-white transition"
               />
               {searchQuery && (
                 <button
                   type="button"
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 text-xs p-1"
+                  className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 text-xs p-1"
                 >
                   <i className="fas fa-times"></i>
                 </button>
@@ -660,19 +651,9 @@ export default function MonthlyMembersPage() {
             {/* AUTOCOMPLETE SUGGESTIONS POPUP */}
             {showSearchSuggestions && searchSuggestions.length > 0 && (
               <div
-                className="absolute left-5 right-5 top-full mt-1 bg-white border border-emerald-300 rounded-2xl shadow-2xl z-30 overflow-hidden divide-y divide-slate-100"
+                className="absolute left-4 right-4 top-full mt-1 bg-white border border-emerald-200 rounded-xl shadow-xl z-30 overflow-hidden divide-y divide-slate-100"
                 onMouseLeave={() => setShowSearchSuggestions(false)}
               >
-                <div className="p-2 bg-emerald-50 text-[10px] font-extrabold uppercase text-emerald-800 flex justify-between items-center">
-                  <span>✨ Matching Member Names</span>
-                  <button
-                    type="button"
-                    onClick={() => setShowSearchSuggestions(false)}
-                    className="text-slate-400 hover:text-slate-600"
-                  >
-                    ✕
-                  </button>
-                </div>
                 {searchSuggestions.map((m) => (
                   <button
                     key={m.id}
@@ -681,23 +662,23 @@ export default function MonthlyMembersPage() {
                       setSearchQuery(m.name);
                       setShowSearchSuggestions(false);
                     }}
-                    className="w-full px-4 py-2.5 text-left hover:bg-emerald-50 transition flex items-center justify-between text-xs group"
+                    className="w-full px-3.5 py-2 text-left hover:bg-emerald-50 transition flex items-center justify-between text-xs group"
                   >
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-7 h-7 rounded-lg bg-[#064E3B] text-white flex items-center justify-center font-bold text-xs">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-md bg-[#0F3D26] text-white flex items-center justify-center font-bold text-[11px]">
                         {m.name?.charAt(0)}
                       </div>
                       <div>
-                        <span className="font-extrabold text-slate-900 group-hover:text-emerald-800 block">
+                        <span className="font-bold text-slate-900 group-hover:text-emerald-800 text-xs">
                           {m.name}
                         </span>
-                        <span className="text-[11px] text-slate-400 font-mono">
+                        <span className="text-[11px] text-slate-400 font-mono ml-2">
                           {m.memberNo || 'MBR'} • 📞 {m.phone}
                         </span>
                       </div>
                     </div>
-                    <span className="text-[11px] font-bold text-emerald-800 bg-emerald-100/60 px-2 py-0.5 rounded-md">
-                      IN ₹{m.monthlyAmount || 100}/mo
+                    <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100/60 px-1.5 py-0.5 rounded">
+                      ₹{m.monthlyAmount || 100}/mo
                     </span>
                   </button>
                 ))}
@@ -706,54 +687,60 @@ export default function MonthlyMembersPage() {
           </div>
 
           {loading ? (
-            <div className="p-12 text-center text-slate-400 text-xs font-semibold">
-              <i className="fas fa-circle-notch fa-spin text-emerald-700 text-2xl mb-2"></i>
+            <div className="p-10 text-center text-slate-400 text-xs font-semibold">
+              <i className="fas fa-circle-notch fa-spin text-emerald-700 text-xl mb-2"></i>
               <p>Loading members directory...</p>
             </div>
           ) : filteredMembers.length === 0 ? (
-            <div className="p-12 text-center text-slate-400 text-xs font-semibold">
+            <div className="p-10 text-center text-slate-400 text-xs font-semibold">
               No registered members found. Use &quot;Add Member&quot; or &quot;Import Excel&quot; to add members.
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="masjid-table w-full">
-                <thead>
+              <table className="w-full text-left border-collapse">
+                <thead className="bg-slate-50/80 border-y border-slate-200 text-[11px] font-bold text-slate-600 uppercase tracking-wider">
                   <tr>
-                    <th>MEMBER NO</th>
-                    <th>FULL NAME</th>
-                    <th>PHONE NUMBER</th>
-                    <th>MONTHLY RATE</th>
-                    <th>REPORT ACCESS</th>
-                    <th className="text-right">ACTIONS</th>
+                    <th className="py-2.5 px-4 whitespace-nowrap">Member No</th>
+                    <th className="py-2.5 px-4 whitespace-nowrap">Full Name</th>
+                    <th className="py-2.5 px-4 whitespace-nowrap">Phone Number</th>
+                    <th className="py-2.5 px-4 whitespace-nowrap">Monthly Rate</th>
+                    <th className="py-2.5 px-4 whitespace-nowrap">Report & Collection Access</th>
+                    <th className="py-2.5 px-4 text-right whitespace-nowrap">Actions</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-slate-100 text-xs">
                   {filteredMembers.map((mbr) => (
-                    <tr key={mbr.id} className="hover:bg-slate-50/70 transition">
-                      <td className="font-mono font-bold text-emerald-800">{mbr.memberNo || 'MBR-001'}</td>
-                      <td>
-                        <span className="font-bold text-slate-900 block">{mbr.name}</span>
-                        <span className="text-[11px] text-slate-500 block">
-                          {mbr.address ? `📍 ${mbr.address}` : 'Address N/A'}
-                          {mbr.email ? ` • ✉️ ${mbr.email}` : ''}
+                    <tr key={mbr.id} className="hover:bg-slate-50/60 transition">
+                      <td className="py-3 px-4 font-mono font-bold text-emerald-800 whitespace-nowrap text-xs">
+                        {mbr.memberNo || 'MBR-001'}
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className="font-bold text-slate-900 block text-xs leading-tight">
+                          {mbr.name}
+                        </span>
+                        <span className="text-[10px] text-slate-400 block leading-tight mt-0.5">
+                          {mbr.address ? mbr.address : 'Address N/A'}
+                          {mbr.email ? ` • ${mbr.email}` : ''}
                         </span>
                       </td>
-                      <td className="font-mono text-xs text-slate-700 font-bold">{mbr.phone}</td>
-                      <td className="font-extrabold text-slate-900 text-sm">
+                      <td className="py-3 px-4 font-mono text-xs text-slate-600 whitespace-nowrap">
+                        {mbr.phone}
+                      </td>
+                      <td className="py-3 px-4 font-extrabold text-slate-900 whitespace-nowrap text-xs">
                         IN ₹{mbr.monthlyAmount?.toLocaleString('en-IN')}
                       </td>
 
                       {/* ADMIN TICK CHECKBOX OPTION */}
-                      <td>
-                        <label className="inline-flex items-center gap-2 cursor-pointer p-1.5 rounded-xl bg-slate-50 border border-slate-200 hover:border-emerald-400 transition">
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        <label className="inline-flex items-center gap-1.5 cursor-pointer px-2 py-1 rounded-lg bg-slate-50 border border-slate-200 hover:border-emerald-300 transition">
                           <input
                             type="checkbox"
                             checked={mbr.canViewReports !== false}
                             onChange={() => handleToggleAccess(mbr.id, mbr.canViewReports !== false)}
-                            className="w-4 h-4 rounded text-emerald-700 accent-emerald-800 cursor-pointer"
+                            className="w-3.5 h-3.5 rounded text-emerald-700 accent-emerald-800 cursor-pointer"
                           />
                           <span
-                            className={`text-xs font-bold ${
+                            className={`text-[11px] font-semibold ${
                               mbr.canViewReports !== false ? 'text-emerald-800' : 'text-slate-400'
                             }`}
                           >
@@ -762,39 +749,39 @@ export default function MonthlyMembersPage() {
                         </label>
                       </td>
 
-                      <td className="text-right space-x-1.5">
+                      <td className="py-3 px-4 text-right whitespace-nowrap space-x-1.5">
                         {/* EDIT BUTTON */}
                         <button
                           onClick={() => handleOpenEdit(mbr)}
-                          className="px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 font-bold rounded-xl text-xs transition inline-flex items-center gap-1"
+                          className="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200/80 font-semibold rounded-lg text-[11px] transition inline-flex items-center gap-1"
                           title="Edit member details"
                         >
-                          <i className="fas fa-pen-to-square"></i> Edit
+                          <i className="fas fa-pen-to-square text-[10px]"></i> Edit
                         </button>
 
                         {/* DELETE BUTTON */}
                         <button
                           onClick={() => setDeletingMember(mbr)}
-                          className="px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold rounded-xl text-xs transition inline-flex items-center gap-1"
+                          className="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/80 font-semibold rounded-lg text-[11px] transition inline-flex items-center gap-1"
                           title="Delete member"
                         >
-                          <i className="fas fa-trash-can"></i> Delete
+                          <i className="fas fa-trash-can text-[10px]"></i> Delete
                         </button>
 
                         {/* COPY LINK */}
                         <button
                           onClick={() => handleCopyLink(mbr)}
-                          className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition inline-flex items-center gap-1"
+                          className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 font-semibold rounded-lg text-[11px] transition inline-flex items-center gap-1"
                         >
-                          {copiedId === mbr.id ? '✓ Copied' : '🔗 Link'}
+                          {copiedId === mbr.id ? '✓ Copied' : '🔗 Copy Report Link'}
                         </button>
 
                         {/* COLLECT FEE */}
                         <Link
                           href={`/dashboard/member-collections`}
-                          className="px-3 py-1.5 bg-[#0F3D26] hover:bg-emerald-900 text-white font-bold rounded-xl text-xs transition inline-flex items-center gap-1"
+                          className="px-2.5 py-1 bg-[#0F3D26] hover:bg-emerald-950 text-white font-semibold rounded-lg text-[11px] transition inline-flex items-center gap-1 shadow-xs"
                         >
-                          <i className="fas fa-hand-holding-dollar"></i> Collect Fee
+                          <i className="fas fa-hand-holding-dollar text-[10px]"></i> Collect Fee
                         </Link>
                       </td>
                     </tr>
@@ -809,25 +796,25 @@ export default function MonthlyMembersPage() {
       {/* 4. EDIT MEMBER MODAL */}
       {editingMember && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl space-y-5 animate-in fade-in zoom-in duration-150">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div className="bg-white rounded-2xl max-w-md w-full p-5 sm:p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in duration-150">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
               <div>
-                <h3 className="text-lg font-extrabold text-slate-900">Edit Member Details</h3>
-                <p className="text-xs text-slate-400 font-mono">ID: {editingMember.memberNo}</p>
+                <h3 className="text-sm font-extrabold text-slate-900">Edit Member Details</h3>
+                <p className="text-[11px] text-slate-400 font-mono">ID: {editingMember.memberNo}</p>
               </div>
               <button
                 type="button"
                 onClick={() => setEditingMember(null)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center text-xs"
+                className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center text-xs"
               >
                 ✕
               </button>
             </div>
 
-            <form onSubmit={handleSaveEdit} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <form onSubmit={handleSaveEdit} className="space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1">
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
                     Full Name *
                   </label>
                   <input
@@ -835,12 +822,12 @@ export default function MonthlyMembersPage() {
                     required
                     value={editForm.name}
                     onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 outline-none focus:border-emerald-600"
+                    className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-900 outline-none focus:border-emerald-600"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1">
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
                     Phone Number *
                   </label>
                   <input
@@ -848,12 +835,12 @@ export default function MonthlyMembersPage() {
                     required
                     value={editForm.phone}
                     onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 outline-none focus:border-emerald-600"
+                    className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono font-bold text-slate-900 outline-none focus:border-emerald-600"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1">
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
                     Monthly Contribution (₹) *
                   </label>
                   <input
@@ -861,61 +848,61 @@ export default function MonthlyMembersPage() {
                     required
                     value={editForm.monthlyAmount}
                     onChange={(e) => setEditForm({ ...editForm, monthlyAmount: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-extrabold text-slate-900 outline-none focus:border-emerald-600"
+                    className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-extrabold text-slate-900 outline-none focus:border-emerald-600"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1">
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
                     Email (Optional)
                   </label>
                   <input
                     type="email"
                     value={editForm.email}
                     onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 outline-none focus:border-emerald-600"
+                    className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 outline-none focus:border-emerald-600"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1">
+                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
                   Address
                 </label>
                 <textarea
                   rows={2}
                   value={editForm.address}
                   onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 outline-none focus:border-emerald-600"
+                  className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 outline-none focus:border-emerald-600"
                 ></textarea>
               </div>
 
-              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
-                <label className="flex items-center gap-2.5 cursor-pointer">
+              <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-lg">
+                <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={editForm.canViewReports}
                     onChange={(e) => setEditForm({ ...editForm, canViewReports: e.target.checked })}
-                    className="w-4 h-4 rounded text-emerald-700 accent-emerald-800"
+                    className="w-3.5 h-3.5 rounded text-emerald-700 accent-emerald-800"
                   />
-                  <span className="text-xs font-bold text-slate-800">
+                  <span className="text-xs font-semibold text-slate-800">
                     Allow Transparency Portal & Report Access
                   </span>
                 </label>
               </div>
 
-              <div className="flex justify-end gap-3 pt-3 border-t">
+              <div className="flex justify-end gap-2.5 pt-2.5 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setEditingMember(null)}
-                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs"
+                  className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg text-xs"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-6 py-2.5 bg-[#0F3D26] hover:bg-emerald-950 text-white font-extrabold rounded-xl text-xs shadow-md transition disabled:opacity-50"
+                  className="px-4 py-1.5 bg-[#0F3D26] hover:bg-emerald-950 text-white font-bold rounded-lg text-xs shadow-xs transition disabled:opacity-50"
                 >
                   {submitting ? 'Saving...' : 'Save Changes'}
                 </button>
@@ -928,21 +915,21 @@ export default function MonthlyMembersPage() {
       {/* 5. DELETE MEMBER CONFIRMATION MODAL */}
       {deletingMember && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4 text-center animate-in fade-in zoom-in duration-150">
-            <div className="w-14 h-14 mx-auto rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center text-2xl shadow-inner">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-5 shadow-2xl space-y-3.5 text-center animate-in fade-in zoom-in duration-150">
+            <div className="w-12 h-12 mx-auto rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center text-xl">
               <i className="fas fa-triangle-exclamation"></i>
             </div>
             <div>
-              <h3 className="text-base font-extrabold text-slate-900">Delete Member?</h3>
+              <h3 className="text-sm font-extrabold text-slate-900">Delete Member?</h3>
               <p className="text-xs text-slate-500 mt-1">
-                Are you sure you want to remove <strong className="text-slate-900">{deletingMember.name}</strong> ({deletingMember.phone})? This action cannot be undone.
+                Are you sure you want to remove <strong className="text-slate-900">{deletingMember.name}</strong> ({deletingMember.phone})?
               </p>
             </div>
-            <div className="flex justify-center gap-3 pt-2">
+            <div className="flex justify-center gap-2.5 pt-1.5">
               <button
                 type="button"
                 onClick={() => setDeletingMember(null)}
-                className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs"
+                className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg text-xs"
               >
                 Cancel
               </button>
@@ -950,9 +937,9 @@ export default function MonthlyMembersPage() {
                 type="button"
                 onClick={handleDeleteMember}
                 disabled={submitting}
-                className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-extrabold rounded-xl text-xs shadow-md transition disabled:opacity-50"
+                className="px-4 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-lg text-xs shadow-xs transition disabled:opacity-50"
               >
-                {submitting ? 'Deleting...' : 'Yes, Delete Member'}
+                {submitting ? 'Deleting...' : 'Yes, Delete'}
               </button>
             </div>
           </div>
