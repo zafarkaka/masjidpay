@@ -5,6 +5,7 @@ import { generateFinancialInsights } from '@/lib/insights';
 import { ensureDatabaseTables } from '@/lib/db-init';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export async function GET(req: NextRequest) {
   try {

@@ -4,29 +4,7 @@ import bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 Starting database seeding...');
-
-  // Clean existing tables in proper foreign key dependency order
-  await prisma.auditLog.deleteMany({});
-  await prisma.receipt.deleteMany({});
-  await prisma.donation.deleteMany({});
-  await prisma.expense.deleteMany({});
-  await prisma.income.deleteMany({});
-  await prisma.recurringDonation.deleteMany({});
-  await prisma.recurringExpense.deleteMany({});
-  await prisma.memberCollection.deleteMany({});
-  await prisma.member.deleteMany({});
-  await prisma.payroll.deleteMany({});
-  await prisma.staff.deleteMany({});
-  await prisma.rentalPayment.deleteMany({});
-  await prisma.rentalShop.deleteMany({});
-  await prisma.document.deleteMany({});
-  await prisma.budget.deleteMany({});
-  await prisma.campaign.deleteMany({});
-  await prisma.paymentLink.deleteMany({});
-  await prisma.fund.deleteMany({});
-  await prisma.donationCategory.deleteMany({});
-  await prisma.expenseCategory.deleteMany({});
+  console.log('🌱 Checking seed data...');
 
   // 1. Create Super Admin User
   const superAdminPassword = await bcrypt.hash('admin123', 10);

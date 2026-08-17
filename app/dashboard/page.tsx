@@ -40,44 +40,16 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto text-slate-800 font-sans pb-10">
-      {/* TOP HEADER STATUS BAR WITH QUICK ACTION SHORTCUTS */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      {/* TOP HEADER STATUS BAR */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <span className="text-xs font-serif italic text-slate-500 block">{currentDateFormatted}</span>
           <h1 className="text-3xl font-serif font-extrabold text-slate-900 tracking-tight mt-0.5">Dashboard</h1>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
-          <Link
-            href="/dashboard/income"
-            className="px-3.5 py-2 bg-[#064E3B] hover:bg-[#043327] text-white font-extrabold text-xs rounded-xl shadow-xs transition flex items-center gap-1.5"
-          >
-            <i className="fas fa-plus text-[10px]"></i> Add Income
-          </Link>
-
-          <Link
-            href="/dashboard/expenses"
-            className="px-3.5 py-2 bg-[#881337] hover:bg-[#70102e] text-white font-extrabold text-xs rounded-xl shadow-xs transition flex items-center gap-1.5"
-          >
-            <i className="fas fa-plus text-[10px]"></i> Add Expense
-          </Link>
-
-          <Link
-            href="/dashboard/monthly-members?tab=add"
-            className="px-3.5 py-2 bg-[#115E59] hover:bg-[#0d4844] text-white font-extrabold text-xs rounded-xl shadow-xs transition flex items-center gap-1.5"
-          >
-            <i className="fas fa-plus text-[10px]"></i> Add Member
-          </Link>
-
-          <Link
-            href="/dashboard/member-collections"
-            className="px-3.5 py-2 bg-[#92400E] hover:bg-[#78350f] text-[#FDE68A] font-extrabold text-xs rounded-xl shadow-xs transition flex items-center gap-1.5"
-          >
-            <i className="fas fa-receipt text-[10px]"></i> Record Member Amount
-          </Link>
-
-          <span className="px-3 py-1.5 bg-emerald-50 text-emerald-800 font-extrabold text-xs rounded-xl border border-emerald-200 flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Live
+        <div className="flex items-center gap-2">
+          <span className="px-3.5 py-1.5 bg-emerald-50 text-emerald-800 font-extrabold text-xs rounded-xl border border-emerald-200 flex items-center gap-1.5 shadow-xs">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Live System
           </span>
         </div>
       </div>

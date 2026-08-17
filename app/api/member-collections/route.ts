@@ -5,6 +5,7 @@ import { generateWhatsAppInvoiceUrl } from '@/lib/whatsapp';
 import { recordAuditLog } from '@/lib/audit';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 async function getOrCreateMasjid(sessionMasjidId?: string, reqMasjidId?: string) {
   let masjid = null;
