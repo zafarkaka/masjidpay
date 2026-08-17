@@ -128,6 +128,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (error: any) {
     console.error('Create member collection error:', error);
-    return NextResponse.json({ error: 'Failed to record collection' }, { status: 500 });
+    return NextResponse.json({ error: error?.message || 'Failed to record collection' }, { status: 500 });
   }
 }
+
