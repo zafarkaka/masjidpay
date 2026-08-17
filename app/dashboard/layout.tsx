@@ -98,7 +98,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     );
   }
 
-  const navGroups = [
+  interface NavItem {
+    label: string;
+    href: string;
+    icon: string;
+    external?: boolean;
+  }
+
+  interface NavGroup {
+    group: string;
+    items: NavItem[];
+  }
+
+  const navGroups: NavGroup[] = [
     {
       group: 'GENERAL',
       items: [{ label: 'Dashboard', href: '/dashboard', icon: 'fa-chart-pie' }],
