@@ -158,7 +158,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div className={`min-h-screen flex text-slate-800 font-sans ${darkMode ? 'dark bg-slate-950 text-slate-100' : 'bg-[#f6faf6]'}`}>
       {/* MASJID ADMIN SIDEBAR MATCHING SCREENSHOT */}
-      <aside className="w-64 bg-white border-r border-slate-200 flex flex-col justify-between hidden md:flex shrink-0">
+      <aside className="w-64 bg-white border-r border-slate-200 flex flex-col hidden md:flex shrink-0">
         <div>
           {/* BRANDING */}
           <div className="p-6 border-b border-slate-100 flex items-center justify-between gap-3">
