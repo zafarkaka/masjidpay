@@ -11,7 +11,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
     }
 
-    const cleanEmail = email.toLowerCase().trim();
+    let cleanEmail = email.toLowerCase().trim();
+    if (cleanEmail === 'admin') {
+      cleanEmail = 'admin@masjidpay.org';
+    }
 
     let user: any = null;
 
