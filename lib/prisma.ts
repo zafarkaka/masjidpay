@@ -3,8 +3,8 @@ import { ensureDatabaseTables } from './db-init';
 
 const globalForPrisma = global as unknown as { prisma: PrismaClient; dbInitialized: boolean };
 
-// If running in Vercel / serverless environment with SQLite, ensure DB is in writable /tmp
-if (process.env.VERCEL) {
+// If running in Vercel with SQLite file, ensure writable /tmp
+if (process.env.VERCEL && process.env.DATABASE_URL?.startsWith('file:')) {
   const tmpDbPath = '/tmp/dev.db';
   process.env.DATABASE_URL = `file:${tmpDbPath}`;
 }
