@@ -156,6 +156,6 @@ export async function POST(req: NextRequest) {
     return response;
   } catch (error: any) {
     console.error('Registration API error:', error);
-    return NextResponse.json({ error: 'Failed to complete registration' }, { status: 500 });
+    return NextResponse.json({ error: error?.message || 'Failed to complete registration' }, { status: 500 });
   }
 }
