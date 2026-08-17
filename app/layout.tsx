@@ -1,5 +1,6 @@
 import './globals.css';
 import type { Metadata, Viewport } from 'next';
+import PwaInstallPrompt from '@/components/PwaInstallPrompt';
 
 export const metadata: Metadata = {
   title: 'MasjidPay · Masjid Financial Management SaaS Engine',
@@ -12,7 +13,11 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'MasjidPay SaaS',
+    title: 'MasjidPay',
+  },
+  applicationName: 'MasjidPay',
+  formatDetection: {
+    telephone: false,
   },
 };
 
@@ -20,6 +25,9 @@ export const viewport: Viewport = {
   themeColor: '#064E3B',
   width: 'device-width',
   initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+  viewportFit: 'cover',
 };
 
 export default function RootLayout({
@@ -34,7 +42,8 @@ export default function RootLayout({
         <link rel="icon" href="https://img.icons8.com/color/96/mosque.png" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="MasjidPay" />
         <link rel="apple-touch-icon" href="https://img.icons8.com/color/192/mosque.png" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -61,6 +70,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen bg-[#FFF9EC] text-[#1c2e28] antialiased font-sans">
         {children}
+        <PwaInstallPrompt />
       </body>
     </html>
   );

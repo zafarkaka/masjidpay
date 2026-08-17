@@ -1,24 +1,63 @@
 {
-  "name": "MasjidPay SaaS - Smart Mosque Management & Financial Engine",
+  "name": "MasjidPay - Smart Mosque Management & Financial Engine",
   "short_name": "MasjidPay",
-  "description": "Smart mosque financial ledger, member collections, payroll, PDF reports, and WhatsApp receipts",
+  "description": "Multi-tenant smart mosque financial ledger, member collections, staff payroll, PDF reports, and WhatsApp receipts.",
+  "id": "/?source=pwa",
   "start_url": "/dashboard",
+  "scope": "/",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
   "orientation": "any",
   "background_color": "#ffffff",
-  "theme_color": "#0F3D26",
+  "theme_color": "#064E3B",
+  "categories": ["finance", "productivity", "utilities"],
   "icons": [
     {
       "src": "https://img.icons8.com/color/192/mosque.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "https://img.icons8.com/color/192/mosque.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
     },
     {
       "src": "https://img.icons8.com/color/512/mosque.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "https://img.icons8.com/color/512/mosque.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Member Collections",
+      "short_name": "Collections",
+      "description": "Record monthly member subscriptions",
+      "url": "/dashboard/member-collections",
+      "icons": [{ "src": "https://img.icons8.com/color/96/mosque.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Donations",
+      "short_name": "Donations",
+      "description": "Log donation & print receipt",
+      "url": "/dashboard/donations",
+      "icons": [{ "src": "https://img.icons8.com/color/96/mosque.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Expenses",
+      "short_name": "Expenses",
+      "description": "Record bills & vendor payments",
+      "url": "/dashboard/expenses",
+      "icons": [{ "src": "https://img.icons8.com/color/96/mosque.png", "sizes": "96x96" }]
     }
   ]
 }

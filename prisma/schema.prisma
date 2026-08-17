@@ -45,6 +45,7 @@ model Masjid {
   website         String?
   logoUrl         String?
   regNumber       String?
+  waqfId          String?      // State Waqf Board Registration / Property ID No
   currency        String       @default("INR")
   timezone        String       @default("Asia/Kolkata")
   status          String       @default("PENDING") // PENDING, APPROVED, REJECTED, SUSPENDED, ACTIVE, ARCHIVED
