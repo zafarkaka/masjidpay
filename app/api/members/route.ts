@@ -38,11 +38,17 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { masjidId: reqMasjidId, name, phone, email, address, monthlyAmount, joiningDate, canViewReports } = body;
-
-    if (!name || !phone) {
-      return NextResponse.json({ error: 'Name and phone are required' }, { status: 400 });
-    }
+    const {
+      masjidId: reqMasjidId,
+      name,
+      phone,
+      email,
+      address,
+      monthlyAmount,
+      joiningDate,
+      canViewReports,
+      bulkMembers,
+    } = body;
 
     let session: any = null;
     try {
@@ -55,6 +61,44 @@ export async function POST(req: NextRequest) {
 
     if (!masjid) {
       return NextResponse.json({ error: 'Masjid record could not be initialized' }, { status: 500 });
+    }
+
+    // 1. Handle Bulk CSV / Excel Upload
+    if (Array.isArray(bulkMembers) && bulkMembers.length > 0) {
+      const existingCount = await prisma.member.count({ where: { masjidId: masjid.id } });
+      const createdMembers = [];
+
+      for (let i = 0; i < bulkMembers.length; i++) {
+        const item = bulkMembers[i];
+        if (!item.name || !item.phone) continue;
+
+        const memberNo = `MBR-${String(existingCount + i + 1).padStart(3, '0')}`;
+        const newMbr = await prisma.member.create({
+          data: {
+            masjidId: masjid.id,
+            memberNo,
+            name: String(item.name).trim(),
+            phone: String(item.phone).trim(),
+            email: item.email ? String(item.email).trim() : null,
+            address: item.address ? String(item.address).trim() : null,
+            monthlyAmount: Number(item.monthlyAmount || 100),
+            canViewReports: item.canViewReports !== undefined ? Boolean(item.canViewReports) : true,
+          },
+        });
+        createdMembers.push(newMbr);
+      }
+
+      return NextResponse.json({
+        success: true,
+        count: createdMembers.length,
+        message: `Successfully imported ${createdMembers.length} community members!`,
+        members: createdMembers,
+      });
+    }
+
+    // 2. Handle Single Member Registration
+    if (!name || !phone) {
+      return NextResponse.json({ error: 'Name and phone are required' }, { status: 400 });
     }
 
     const memberCount = await prisma.member.count({ where: { masjidId: masjid.id } });
@@ -91,19 +135,56 @@ export async function POST(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   try {
-    const { memberId, canViewReports } = await req.json();
+    const body = await req.json();
+    const { memberId, name, phone, email, address, monthlyAmount, canViewReports } = body;
+
     if (!memberId) {
       return NextResponse.json({ error: 'memberId is required' }, { status: 400 });
     }
 
+    const updateData: any = {};
+    if (name !== undefined) updateData.name = name.trim();
+    if (phone !== undefined) updateData.phone = phone.trim();
+    if (email !== undefined) updateData.email = email ? email.trim() : null;
+    if (address !== undefined) updateData.address = address ? address.trim() : null;
+    if (monthlyAmount !== undefined) updateData.monthlyAmount = Number(monthlyAmount || 100);
+    if (canViewReports !== undefined) updateData.canViewReports = Boolean(canViewReports);
+
     const updated = await prisma.member.update({
       where: { id: memberId },
-      data: { canViewReports: Boolean(canViewReports) },
+      data: updateData,
     });
 
     return NextResponse.json({ success: true, member: updated });
   } catch (error: any) {
     console.error('Update member error:', error);
-    return NextResponse.json({ error: 'Failed to update member access' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to update member' }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    let memberId = searchParams.get('memberId');
+
+    if (!memberId) {
+      try {
+        const body = await req.json();
+        memberId = body.memberId;
+      } catch (e) {}
+    }
+
+    if (!memberId) {
+      return NextResponse.json({ error: 'memberId is required' }, { status: 400 });
+    }
+
+    // Cascade delete member collections and member
+    await prisma.memberCollection.deleteMany({ where: { memberId } }).catch(() => {});
+    await prisma.member.delete({ where: { id: memberId } });
+
+    return NextResponse.json({ success: true, message: 'Member deleted successfully' });
+  } catch (error: any) {
+    console.error('Delete member error:', error);
+    return NextResponse.json({ error: 'Failed to delete member' }, { status: 500 });
   }
 }

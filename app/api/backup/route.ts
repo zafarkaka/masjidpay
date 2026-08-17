@@ -307,12 +307,27 @@ export async function POST(req: NextRequest) {
     // 7. Restore Payrolls
     if (Array.isArray(payload.payrolls)) {
       for (const p of payload.payrolls) {
-        if (!p.staffName || !p.netSalary) continue;
+        if (!p.staffName) continue;
+        let staffRecord = await prisma.staff.findFirst({
+          where: { masjidId, name: p.staffName },
+        });
+        if (!staffRecord) {
+          staffRecord = await prisma.staff.create({
+            data: {
+              masjidId,
+              name: p.staffName,
+              roleTitle: 'Mosque Staff',
+              monthlySalary: Number(p.netSalary || p.amount || 0),
+            },
+          });
+        }
+
         await prisma.payroll.create({
           data: {
             masjidId,
+            staffId: staffRecord.id,
             staffName: p.staffName,
-            roleTitle: p.roleTitle || 'Staff',
+            amount: Number(p.amount || p.netSalary || 0),
             monthPaid: p.monthPaid || 'Restored Month',
             netSalary: Number(p.netSalary || p.amount || 0),
             workingDays: Number(p.workingDays || 30),

@@ -25,11 +25,12 @@ export default function ExpensesPage() {
     description: '',
   });
 
-  const masjidId = 'jama-masjid';
+  const [formError, setFormError] = useState('');
+  const [masjidId, setMasjidId] = useState('jama-masjid');
 
-  const loadExpenses = () => {
+  const loadExpenses = (targetMasjid = masjidId) => {
     setLoading(true);
-    fetch(`/api/expenses?masjidId=${masjidId}`)
+    fetch(`/api/expenses?masjidId=${targetMasjid}`)
       .then((res) => res.json())
       .then((data) => {
         setExpenses(data.expenses || []);
@@ -39,16 +40,25 @@ export default function ExpensesPage() {
   };
 
   useEffect(() => {
-    loadExpenses();
-
-    fetch(`/api/funds?masjidId=${masjidId}`)
-      .then((res) => res.json())
-      .then((data) => setFunds(data.funds || []));
+    fetch('/api/auth/me')
+      .then((r) => r.json())
+      .then((d) => {
+        const mId = d?.user?.masjidId || d?.user?.masjidSlug || 'jama-masjid';
+        setMasjidId(mId);
+        loadExpenses(mId);
+        fetch(`/api/funds?masjidId=${mId}`)
+          .then((res) => res.json())
+          .then((data) => setFunds(data.funds || []));
+      })
+      .catch(() => {
+        loadExpenses();
+      });
   }, []);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     setActionLoading(true);
+    setFormError('');
 
     try {
       // Fetch default categories & funds if missing
@@ -58,10 +68,17 @@ export default function ExpensesPage() {
       const res = await fetch('/api/expenses', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, masjidId, fundId: fId, categoryId: cId }),
+        body: JSON.stringify({
+          ...form,
+          masjidId,
+          fundId: fId,
+          categoryId: cId,
+        }),
       });
 
-      if (res.ok) {
+      const data = await res.json();
+
+      if (res.ok && (data.success || data.expense)) {
         setShowModal(false);
         setForm({
           title: '',
@@ -74,9 +91,11 @@ export default function ExpensesPage() {
           description: '',
         });
         loadExpenses();
+      } else {
+        setFormError(data.error || 'Failed to record expense. Please try again.');
       }
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      setFormError(err.message || 'An error occurred while saving the expense.');
     } finally {
       setActionLoading(false);
     }
@@ -191,6 +210,11 @@ export default function ExpensesPage() {
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
             <h3 className="text-lg font-bold text-slate-900">Record New Expense</h3>
+            {formError && (
+              <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold rounded-xl">
+                {formError}
+              </div>
+            )}
             <form onSubmit={handleCreate} className="space-y-3">
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Expense Title *</label>

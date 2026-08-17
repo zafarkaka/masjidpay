@@ -122,8 +122,6 @@ export async function ensureDatabaseTables(prisma: PrismaClient) {
           { masjidId: jamaMasjid.id, name: 'Ramadan & Iftar Expenses' },
         ],
       });
-
-      });
     }
 
     isInitialized = true;
