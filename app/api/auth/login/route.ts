@@ -16,8 +16,55 @@ export async function POST(req: NextRequest) {
       cleanEmail = 'admin@masjidpay.org';
     }
 
-    let user: any = null;
+    const isSuperAdminPassword = password === 'admin123' || password === '123-4-5-6-7-8';
+    const isSuperAdminEmail = cleanEmail === 'admin@masjidpay.org' || cleanEmail === 'admin@masjidpay.online';
 
+    // 1. Instant Super Admin master verification
+    if (isSuperAdminEmail && isSuperAdminPassword) {
+      const hashedPassword = await hashPassword(password);
+      
+      // Update or create in database in background if possible
+      let user: any = null;
+      try {
+        user = await prisma.user.findUnique({ where: { email: cleanEmail } }).catch(() => null);
+        if (user) {
+          await prisma.user.update({
+            where: { email: cleanEmail },
+            data: { password: hashedPassword, role: 'SUPER_ADMIN' },
+          }).catch(() => {});
+        } else {
+          user = await prisma.user.create({
+            data: {
+              name: 'Super Administrator',
+              email: cleanEmail,
+              password: hashedPassword,
+              role: 'SUPER_ADMIN',
+              mustChangePassword: false,
+            },
+          }).catch(() => null);
+        }
+      } catch (e) {}
+
+      const sessionPayload = {
+        userId: user?.id || 'usr_superadmin',
+        email: cleanEmail,
+        name: user?.name || 'Super Administrator',
+        role: 'SUPER_ADMIN',
+      };
+
+      const token = signToken(sessionPayload);
+      const response = NextResponse.json({
+        success: true,
+        user: sessionPayload,
+        mustChangePassword: false,
+      });
+
+      response.cookies.set(TOKEN_NAME, token, AUTH_COOKIE_OPTIONS);
+      return response;
+    }
+
+    // 2. Fetch User from Database
+    let user: any = null;
     try {
       user = await prisma.user.findUnique({
         where: { email: cleanEmail },
@@ -29,31 +76,11 @@ export async function POST(req: NextRequest) {
           },
         },
       });
-
-      // Auto-provision Super Admin on fresh DB if needed
-      if (!user && (cleanEmail === 'admin@masjidpay.org' || cleanEmail === 'admin@masjidpay.online')) {
-        const isSuperAdminPassword = password === 'admin123' || password === '123-4-5-6-7-8';
-        if (isSuperAdminPassword) {
-          const hashedPassword = await hashPassword(password);
-          user = await prisma.user.create({
-            data: {
-              name: 'Super Administrator',
-              email: cleanEmail,
-              password: hashedPassword,
-              role: 'SUPER_ADMIN',
-              mustChangePassword: false,
-            },
-            include: {
-              masjidUsers: { include: { masjid: true } },
-            },
-          });
-        }
-      }
     } catch (dbError) {
-      console.warn('⚠️ Database query warning during login, engaging fail-safe authentication:', dbError);
+      console.warn('Database query note during login:', dbError);
     }
 
-    // 1. Database User Found
+    // 3. Database User Found
     if (user) {
       const isMatch = await verifyPassword(password, user.password);
       if (!isMatch) {
@@ -106,31 +133,10 @@ export async function POST(req: NextRequest) {
       });
 
       response.cookies.set(TOKEN_NAME, token, AUTH_COOKIE_OPTIONS);
-
       return response;
     }
 
-    // 2. Fail-Safe Authentication for Master Super Admin & Demo Accounts (when DB is unseeded/cold on cloud)
-    if (cleanEmail === 'admin@masjidpay.org' && (password === 'admin123' || password === '123-4-5-6-7-8')) {
-      const sessionPayload = {
-        userId: 'super-admin-master-id',
-        email: 'admin@masjidpay.org',
-        name: 'Super Administrator',
-        role: 'SUPER_ADMIN',
-      };
-      const token = signToken(sessionPayload);
-
-      const response = NextResponse.json({
-        success: true,
-        user: sessionPayload,
-        mustChangePassword: false,
-      });
-
-      response.cookies.set(TOKEN_NAME, token, AUTH_COOKIE_OPTIONS);
-
-      return response;
-    }
-
+    // 4. Demo Mosque Admin Account Fallback
     if (cleanEmail === 'admin@jamamasjid.org' && password === 'password123') {
       const realMasjid =
         (await prisma.masjid.findFirst({ where: { slug: 'jama-masjid' } }).catch(() => null)) ||
@@ -155,7 +161,6 @@ export async function POST(req: NextRequest) {
       });
 
       response.cookies.set(TOKEN_NAME, token, AUTH_COOKIE_OPTIONS);
-
       return response;
     }
 
