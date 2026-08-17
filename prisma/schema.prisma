@@ -51,6 +51,7 @@ model Masjid {
   status          String       @default("PENDING") // PENDING, APPROVED, REJECTED, SUSPENDED, ACTIVE, ARCHIVED
   rejectionReason String?
   openingBalance  Float        @default(0)
+  openingCashBalance Float     @default(0)
   bankName        String?
   bankAccNo       String?
   bankIfsc        String?
@@ -86,6 +87,8 @@ model Masjid {
   rentalShops         RentalShop[]
   rentalPayments      RentalPayment[]
   documents           Document[]
+  bankAccounts        BankAccount[]
+  bankTransactions    BankTransaction[]
 }
 
 model MasjidUser {
@@ -571,3 +574,43 @@ model Setting {
 
   @@unique([masjidId, key])
 }
+
+model BankAccount {
+  id             String            @id @default(uuid())
+  masjidId       String
+  bankName       String            // e.g. "State Bank of India", "HDFC Bank"
+  accountName    String?           // e.g. "Main Operating Account"
+  accountNumber  String            // e.g. "38920194821" (will be masked in UI)
+  ifscCode       String?
+  branchName     String?
+  financialYear  String            @default("2026-2027")
+  openingBalance Float             @default(0)
+  currentBalance Float             @default(0)
+  status         String            @default("ACTIVE")
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  masjid         Masjid            @relation(fields: [masjidId], references: [id], onDelete: Cascade)
+  transactions   BankTransaction[]
+}
+
+model BankTransaction {
+  id             String       @id @default(uuid())
+  masjidId       String
+  bankAccountId  String
+  type           String       // "CASH_DEPOSIT", "CHEQUE_DEPOSIT", "WITHDRAWAL"
+  amount         Float
+  date           DateTime     @default(now())
+  chequeNo       String?
+  chequeDate     DateTime?
+  referenceNo    String?
+  notes          String?
+  financialYear  String       @default("2026-2027")
+  isVoided       Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  masjid         Masjid       @relation(fields: [masjidId], references: [id], onDelete: Cascade)
+  bankAccount    BankAccount  @relation(fields: [bankAccountId], references: [id], onDelete: Cascade)
+}
+

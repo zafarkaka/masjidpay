@@ -155,6 +155,29 @@ export async function GET(req: NextRequest) {
     const salaryPaid = payrollsMonth._sum.amount || 0;
     const salaryPending = Math.max(0, salaryBudget - salaryPaid);
 
+    const [bankAccounts, cashDepositsAgg] = await Promise.all([
+      prisma.bankAccount.findMany({ where: { masjidId, status: 'ACTIVE' } }).catch(() => []),
+      prisma.bankTransaction.aggregate({ where: { masjidId, type: 'CASH_DEPOSIT', isVoided: false }, _sum: { amount: true } }).catch(() => ({ _sum: { amount: 0 } })),
+    ]);
+
+    const openingCash = Number(masjid.openingCashBalance || masjid.openingBalance || 0);
+    const totalOpeningBank = bankAccounts.reduce((sum, b) => sum + (Number(b.openingBalance) || 0), 0);
+    const totalBankBalance = bankAccounts.reduce((sum, b) => sum + (Number(b.currentBalance) || 0), 0);
+
+    // Cash In Hand = Opening Cash + Cash Inflows - Cash Outflows - Cash Deposited to Bank
+    const [cashDonations, cashMembers, cashIncome, cashExpenses, cashPayroll] = await Promise.all([
+      prisma.donation.aggregate({ where: { masjidId, paymentMethod: 'CASH', isVoided: false }, _sum: { amount: true } }).catch(() => ({ _sum: { amount: 0 } })),
+      prisma.memberCollection.aggregate({ where: { masjidId, paymentMethod: 'CASH' }, _sum: { amount: true } }).catch(() => ({ _sum: { amount: 0 } })),
+      prisma.income.aggregate({ where: { masjidId, paymentMethod: 'CASH', isVoided: false }, _sum: { amount: true } }).catch(() => ({ _sum: { amount: 0 } })),
+      prisma.expense.aggregate({ where: { masjidId, paymentMethod: 'CASH', isVoided: false }, _sum: { amount: true } }).catch(() => ({ _sum: { amount: 0 } })),
+      prisma.payroll.aggregate({ where: { masjidId, paymentMethod: 'CASH' }, _sum: { amount: true } }).catch(() => ({ _sum: { amount: 0 } })),
+    ]);
+
+    const cashInflows = (cashDonations._sum.amount || 0) + (cashMembers._sum.amount || 0) + (cashIncome._sum.amount || 0);
+    const cashOutflows = (cashExpenses._sum.amount || 0) + (cashPayroll._sum.amount || 0);
+    const cashDeposited = cashDepositsAgg._sum.amount || 0;
+    const cashInHand = Math.max(0, openingCash + cashInflows - cashOutflows - cashDeposited);
+
     const insights = await generateFinancialInsights(masjidId).catch(() => []);
 
     return NextResponse.json({
@@ -165,12 +188,19 @@ export async function GET(req: NextRequest) {
         status: masjid.status,
         currency: masjid.currency,
         openingBalance: masjid.openingBalance,
+        openingCashBalance: openingCash,
+        financialYear: masjid.financialYear || '2026-2027',
       },
       kpis: {
         totalIncome: overallTotalIncome,
         totalExpenses: overallTotalExpenses,
         currentBalance: netBalance,
         netBalance,
+        totalBankBalance,
+        cashInHand,
+        openingCashBalance: openingCash,
+        openingBankBalance: totalOpeningBank,
+        totalLiquidFunds: totalBankBalance + cashInHand,
         thisMonthDonations: thisMonthInflows,
         monthIncome: monthIncome._sum.amount || 0,
         memberCollectionTotal: memberCollectionsSum,
@@ -180,6 +210,13 @@ export async function GET(req: NextRequest) {
         staffCount: activeStaffCount,
         monthlyPayroll: salaryPaid,
       },
+      bankAccounts: bankAccounts.map((b) => ({
+        id: b.id,
+        bankName: b.bankName,
+        accountName: b.accountName,
+        accountNumber: b.accountNumber,
+        currentBalance: b.currentBalance,
+      })),
       memberOverview: {
         totalMembers: totalMembersCount,
         paidMembers: paidMembersCount,

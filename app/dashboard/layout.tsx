@@ -106,6 +106,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       items: [{ label: 'Mosque Expenses', href: '/dashboard/expenses', icon: 'fa-receipt' }],
     },
     {
+      group: 'FINANCE',
+      items: [
+        { label: 'Bank & Cash Deposits', href: '/dashboard/finance', icon: 'fa-building-columns' },
+        { label: 'Opening Balances', href: '/dashboard/finance/opening-balance', icon: 'fa-scale-balanced' },
+        { label: 'Monthly Finance Report', href: '/dashboard/finance/reports', icon: 'fa-file-invoice-dollar' },
+      ],
+    },
+    {
       group: 'MONTHLY MEMBERS',
       items: [
         { label: 'Monthly Members', href: '/dashboard/monthly-members?tab=directory', icon: 'fa-users' },

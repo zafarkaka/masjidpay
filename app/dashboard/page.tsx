@@ -114,6 +114,44 @@ export default function DashboardPage() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* TOTAL BANK BALANCE */}
+          <div className="bg-white border border-slate-200/90 rounded-3xl p-5 shadow-xs hover:border-emerald-300 transition space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center text-base">
+                <i className="fas fa-building-columns"></i>
+              </div>
+              <Link href="/dashboard/finance" className="text-[10px] font-bold text-emerald-700 hover:underline">
+                Manage Banks →
+              </Link>
+            </div>
+            <div>
+              <span className="text-2xl font-black text-slate-900 block">
+                IN ₹{(kpis.totalBankBalance || 0).toLocaleString('en-IN')}
+              </span>
+              <span className="text-xs font-bold text-slate-600 block mt-0.5">Total Bank Balance</span>
+              <span className="text-[11px] font-semibold text-emerald-700 block mt-0.5">All mosque accounts</span>
+            </div>
+          </div>
+
+          {/* CASH IN HAND (HAND BALANCE) */}
+          <div className="bg-white border border-slate-200/90 rounded-3xl p-5 shadow-xs hover:border-amber-300 transition space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center text-base">
+                <i className="fas fa-hand-holding-dollar"></i>
+              </div>
+              <Link href="/dashboard/finance/opening-balance" className="text-[10px] font-bold text-amber-700 hover:underline">
+                Opening Balances →
+              </Link>
+            </div>
+            <div>
+              <span className="text-2xl font-black text-slate-900 block">
+                IN ₹{(kpis.cashInHand || 0).toLocaleString('en-IN')}
+              </span>
+              <span className="text-xs font-bold text-slate-600 block mt-0.5">Cash in Hand (Hand Balance)</span>
+              <span className="text-[11px] font-semibold text-slate-400 block mt-0.5">Physical mosque cash</span>
+            </div>
+          </div>
+
           {/* TOTAL INCOME */}
           <div className="bg-white border border-slate-200/90 rounded-3xl p-5 shadow-xs hover:border-emerald-300 transition space-y-3">
             <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center text-base">
@@ -140,35 +178,6 @@ export default function DashboardPage() {
               <span className="text-xs font-bold text-slate-600 block mt-0.5">Total Expenses</span>
               <span className="text-[11px] font-semibold text-rose-600 block mt-0.5">
                 IN ₹{(kpis.totalExpenses || 0).toLocaleString('en-IN')} this month
-              </span>
-            </div>
-          </div>
-
-          {/* NET BALANCE */}
-          <div className="bg-white border border-slate-200/90 rounded-3xl p-5 shadow-xs hover:border-emerald-300 transition space-y-3">
-            <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center text-base">
-              <i className="fas fa-wallet"></i>
-            </div>
-            <div>
-              <span className="text-2xl font-black text-slate-900 block">
-                IN ₹{netBalance.toLocaleString('en-IN')}
-              </span>
-              <span className="text-xs font-bold text-slate-600 block mt-0.5">Net Balance</span>
-            </div>
-          </div>
-
-          {/* MONTHLY MEMBER COLLECTION */}
-          <div className="bg-white border border-slate-200/90 rounded-3xl p-5 shadow-xs hover:border-amber-300 transition space-y-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center text-base">
-              <i className="fas fa-indian-rupee-sign"></i>
-            </div>
-            <div>
-              <span className="text-2xl font-black text-slate-900 block">
-                IN ₹{(kpis.memberCollectionTotal || memberOverview.collected || 0).toLocaleString('en-IN')}
-              </span>
-              <span className="text-xs font-bold text-slate-600 block mt-0.5">Monthly Member Collection</span>
-              <span className="text-[11px] font-semibold text-slate-400 block mt-0.5">
-                IN ₹{(kpis.memberCollectionTotal || memberOverview.collected || 0).toLocaleString('en-IN')} this month
               </span>
             </div>
           </div>
