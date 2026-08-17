@@ -11,8 +11,9 @@ export async function GET(req: NextRequest) {
     const masjidIdParam = searchParams.get('masjidId');
     const bankAccountId = searchParams.get('bankAccountId');
     const type = searchParams.get('type');
-    const month = searchParams.get('month'); // "YYYY-MM" or "MM"
-    const year = searchParams.get('year'); // "YYYY"
+    const month = searchParams.get('month'); // "1" to "12"
+    const year = searchParams.get('year'); // "2026"
+    const financialYear = searchParams.get('financialYear');
 
     let session: any = null;
     try {
@@ -24,21 +25,24 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({
         transactions: [],
         summary: {
-          totalBankBalance: 0,
-          cashInHand: 0,
-          totalCashDeposits: 0,
-          totalChequeDeposits: 0,
-          totalDeposits: 0,
-          totalWithdrawals: 0,
           openingCashBalance: 0,
           openingBankBalance: 0,
+          totalCashDeposited: 0,
+          totalCashWithdrawn: 0,
+          totalChequeDeposits: 0,
+          totalIncome: 0,
+          totalExpenses: 0,
+          currentCashInHand: 0,
+          currentBankBalance: 0,
+          actualTotalBalance: 0,
         },
       });
     }
 
     const masjidId = masjid.id;
+    const selectedFY = financialYear || masjid.financialYear || '2026-2027';
 
-    // Build filter
+    // Build query filter
     const whereClause: any = {
       masjidId,
       isVoided: false,
@@ -65,14 +69,25 @@ export async function GET(req: NextRequest) {
     const [
       transactions,
       bankAccounts,
-      totalCashInflowsDonations,
-      totalCashInflowsMembers,
-      totalCashInflowsIncome,
-      totalCashOutflowsExpenses,
-      totalCashOutflowsPayrolls,
-      allCashDeposits,
-      allChequeDeposits,
-      allWithdrawals,
+      fyRecord,
+      // Total Inflows (All sources)
+      donationsAgg,
+      membersAgg,
+      incomesAgg,
+      // Cash Inflows
+      donationsCashAgg,
+      membersCashAgg,
+      incomesCashAgg,
+      // Total Expenses (All sources)
+      expensesAgg,
+      payrollsAgg,
+      // Cash Expenses
+      expensesCashAgg,
+      payrollsCashAgg,
+      // Bank Transactions
+      cashDepositsAgg,
+      chequeDepositsAgg,
+      withdrawalsAgg,
     ] = await Promise.all([
       prisma.bankTransaction.findMany({
         where: whereClause,
@@ -81,78 +96,86 @@ export async function GET(req: NextRequest) {
       }),
       prisma.bankAccount.findMany({
         where: { masjidId, status: 'ACTIVE' },
+        include: { yearlyOpenings: true },
       }),
-      // Cash Inflows:
-      prisma.donation.aggregate({
-        where: { masjidId, paymentMethod: 'CASH', isVoided: false },
-        _sum: { amount: true },
+      prisma.masjidFinancialYear.findUnique({
+        where: { masjidId_year: { masjidId, year: selectedFY } },
       }),
-      prisma.memberCollection.aggregate({
-        where: { masjidId, paymentMethod: 'CASH' },
-        _sum: { amount: true },
-      }),
-      prisma.income.aggregate({
-        where: { masjidId, paymentMethod: 'CASH', isVoided: false },
-        _sum: { amount: true },
-      }),
-      // Cash Outflows:
-      prisma.expense.aggregate({
-        where: { masjidId, paymentMethod: 'CASH', isVoided: false },
-        _sum: { amount: true },
-      }),
-      prisma.payroll.aggregate({
-        where: { masjidId, paymentMethod: 'CASH' },
-        _sum: { amount: true },
-      }),
-      // Deposits & Withdrawals:
-      prisma.bankTransaction.aggregate({
-        where: { masjidId, type: 'CASH_DEPOSIT', isVoided: false },
-        _sum: { amount: true },
-      }),
-      prisma.bankTransaction.aggregate({
-        where: { masjidId, type: 'CHEQUE_DEPOSIT', isVoided: false },
-        _sum: { amount: true },
-      }),
-      prisma.bankTransaction.aggregate({
-        where: { masjidId, type: 'WITHDRAWAL', isVoided: false },
-        _sum: { amount: true },
-      }),
+      // Inflows
+      prisma.donation.aggregate({ where: { masjidId, isVoided: false }, _sum: { amount: true } }),
+      prisma.memberCollection.aggregate({ where: { masjidId }, _sum: { amount: true } }),
+      prisma.income.aggregate({ where: { masjidId, isVoided: false }, _sum: { amount: true } }),
+      // Cash Inflows
+      prisma.donation.aggregate({ where: { masjidId, paymentMethod: 'CASH', isVoided: false }, _sum: { amount: true } }),
+      prisma.memberCollection.aggregate({ where: { masjidId, paymentMethod: 'CASH' }, _sum: { amount: true } }),
+      prisma.income.aggregate({ where: { masjidId, paymentMethod: 'CASH', isVoided: false }, _sum: { amount: true } }),
+      // Outflows
+      prisma.expense.aggregate({ where: { masjidId, isVoided: false }, _sum: { amount: true } }),
+      prisma.payroll.aggregate({ where: { masjidId }, _sum: { amount: true } }),
+      // Cash Outflows
+      prisma.expense.aggregate({ where: { masjidId, paymentMethod: 'CASH', isVoided: false }, _sum: { amount: true } }),
+      prisma.payroll.aggregate({ where: { masjidId, paymentMethod: 'CASH' }, _sum: { amount: true } }),
+      // Bank Transactions
+      prisma.bankTransaction.aggregate({ where: { masjidId, type: 'CASH_DEPOSIT', isVoided: false }, _sum: { amount: true } }),
+      prisma.bankTransaction.aggregate({ where: { masjidId, type: 'CHEQUE_DEPOSIT', isVoided: false }, _sum: { amount: true } }),
+      prisma.bankTransaction.aggregate({ where: { masjidId, type: 'WITHDRAWAL', isVoided: false }, _sum: { amount: true } }),
     ]);
 
-    const openingCash = Number(masjid.openingCashBalance || masjid.openingBalance || 0);
-    const openingBank = bankAccounts.reduce((sum, b) => sum + (Number(b.openingBalance) || 0), 0);
-    const totalBankBalance = bankAccounts.reduce((sum, b) => sum + (Number(b.currentBalance) || 0), 0);
+    // 1. Opening Balances
+    const openingCash = fyRecord?.openingCash ?? Number(masjid.openingCashBalance || masjid.openingBalance || 0);
+    const openingBank = bankAccounts.reduce((sum, b) => {
+      const yearOpening = b.yearlyOpenings.find((y) => y.financialYear === selectedFY);
+      return sum + (yearOpening ? yearOpening.openingBalance : Number(b.openingBalance) || 0);
+    }, 0);
 
-    const cashInflows =
-      (totalCashInflowsDonations._sum.amount || 0) +
-      (totalCashInflowsMembers._sum.amount || 0) +
-      (totalCashInflowsIncome._sum.amount || 0);
+    // 2. Inflows & Outflows
+    const totalIncome = (donationsAgg._sum.amount || 0) + (membersAgg._sum.amount || 0) + (incomesAgg._sum.amount || 0);
+    const totalExpenses = (expensesAgg._sum.amount || 0) + (payrollsAgg._sum.amount || 0);
 
-    const cashOutflows =
-      (totalCashOutflowsExpenses._sum.amount || 0) +
-      (totalCashOutflowsPayrolls._sum.amount || 0);
+    const cashInflows = (donationsCashAgg._sum.amount || 0) + (membersCashAgg._sum.amount || 0) + (incomesCashAgg._sum.amount || 0);
+    const cashOutflows = (expensesCashAgg._sum.amount || 0) + (payrollsCashAgg._sum.amount || 0);
 
-    const totalCashDeposited = allCashDeposits._sum.amount || 0;
-    const totalChequeDeposited = allChequeDeposits._sum.amount || 0;
-    const totalWithdrawn = allWithdrawals._sum.amount || 0;
+    // 3. Bank Deposits & Withdrawals
+    const totalCashDeposited = cashDepositsAgg._sum.amount || 0;
+    const totalChequeDeposited = chequeDepositsAgg._sum.amount || 0;
+    const totalCashWithdrawn = withdrawalsAgg._sum.amount || 0;
 
-    // Cash In Hand = Opening Cash + Cash Inflows - Cash Outflows - Cash Deposited to Bank
-    const cashInHand = openingCash + cashInflows - cashOutflows - totalCashDeposited;
+    // 4. Current Balances
+    // Current Cash in Hand = Opening Cash + Cash Inflows - Cash Outflows - Cash Deposited to Bank + Cash Withdrawn from Bank
+    const currentCashInHand = openingCash + cashInflows - cashOutflows - totalCashDeposited + totalCashWithdrawn;
+
+    // Current Bank Balance = Sum of all active bank balances
+    const currentBankBalance = bankAccounts.reduce((sum, b) => sum + (Number(b.currentBalance) || 0), 0);
+
+    // Actual Total Balance = Current Cash in Hand + Current Bank Balance
+    const actualTotalBalance = Math.max(0, currentCashInHand) + currentBankBalance;
 
     return NextResponse.json({
       transactions,
-      bankAccounts,
+      bankAccounts: bankAccounts.map((b) => ({
+        id: b.id,
+        bankName: b.bankName,
+        accountName: b.accountName,
+        accountNumber: b.accountNumber,
+        ifscCode: b.ifscCode,
+        openingBalance: b.openingBalance,
+        currentBalance: b.currentBalance,
+      })),
       summary: {
-        totalBankBalance,
-        cashInHand: Math.max(0, cashInHand),
-        rawCashInHand: cashInHand,
-        totalCashDeposits: totalCashDeposited,
-        totalChequeDeposits: totalChequeDeposited,
-        totalDeposits: totalCashDeposited + totalChequeDeposited,
-        totalWithdrawals: totalWithdrawn,
+        financialYear: selectedFY,
         openingCashBalance: openingCash,
         openingBankBalance: openingBank,
-        totalLiquidFunds: totalBankBalance + Math.max(0, cashInHand),
+        totalOpeningBalance: openingCash + openingBank,
+        totalCashDeposited,
+        totalCashWithdrawn,
+        totalChequeDeposited,
+        totalDeposits: totalCashDeposited + totalChequeDeposited,
+        totalIncome,
+        totalExpenses,
+        currentCashInHand: Math.max(0, currentCashInHand),
+        rawCashInHand: currentCashInHand,
+        currentBankBalance,
+        actualTotalBalance,
       },
     });
   } catch (error: any) {
@@ -180,7 +203,7 @@ export async function POST(req: NextRequest) {
     const { bankAccountId, type, amount, date, chequeNo, chequeDate, referenceNo, notes } = body;
 
     if (!bankAccountId || !type || !amount) {
-      return NextResponse.json({ error: 'Bank Account, Deposit Type, and Amount are required' }, { status: 400 });
+      return NextResponse.json({ error: 'Bank Account, Transaction Type, and Amount are required' }, { status: 400 });
     }
 
     const numAmount = Number(amount);
@@ -215,14 +238,15 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // 2. Increment / decrement target Bank Account balance
+    // 2. Adjust target Bank Account balance
     if (type === 'WITHDRAWAL') {
+      // Cash withdrawal from bank reduces Bank Balance (and automatically increments Cash In Hand in calculations)
       await prisma.bankAccount.update({
         where: { id: bankAccount.id },
         data: { currentBalance: { decrement: numAmount } },
       });
     } else {
-      // CASH_DEPOSIT or CHEQUE_DEPOSIT adds to bank balance
+      // CASH_DEPOSIT or CHEQUE_DEPOSIT increments Bank Balance
       await prisma.bankAccount.update({
         where: { id: bankAccount.id },
         data: { currentBalance: { increment: numAmount } },
@@ -243,7 +267,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, transaction });
   } catch (error: any) {
-    console.error('Error creating deposit:', error);
-    return NextResponse.json({ error: 'Failed to record deposit' }, { status: 500 });
+    console.error('Error creating deposit/withdrawal:', error);
+    return NextResponse.json({ error: 'Failed to record transaction' }, { status: 500 });
   }
 }

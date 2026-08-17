@@ -155,16 +155,21 @@ export async function GET(req: NextRequest) {
     const salaryPaid = payrollsMonth._sum.amount || 0;
     const salaryPending = Math.max(0, salaryBudget - salaryPaid);
 
-    const [bankAccounts, cashDepositsAgg] = await Promise.all([
-      prisma.bankAccount.findMany({ where: { masjidId, status: 'ACTIVE' } }).catch(() => []),
+    const [bankAccounts, cashDepositsAgg, withdrawalsAgg, fyRecord] = await Promise.all([
+      prisma.bankAccount.findMany({ where: { masjidId, status: 'ACTIVE' }, include: { yearlyOpenings: true } }).catch(() => []),
       prisma.bankTransaction.aggregate({ where: { masjidId, type: 'CASH_DEPOSIT', isVoided: false }, _sum: { amount: true } }).catch(() => ({ _sum: { amount: 0 } })),
+      prisma.bankTransaction.aggregate({ where: { masjidId, type: 'WITHDRAWAL', isVoided: false }, _sum: { amount: true } }).catch(() => ({ _sum: { amount: 0 } })),
+      prisma.masjidFinancialYear.findUnique({ where: { masjidId_year: { masjidId, year: masjid.financialYear || '2026-2027' } } }).catch(() => null),
     ]);
 
-    const openingCash = Number(masjid.openingCashBalance || masjid.openingBalance || 0);
-    const totalOpeningBank = bankAccounts.reduce((sum, b) => sum + (Number(b.openingBalance) || 0), 0);
+    const openingCash = fyRecord?.openingCash ?? Number(masjid.openingCashBalance || masjid.openingBalance || 0);
+    const totalOpeningBank = bankAccounts.reduce((sum, b) => {
+      const yearOpening = b.yearlyOpenings?.find((y: any) => y.financialYear === (masjid.financialYear || '2026-2027'));
+      return sum + (yearOpening ? yearOpening.openingBalance : Number(b.openingBalance) || 0);
+    }, 0);
     const totalBankBalance = bankAccounts.reduce((sum, b) => sum + (Number(b.currentBalance) || 0), 0);
 
-    // Cash In Hand = Opening Cash + Cash Inflows - Cash Outflows - Cash Deposited to Bank
+    // Cash In Hand = Opening Cash + Cash Inflows - Cash Outflows - Cash Deposited to Bank + Cash Withdrawn from Bank
     const [cashDonations, cashMembers, cashIncome, cashExpenses, cashPayroll] = await Promise.all([
       prisma.donation.aggregate({ where: { masjidId, paymentMethod: 'CASH', isVoided: false }, _sum: { amount: true } }).catch(() => ({ _sum: { amount: 0 } })),
       prisma.memberCollection.aggregate({ where: { masjidId, paymentMethod: 'CASH' }, _sum: { amount: true } }).catch(() => ({ _sum: { amount: 0 } })),
@@ -176,7 +181,9 @@ export async function GET(req: NextRequest) {
     const cashInflows = (cashDonations._sum.amount || 0) + (cashMembers._sum.amount || 0) + (cashIncome._sum.amount || 0);
     const cashOutflows = (cashExpenses._sum.amount || 0) + (cashPayroll._sum.amount || 0);
     const cashDeposited = cashDepositsAgg._sum.amount || 0;
-    const cashInHand = Math.max(0, openingCash + cashInflows - cashOutflows - cashDeposited);
+    const cashWithdrawn = withdrawalsAgg._sum.amount || 0;
+    const cashInHand = Math.max(0, openingCash + cashInflows - cashOutflows - cashDeposited + cashWithdrawn);
+    const actualTotalBalance = cashInHand + totalBankBalance;
 
     const insights = await generateFinancialInsights(masjidId).catch(() => []);
 
@@ -194,13 +201,19 @@ export async function GET(req: NextRequest) {
       kpis: {
         totalIncome: overallTotalIncome,
         totalExpenses: overallTotalExpenses,
-        currentBalance: netBalance,
-        netBalance,
+        currentBalance: actualTotalBalance,
+        netBalance: actualTotalBalance,
+        actualTotalBalance,
         totalBankBalance,
+        currentBankBalance: totalBankBalance,
         cashInHand,
+        currentCashInHand: cashInHand,
         openingCashBalance: openingCash,
         openingBankBalance: totalOpeningBank,
-        totalLiquidFunds: totalBankBalance + cashInHand,
+        totalOpeningBalance: openingCash + totalOpeningBank,
+        cashDeposited,
+        cashWithdrawn,
+        totalLiquidFunds: actualTotalBalance,
         thisMonthDonations: thisMonthInflows,
         monthIncome: monthIncome._sum.amount || 0,
         memberCollectionTotal: memberCollectionsSum,

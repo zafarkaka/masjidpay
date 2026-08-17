@@ -6,9 +6,16 @@ import Link from 'next/link';
 export default function OpeningBalancePage() {
   const [loading, setLoading] = useState(true);
   const [financialYear, setFinancialYear] = useState('2026-2027');
+  const [previousFY, setPreviousFY] = useState('2025-2026');
   const [openingCashBalance, setOpeningCashBalance] = useState<string>('0');
   const [bankAccounts, setBankAccounts] = useState<any[]>([]);
   const [bankBalances, setBankBalances] = useState<{ [key: string]: string }>({});
+  const [previousYearClosing, setPreviousYearClosing] = useState<any>({
+    year: '2025-2026',
+    closingCash: 0,
+    closingBank: 0,
+    totalClosing: 0,
+  });
 
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
@@ -20,6 +27,12 @@ export default function OpeningBalancePage() {
       const res = await fetch(`/api/finance/opening-balance?financialYear=${financialYear}`);
       const data = await res.json();
 
+      if (data.previousFinancialYear) {
+        setPreviousFY(data.previousFinancialYear);
+      }
+      if (data.previousYearClosing) {
+        setPreviousYearClosing(data.previousYearClosing);
+      }
       if (data.openingCashBalance !== undefined) {
         setOpeningCashBalance(data.openingCashBalance.toString());
       }
@@ -49,6 +62,19 @@ export default function OpeningBalancePage() {
     }));
   };
 
+  const handleImportPreviousClosing = () => {
+    if (previousYearClosing) {
+      setOpeningCashBalance((previousYearClosing.closingCash || 0).toString());
+      // If previous bank breakdown exists
+      const map: { [key: string]: string } = {};
+      bankAccounts.forEach((b) => {
+        map[b.id] = (b.prevYearClosingBalance || 0).toString();
+      });
+      setBankBalances(map);
+      setSuccessMsg(`✓ Imported closing figures from FY ${previousFY} into FY ${financialYear} opening fields!`);
+    }
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
@@ -68,6 +94,7 @@ export default function OpeningBalancePage() {
           financialYear,
           openingCashBalance: Number(openingCashBalance || 0),
           bankOpeningBalances,
+          previousYearClosing,
         }),
       });
 
@@ -78,7 +105,7 @@ export default function OpeningBalancePage() {
         return;
       }
 
-      setSuccessMsg('Opening cash & bank balances updated successfully!');
+      setSuccessMsg(`Opening cash & bank balances for FY ${financialYear} saved successfully!`);
       fetchOpeningData();
     } catch (err: any) {
       setErrorMsg(err.message || 'Error occurred while saving');
@@ -109,13 +136,13 @@ export default function OpeningBalancePage() {
               Finance
             </Link>
             <span>/</span>
-            <span className="text-slate-800">Opening Balance</span>
+            <span className="text-slate-800">Opening Balance Setup</span>
           </div>
           <h1 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-            <i className="fas fa-scale-balanced text-emerald-800"></i> Financial Year Opening Balances
+            <i className="fas fa-scale-balanced text-emerald-800"></i> Financial Year Account Opening Balance
           </h1>
           <p className="text-xs text-slate-500 mt-1">
-            Set the baseline starting Cash and Bank balances for your chosen financial year.
+            Carry forward the previous financial year&apos;s closing balance as the starting opening balance for this year.
           </p>
         </div>
 
@@ -132,7 +159,7 @@ export default function OpeningBalancePage() {
       {/* SUCCESS / ERROR ALERTS */}
       {successMsg && (
         <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold rounded-2xl flex items-center justify-between">
-          <span>✓ {successMsg}</span>
+          <span>{successMsg}</span>
           <button onClick={() => setSuccessMsg('')} className="text-emerald-600 hover:text-emerald-900">✕</button>
         </div>
       )}
@@ -143,22 +170,48 @@ export default function OpeningBalancePage() {
         </div>
       )}
 
+      {/* PREVIOUS YEAR TO CURRENT YEAR TRANSITION BANNER */}
+      <div className="bg-gradient-to-r from-slate-900 via-emerald-950 to-slate-900 text-white rounded-3xl p-6 shadow-md space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 text-emerald-300 text-xs font-extrabold uppercase tracking-wider">
+              <i className="fas fa-arrow-right-arrow-left"></i>
+              <span>Financial Year Carry Forward</span>
+            </div>
+            <h2 className="text-lg font-black text-white mt-1">
+              FY {previousFY} Closing Balance → FY {financialYear} Opening Balance
+            </h2>
+            <p className="text-xs text-slate-300 mt-1">
+              Previous year closing: Cash: ₹{(previousYearClosing.closingCash || 0).toLocaleString('en-IN')} • Banks: ₹{(previousYearClosing.closingBank || 0).toLocaleString('en-IN')} (Total: ₹{(previousYearClosing.totalClosing || 0).toLocaleString('en-IN')})
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleImportPreviousClosing}
+            className="px-4 py-2.5 bg-emerald-700 hover:bg-emerald-600 text-white font-extrabold text-xs rounded-2xl shadow-sm transition flex items-center gap-2 shrink-0 self-start sm:self-center"
+          >
+            <i className="fas fa-wand-magic-sparkles"></i> Copy Prev Year Closing as Opening
+          </button>
+        </div>
+      </div>
+
       {/* SUMMARY OVERVIEW CARDS */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white border border-slate-200/90 rounded-3xl p-5 shadow-xs space-y-2">
           <div className="flex items-center justify-between text-amber-700">
-            <span className="text-[10px] font-black uppercase tracking-wider">Starting Cash Balance</span>
+            <span className="text-[10px] font-black uppercase tracking-wider">Opening Cash in Hand</span>
             <i className="fas fa-hand-holding-dollar text-base"></i>
           </div>
           <span className="text-2xl font-black text-slate-900 block">
             ₹{(Number(openingCashBalance) || 0).toLocaleString('en-IN')}
           </span>
-          <span className="text-[11px] font-semibold text-slate-400 block">Cash in hand baseline</span>
+          <span className="text-[11px] font-semibold text-slate-400 block">Starting physical cash</span>
         </div>
 
         <div className="bg-white border border-slate-200/90 rounded-3xl p-5 shadow-xs space-y-2">
           <div className="flex items-center justify-between text-emerald-800">
-            <span className="text-[10px] font-black uppercase tracking-wider">Starting Bank Balances</span>
+            <span className="text-[10px] font-black uppercase tracking-wider">Opening Bank Balances</span>
             <i className="fas fa-building-columns text-base"></i>
           </div>
           <span className="text-2xl font-black text-slate-900 block">
@@ -175,7 +228,7 @@ export default function OpeningBalancePage() {
           <span className="text-2xl font-black text-white block">
             ₹{totalCombinedOpening.toLocaleString('en-IN')}
           </span>
-          <span className="text-[11px] font-semibold text-emerald-200 block">Combined liquid baseline</span>
+          <span className="text-[11px] font-semibold text-emerald-200 block">Starting Total for FY {financialYear}</span>
         </div>
       </div>
 
@@ -184,8 +237,8 @@ export default function OpeningBalancePage() {
         {/* FINANCIAL YEAR SELECTOR */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-5 border-b border-slate-100">
           <div>
-            <label className="block text-xs font-black text-slate-900">Select Financial Year</label>
-            <p className="text-xs text-slate-500 mt-0.5">Opening balances will apply as the starting baseline for this financial year.</p>
+            <label className="block text-xs font-black text-slate-900">Active Financial Year</label>
+            <p className="text-xs text-slate-500 mt-0.5">Select the financial year to configure its opening baseline.</p>
           </div>
           <select
             value={financialYear}
@@ -207,7 +260,7 @@ export default function OpeningBalancePage() {
             </div>
             <div>
               <h3 className="text-sm font-black text-slate-900">Physical Cash in Hand (Starting Balance)</h3>
-              <p className="text-xs text-slate-500">Unbanked cash physically kept in the mosque vault or with the treasurer on Day 1.</p>
+              <p className="text-xs text-slate-500">Unbanked physical cash physically in mosque vault on Day 1 of FY {financialYear}.</p>
             </div>
           </div>
 
@@ -237,7 +290,7 @@ export default function OpeningBalancePage() {
               </div>
               <div>
                 <h3 className="text-sm font-black text-slate-900">Bank Accounts (Starting Balances)</h3>
-                <p className="text-xs text-slate-500">Enter the starting ledger balance for each active mosque bank account.</p>
+                <p className="text-xs text-slate-500">Starting bank balance for each active mosque bank account.</p>
               </div>
             </div>
 
@@ -277,7 +330,7 @@ export default function OpeningBalancePage() {
 
                   <div className="flex items-center gap-2">
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">
-                      Opening Balance:
+                      FY {financialYear} Opening:
                     </label>
                     <div className="relative">
                       <span className="absolute left-3 top-2 text-xs font-bold text-slate-400">₹</span>
@@ -317,7 +370,7 @@ export default function OpeningBalancePage() {
               </>
             ) : (
               <>
-                <i className="fas fa-floppy-disk"></i> Save Opening Balances
+                <i className="fas fa-floppy-disk"></i> Save FY {financialYear} Opening Balances
               </>
             )}
           </button>

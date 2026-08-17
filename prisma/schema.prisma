@@ -89,6 +89,7 @@ model Masjid {
   documents           Document[]
   bankAccounts        BankAccount[]
   bankTransactions    BankTransaction[]
+  financialYears      MasjidFinancialYear[]
 }
 
 model MasjidUser {
@@ -586,12 +587,13 @@ model BankAccount {
   financialYear  String            @default("2026-2027")
   openingBalance Float             @default(0)
   currentBalance Float             @default(0)
-  status         String            @default("ACTIVE")
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @updatedAt
+  status         String                     @default("ACTIVE")
+  createdAt      DateTime                   @default(now())
+  updatedAt      DateTime                   @updatedAt
 
-  masjid         Masjid            @relation(fields: [masjidId], references: [id], onDelete: Cascade)
+  masjid         Masjid                     @relation(fields: [masjidId], references: [id], onDelete: Cascade)
   transactions   BankTransaction[]
+  yearlyOpenings BankAccountYearlyOpening[]
 }
 
 model BankTransaction {
@@ -613,4 +615,37 @@ model BankTransaction {
   masjid         Masjid       @relation(fields: [masjidId], references: [id], onDelete: Cascade)
   bankAccount    BankAccount  @relation(fields: [bankAccountId], references: [id], onDelete: Cascade)
 }
+
+model MasjidFinancialYear {
+  id             String   @id @default(uuid())
+  masjidId       String
+  year           String   // e.g. "2024-2025", "2025-2026", "2026-2027"
+  openingCash    Float    @default(0)
+  closingCash    Float?   @default(0)
+  openingBank    Float    @default(0)
+  closingBank    Float?   @default(0)
+  isClosed       Boolean  @default(false)
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  masjid         Masjid   @relation(fields: [masjidId], references: [id], onDelete: Cascade)
+
+  @@unique([masjidId, year])
+}
+
+model BankAccountYearlyOpening {
+  id             String      @id @default(uuid())
+  bankAccountId  String
+  financialYear  String      // e.g. "2024-2025", "2025-2026", "2026-2027"
+  openingBalance Float       @default(0)
+  closingBalance Float?      @default(0)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  bankAccount    BankAccount @relation(fields: [bankAccountId], references: [id], onDelete: Cascade)
+
+  @@unique([bankAccountId, financialYear])
+}
+
 

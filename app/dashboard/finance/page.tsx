@@ -8,15 +8,18 @@ export default function FinanceDashboardPage() {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [bankAccounts, setBankAccounts] = useState<any[]>([]);
   const [summary, setSummary] = useState<any>({
-    totalBankBalance: 0,
-    cashInHand: 0,
-    totalCashDeposits: 0,
-    totalChequeDeposits: 0,
-    totalDeposits: 0,
-    totalWithdrawals: 0,
     openingCashBalance: 0,
     openingBankBalance: 0,
-    totalLiquidFunds: 0,
+    totalOpeningBalance: 0,
+    totalCashDeposited: 0,
+    totalCashWithdrawn: 0,
+    totalChequeDeposited: 0,
+    totalDeposits: 0,
+    totalIncome: 0,
+    totalExpenses: 0,
+    currentCashInHand: 0,
+    currentBankBalance: 0,
+    actualTotalBalance: 0,
   });
 
   // Filters
@@ -25,15 +28,15 @@ export default function FinanceDashboardPage() {
   const [searchQuery, setSearchQuery] = useState('');
 
   // Modals
-  const [showDepositModal, setShowDepositModal] = useState(false);
+  const [showTransactionModal, setShowTransactionModal] = useState(false);
   const [showBankModal, setShowBankModal] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<any>(null);
   const [editingBank, setEditingBank] = useState<any>(null);
 
   // Form states
-  const [depositForm, setDepositForm] = useState({
+  const [txForm, setTxForm] = useState({
     bankAccountId: '',
-    type: 'CASH_DEPOSIT', // CASH_DEPOSIT or CHEQUE_DEPOSIT
+    type: 'CASH_DEPOSIT', // CASH_DEPOSIT, CHEQUE_DEPOSIT, or WITHDRAWAL
     amount: '',
     date: new Date().toISOString().split('T')[0],
     chequeNo: '',
@@ -79,12 +82,12 @@ export default function FinanceDashboardPage() {
     fetchFinanceData();
   }, [selectedBank, selectedType]);
 
-  const handleOpenDepositModal = (tx: any = null) => {
+  const handleOpenTxModal = (tx: any = null, defaultType: string = 'CASH_DEPOSIT') => {
     setErrorMsg('');
     setSuccessMsg('');
     if (tx) {
       setEditingTransaction(tx);
-      setDepositForm({
+      setTxForm({
         bankAccountId: tx.bankAccountId || '',
         type: tx.type || 'CASH_DEPOSIT',
         amount: tx.amount?.toString() || '',
@@ -96,9 +99,9 @@ export default function FinanceDashboardPage() {
       });
     } else {
       setEditingTransaction(null);
-      setDepositForm({
+      setTxForm({
         bankAccountId: bankAccounts[0]?.id || '',
-        type: 'CASH_DEPOSIT',
+        type: defaultType,
         amount: '',
         date: new Date().toISOString().split('T')[0],
         chequeNo: '',
@@ -107,10 +110,10 @@ export default function FinanceDashboardPage() {
         notes: '',
       });
     }
-    setShowDepositModal(true);
+    setShowTransactionModal(true);
   };
 
-  const handleSaveDeposit = async (e: React.FormEvent) => {
+  const handleSaveTransaction = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
     setSubmitting(true);
@@ -124,18 +127,24 @@ export default function FinanceDashboardPage() {
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(depositForm),
+        body: JSON.stringify(txForm),
       });
 
       const data = await res.json();
       if (!res.ok) {
-        setErrorMsg(data.error || 'Failed to save deposit');
+        setErrorMsg(data.error || 'Failed to save transaction');
         setSubmitting(false);
         return;
       }
 
-      setShowDepositModal(false);
-      setSuccessMsg(editingTransaction ? 'Deposit updated successfully' : 'Deposit recorded successfully');
+      setShowTransactionModal(false);
+      setSuccessMsg(
+        editingTransaction
+          ? 'Transaction updated and balances recalculated'
+          : txForm.type === 'WITHDRAWAL'
+          ? 'Cash withdrawal recorded (Cash in Hand increased, Bank reduced)'
+          : 'Bank deposit recorded successfully'
+      );
       fetchFinanceData();
     } catch (err: any) {
       setErrorMsg(err.message || 'An error occurred');
@@ -144,20 +153,20 @@ export default function FinanceDashboardPage() {
     }
   };
 
-  const handleDeleteDeposit = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this deposit record? This will revert the bank and cash balances.')) return;
+  const handleDeleteTransaction = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this record? This will automatically restore bank and cash balances.')) return;
 
     try {
       const res = await fetch(`/api/finance/deposits/${id}`, { method: 'DELETE' });
       if (res.ok) {
-        setSuccessMsg('Deposit removed and balances adjusted');
+        setSuccessMsg('Record removed and balances restored');
         fetchFinanceData();
       } else {
         const d = await res.json();
-        alert(d.error || 'Failed to delete deposit');
+        alert(d.error || 'Failed to delete record');
       }
     } catch (err) {
-      alert('Error deleting deposit');
+      alert('Error deleting record');
     }
   };
 
@@ -246,10 +255,10 @@ export default function FinanceDashboardPage() {
             <span className="w-9 h-9 rounded-2xl bg-emerald-700 text-white flex items-center justify-center text-base shadow-sm">
               <i className="fas fa-building-columns"></i>
             </span>
-            <h1 className="text-xl font-black text-slate-900 tracking-tight">Finance & Bank Management</h1>
+            <h1 className="text-xl font-black text-slate-900 tracking-tight">Finance & Account Balances</h1>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Manage cash & cheque deposits, maintain separate bank balances, and track live cash-in-hand.
+            Manage cash & cheque deposits, record cash withdrawals from bank, and maintain audited actual balances.
           </p>
         </div>
 
@@ -264,7 +273,7 @@ export default function FinanceDashboardPage() {
             href="/dashboard/finance/reports"
             className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs rounded-xl transition flex items-center gap-1.5"
           >
-            <i className="fas fa-file-invoice-dollar text-emerald-700"></i> Monthly Report
+            <i className="fas fa-file-invoice-dollar text-emerald-700"></i> Monthly Statement
           </Link>
           <button
             onClick={() => handleOpenBankModal()}
@@ -273,10 +282,16 @@ export default function FinanceDashboardPage() {
             <i className="fas fa-plus"></i> Add Bank
           </button>
           <button
-            onClick={() => handleOpenDepositModal()}
+            onClick={() => handleOpenTxModal(null, 'WITHDRAWAL')}
+            className="px-3.5 py-2 bg-rose-700 hover:bg-rose-800 text-white font-extrabold text-xs rounded-xl transition flex items-center gap-1.5 shadow-xs"
+          >
+            <i className="fas fa-money-bill-transfer"></i> Withdraw Cash
+          </button>
+          <button
+            onClick={() => handleOpenTxModal(null, 'CASH_DEPOSIT')}
             className="px-4 py-2 bg-[#0F3D26] hover:bg-emerald-950 text-white font-extrabold text-xs rounded-xl transition flex items-center gap-1.5 shadow-md shadow-emerald-950/20"
           >
-            <i className="fas fa-money-bill-transfer"></i> Record Deposit
+            <i className="fas fa-arrow-down-to-bracket"></i> Record Deposit
           </button>
         </div>
       </div>
@@ -289,81 +304,123 @@ export default function FinanceDashboardPage() {
         </div>
       )}
 
-      {/* KPI STATS CARDS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* TOTAL BANK BALANCE */}
-        <div className="bg-white border border-slate-200/90 rounded-3xl p-5 shadow-xs space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center text-base">
-              <i className="fas fa-building-columns"></i>
-            </div>
-            <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
-              {bankAccounts.length} {bankAccounts.length === 1 ? 'Account' : 'Accounts'}
-            </span>
-          </div>
-          <div>
-            <span className="text-2xl font-black text-slate-900 block">
-              ₹{(summary.totalBankBalance || 0).toLocaleString('en-IN')}
-            </span>
-            <span className="text-xs font-bold text-slate-600 block mt-0.5">Total Bank Balance</span>
-            <span className="text-[11px] font-semibold text-emerald-700 block mt-0.5">All mosque accounts</span>
-          </div>
-        </div>
-
-        {/* CASH IN HAND (HAND BALANCE) */}
-        <div className="bg-white border border-slate-200/90 rounded-3xl p-5 shadow-xs space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center text-base">
+      {/* COMPREHENSIVE 9-METRIC STATS OVERVIEW */}
+      <div className="space-y-3">
+        <h2 className="text-xs font-extrabold uppercase tracking-widest text-slate-500">Live Financial Ledger Overview</h2>
+        
+        {/* ROW 1: OPENING BALANCES & ACTUAL CLOSING TOTAL */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="bg-white border border-slate-200/90 rounded-3xl p-5 shadow-xs space-y-2">
+            <div className="flex items-center justify-between text-amber-700">
+              <span className="text-[10px] font-bold uppercase tracking-wider">Opening Cash Balance</span>
               <i className="fas fa-hand-holding-dollar"></i>
             </div>
-            <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
-              Cash Balance
-            </span>
-          </div>
-          <div>
             <span className="text-2xl font-black text-slate-900 block">
-              ₹{(summary.cashInHand || 0).toLocaleString('en-IN')}
+              ₹{(summary.openingCashBalance || 0).toLocaleString('en-IN')}
             </span>
-            <span className="text-xs font-bold text-slate-600 block mt-0.5">Cash in Hand (Hand Balance)</span>
-            <span className="text-[11px] font-semibold text-slate-400 block mt-0.5">Physical cash remaining</span>
+            <span className="text-[11px] font-semibold text-slate-400 block">Starting physical cash</span>
+          </div>
+
+          <div className="bg-white border border-slate-200/90 rounded-3xl p-5 shadow-xs space-y-2">
+            <div className="flex items-center justify-between text-emerald-800">
+              <span className="text-[10px] font-bold uppercase tracking-wider">Opening Bank Balance</span>
+              <i className="fas fa-building-columns"></i>
+            </div>
+            <span className="text-2xl font-black text-slate-900 block">
+              ₹{(summary.openingBankBalance || 0).toLocaleString('en-IN')}
+            </span>
+            <span className="text-[11px] font-semibold text-slate-400 block">Across {bankAccounts.length} bank accounts</span>
+          </div>
+
+          <div className="bg-gradient-to-br from-[#0F3D26] to-emerald-950 text-white rounded-3xl p-5 shadow-sm space-y-2">
+            <div className="flex items-center justify-between text-emerald-300">
+              <span className="text-[10px] font-bold uppercase tracking-wider">Actual Total Balance</span>
+              <i className="fas fa-vault text-base"></i>
+            </div>
+            <span className="text-2xl font-black text-white block">
+              ₹{(summary.actualTotalBalance || 0).toLocaleString('en-IN')}
+            </span>
+            <span className="text-[11px] font-semibold text-emerald-200 block">Current Cash in Hand + Current Banks</span>
           </div>
         </div>
 
-        {/* TOTAL CASH DEPOSITS */}
-        <div className="bg-white border border-slate-200/90 rounded-3xl p-5 shadow-xs space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-700 flex items-center justify-center text-base">
+        {/* ROW 2: INFLOWS, OUTFLOWS, DEPOSITS, WITHDRAWALS */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* TOTAL INCOME */}
+          <div className="bg-white border border-slate-200/90 rounded-3xl p-5 shadow-xs space-y-2">
+            <div className="flex items-center justify-between text-emerald-700">
+              <span className="text-[10px] font-bold uppercase tracking-wider">Total Income</span>
+              <i className="fas fa-arrow-trend-up"></i>
+            </div>
+            <span className="text-2xl font-black text-emerald-800 block">
+              +₹{(summary.totalIncome || 0).toLocaleString('en-IN')}
+            </span>
+            <span className="text-[11px] font-semibold text-slate-400 block">All donations & receipts</span>
+          </div>
+
+          {/* TOTAL EXPENSES */}
+          <div className="bg-white border border-slate-200/90 rounded-3xl p-5 shadow-xs space-y-2">
+            <div className="flex items-center justify-between text-rose-700">
+              <span className="text-[10px] font-bold uppercase tracking-wider">Total Expenses</span>
+              <i className="fas fa-arrow-trend-down"></i>
+            </div>
+            <span className="text-2xl font-black text-rose-600 block">
+              -₹{(summary.totalExpenses || 0).toLocaleString('en-IN')}
+            </span>
+            <span className="text-[11px] font-semibold text-slate-400 block">Mosque expenses & payrolls</span>
+          </div>
+
+          {/* CASH DEPOSITED TO BANK */}
+          <div className="bg-white border border-slate-200/90 rounded-3xl p-5 shadow-xs space-y-2">
+            <div className="flex items-center justify-between text-blue-700">
+              <span className="text-[10px] font-bold uppercase tracking-wider">Cash Deposited to Bank</span>
+              <i className="fas fa-arrow-down-to-bracket"></i>
+            </div>
+            <span className="text-2xl font-black text-blue-700 block">
+              ₹{(summary.totalCashDeposited || 0).toLocaleString('en-IN')}
+            </span>
+            <span className="text-[11px] font-semibold text-slate-400 block">Cash moved from hand to bank</span>
+          </div>
+
+          {/* CASH WITHDRAWN FROM BANK */}
+          <div className="bg-white border border-slate-200/90 rounded-3xl p-5 shadow-xs space-y-2">
+            <div className="flex items-center justify-between text-purple-700">
+              <span className="text-[10px] font-bold uppercase tracking-wider">Cash Withdrawn from Bank</span>
+              <i className="fas fa-arrow-up-from-bracket"></i>
+            </div>
+            <span className="text-2xl font-black text-purple-700 block">
+              ₹{(summary.totalCashWithdrawn || 0).toLocaleString('en-IN')}
+            </span>
+            <span className="text-[11px] font-semibold text-slate-400 block">Bank moved into hand cash</span>
+          </div>
+        </div>
+
+        {/* ROW 3: CURRENT CASH IN HAND & CURRENT BANK BALANCE */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="bg-white border border-slate-200/90 rounded-3xl p-5 shadow-xs flex items-center justify-between">
+            <div>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700 block">Current Cash in Hand (Hand Balance)</span>
+              <span className="text-3xl font-black text-slate-900 block mt-1">
+                ₹{(summary.currentCashInHand || 0).toLocaleString('en-IN')}
+              </span>
+              <span className="text-xs text-slate-500 block mt-0.5">Physical cash currently available</span>
+            </div>
+            <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center text-xl">
               <i className="fas fa-money-bill-wave"></i>
             </div>
-            <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-800 border border-blue-200">
-              Cash Deposited
-            </span>
           </div>
-          <div>
-            <span className="text-2xl font-black text-slate-900 block">
-              ₹{(summary.totalCashDeposits || 0).toLocaleString('en-IN')}
-            </span>
-            <span className="text-xs font-bold text-slate-600 block mt-0.5">Total Cash Deposits</span>
-            <span className="text-[11px] font-semibold text-slate-400 block mt-0.5">Deposited to bank</span>
-          </div>
-        </div>
 
-        {/* TOTAL CHEQUE DEPOSITS */}
-        <div className="bg-white border border-slate-200/90 rounded-3xl p-5 shadow-xs space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="w-10 h-10 rounded-2xl bg-purple-50 text-purple-700 flex items-center justify-center text-base">
-              <i className="fas fa-money-check"></i>
+          <div className="bg-white border border-slate-200/90 rounded-3xl p-5 shadow-xs flex items-center justify-between">
+            <div>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 block">Current Bank Balance</span>
+              <span className="text-3xl font-black text-emerald-800 block mt-1">
+                ₹{(summary.currentBankBalance || 0).toLocaleString('en-IN')}
+              </span>
+              <span className="text-xs text-slate-500 block mt-0.5">Total across all active accounts</span>
             </div>
-            <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-purple-50 text-purple-800 border border-purple-200">
-              Cheque Deposits
-            </span>
-          </div>
-          <div>
-            <span className="text-2xl font-black text-slate-900 block">
-              ₹{(summary.totalChequeDeposits || 0).toLocaleString('en-IN')}
-            </span>
-            <span className="text-xs font-bold text-slate-600 block mt-0.5">Total Cheque Deposits</span>
-            <span className="text-[11px] font-semibold text-slate-400 block mt-0.5">Cleared into accounts</span>
+            <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-800 flex items-center justify-center text-xl">
+              <i className="fas fa-landmark"></i>
+            </div>
           </div>
         </div>
       </div>
@@ -371,7 +428,7 @@ export default function FinanceDashboardPage() {
       {/* BANK ACCOUNTS OVERVIEW CARDS */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-xs font-extrabold uppercase tracking-widest text-slate-500">Bank Accounts & Current Balances</h2>
+          <h2 className="text-xs font-extrabold uppercase tracking-widest text-slate-500">Bank Accounts & Ledger Balances</h2>
           <button
             onClick={() => handleOpenBankModal()}
             className="text-xs font-bold text-emerald-800 hover:text-emerald-950 flex items-center gap-1"
@@ -439,8 +496,8 @@ export default function FinanceDashboardPage() {
       <div className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-xs space-y-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h2 className="text-base font-black text-slate-900">Deposit & Withdrawal History</h2>
-            <p className="text-xs text-slate-500 mt-0.5">Real-time log of cash deposits, cheque deposits, and bank transactions.</p>
+            <h2 className="text-base font-black text-slate-900">Deposit & Cash Withdrawal History</h2>
+            <p className="text-xs text-slate-500 mt-0.5">Real-time audited log of cash deposits, cheque deposits, and bank withdrawals.</p>
           </div>
 
           {/* FILTERS & SEARCH */}
@@ -472,10 +529,10 @@ export default function FinanceDashboardPage() {
               onChange={(e) => setSelectedType(e.target.value)}
               className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:border-emerald-500"
             >
-              <option value="ALL">All Types</option>
+              <option value="ALL">All Transactions</option>
               <option value="CASH_DEPOSIT">Cash Deposit</option>
               <option value="CHEQUE_DEPOSIT">Cheque Deposit</option>
-              <option value="WITHDRAWAL">Withdrawal</option>
+              <option value="WITHDRAWAL">Cash Withdrawal</option>
             </select>
           </div>
         </div>
@@ -484,7 +541,7 @@ export default function FinanceDashboardPage() {
         {loading ? (
           <div className="py-12 text-center text-slate-400 text-xs flex items-center justify-center gap-2">
             <i className="fas fa-circle-notch fa-spin text-emerald-600 text-lg"></i>
-            <span>Loading finance records...</span>
+            <span>Loading finance ledger...</span>
           </div>
         ) : filteredTransactions.length === 0 ? (
           <div className="py-12 text-center text-slate-400 text-xs space-y-2">
@@ -498,7 +555,7 @@ export default function FinanceDashboardPage() {
                 <tr className="border-b border-slate-100 text-slate-400 text-[10px] font-black uppercase tracking-wider">
                   <th className="pb-3 px-3">Date</th>
                   <th className="pb-3 px-3">Type</th>
-                  <th className="pb-3 px-3">Target Bank</th>
+                  <th className="pb-3 px-3">Bank</th>
                   <th className="pb-3 px-3">Account Number</th>
                   <th className="pb-3 px-3">Cheque / Reference</th>
                   <th className="pb-3 px-3 text-right">Amount</th>
@@ -524,7 +581,7 @@ export default function FinanceDashboardPage() {
                       )}
                       {t.type === 'WITHDRAWAL' && (
                         <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-rose-50 text-rose-700 border border-rose-200">
-                          📤 Withdrawal
+                          📤 Cash Withdrawal
                         </span>
                       )}
                     </td>
@@ -555,14 +612,14 @@ export default function FinanceDashboardPage() {
                     <td className="py-3.5 px-3 text-center whitespace-nowrap">
                       <div className="flex items-center justify-center gap-1.5">
                         <button
-                          onClick={() => handleOpenDepositModal(t)}
+                          onClick={() => handleOpenTxModal(t)}
                           className="p-1.5 text-slate-400 hover:text-emerald-700 rounded-lg transition"
                           title="Edit"
                         >
                           <i className="fas fa-pen-to-square"></i>
                         </button>
                         <button
-                          onClick={() => handleDeleteDeposit(t.id)}
+                          onClick={() => handleDeleteTransaction(t.id)}
                           className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg transition"
                           title="Delete"
                         >
@@ -578,21 +635,21 @@ export default function FinanceDashboardPage() {
         )}
       </div>
 
-      {/* RECORD DEPOSIT MODAL */}
-      {showDepositModal && (
+      {/* RECORD DEPOSIT / WITHDRAWAL MODAL */}
+      {showTransactionModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-4 animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div>
                 <h3 className="text-base font-black text-slate-900">
-                  {editingTransaction ? 'Edit Deposit Record' : 'Record Bank Deposit'}
+                  {editingTransaction ? 'Edit Transaction Record' : 'Record Bank Transaction'}
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Deposit cash or cheques into your mosque bank account.
+                  Deposit or withdraw funds with automatic real-time balance synchronization.
                 </p>
               </div>
               <button
-                onClick={() => setShowDepositModal(false)}
+                onClick={() => setShowTransactionModal(false)}
                 className="text-slate-400 hover:text-slate-600 p-1 text-base"
               >
                 ✕
@@ -605,18 +662,18 @@ export default function FinanceDashboardPage() {
               </div>
             )}
 
-            <form onSubmit={handleSaveDeposit} className="space-y-3.5 text-xs font-bold text-slate-700">
-              {/* DEPOSIT TYPE TOGGLE */}
+            <form onSubmit={handleSaveTransaction} className="space-y-3.5 text-xs font-bold text-slate-700">
+              {/* TRANSACTION TYPE TOGGLE */}
               <div>
                 <label className="block mb-1.5 text-slate-500 uppercase tracking-wider text-[10px]">
-                  Deposit Type *
+                  Transaction Type *
                 </label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   <button
                     type="button"
-                    onClick={() => setDepositForm({ ...depositForm, type: 'CASH_DEPOSIT' })}
-                    className={`py-2 px-3 rounded-xl border text-xs font-extrabold flex items-center justify-center gap-1.5 transition ${
-                      depositForm.type === 'CASH_DEPOSIT'
+                    onClick={() => setTxForm({ ...txForm, type: 'CASH_DEPOSIT' })}
+                    className={`py-2 px-2.5 rounded-xl border text-xs font-extrabold flex items-center justify-center gap-1 transition ${
+                      txForm.type === 'CASH_DEPOSIT'
                         ? 'bg-emerald-800 text-white border-emerald-800 shadow-xs'
                         : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
                     }`}
@@ -625,14 +682,25 @@ export default function FinanceDashboardPage() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setDepositForm({ ...depositForm, type: 'CHEQUE_DEPOSIT' })}
-                    className={`py-2 px-3 rounded-xl border text-xs font-extrabold flex items-center justify-center gap-1.5 transition ${
-                      depositForm.type === 'CHEQUE_DEPOSIT'
+                    onClick={() => setTxForm({ ...txForm, type: 'CHEQUE_DEPOSIT' })}
+                    className={`py-2 px-2.5 rounded-xl border text-xs font-extrabold flex items-center justify-center gap-1 transition ${
+                      txForm.type === 'CHEQUE_DEPOSIT'
                         ? 'bg-purple-800 text-white border-purple-800 shadow-xs'
                         : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
                     }`}
                   >
                     <i className="fas fa-money-check"></i> Cheque Deposit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTxForm({ ...txForm, type: 'WITHDRAWAL' })}
+                    className={`py-2 px-2.5 rounded-xl border text-xs font-extrabold flex items-center justify-center gap-1 transition ${
+                      txForm.type === 'WITHDRAWAL'
+                        ? 'bg-rose-700 text-white border-rose-700 shadow-xs'
+                        : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                    }`}
+                  >
+                    <i className="fas fa-hand-holding-dollar"></i> Cash Withdraw
                   </button>
                 </div>
               </div>
@@ -640,12 +708,12 @@ export default function FinanceDashboardPage() {
               {/* TARGET BANK ACCOUNT */}
               <div>
                 <label className="block mb-1 text-slate-500 uppercase tracking-wider text-[10px]">
-                  Select Target Bank *
+                  Select Bank Account *
                 </label>
                 <select
                   required
-                  value={depositForm.bankAccountId}
-                  onChange={(e) => setDepositForm({ ...depositForm, bankAccountId: e.target.value })}
+                  value={txForm.bankAccountId}
+                  onChange={(e) => setTxForm({ ...txForm, bankAccountId: e.target.value })}
                   className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-emerald-500 font-semibold"
                 >
                   <option value="" disabled>Select Bank Account</option>
@@ -669,27 +737,27 @@ export default function FinanceDashboardPage() {
                     min="1"
                     required
                     placeholder="e.g. 15000"
-                    value={depositForm.amount}
-                    onChange={(e) => setDepositForm({ ...depositForm, amount: e.target.value })}
+                    value={txForm.amount}
+                    onChange={(e) => setTxForm({ ...txForm, amount: e.target.value })}
                     className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-emerald-500 font-bold"
                   />
                 </div>
                 <div>
                   <label className="block mb-1 text-slate-500 uppercase tracking-wider text-[10px]">
-                    Deposit Date *
+                    Date *
                   </label>
                   <input
                     type="date"
                     required
-                    value={depositForm.date}
-                    onChange={(e) => setDepositForm({ ...depositForm, date: e.target.value })}
+                    value={txForm.date}
+                    onChange={(e) => setTxForm({ ...txForm, date: e.target.value })}
                     className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-emerald-500 font-semibold"
                   />
                 </div>
               </div>
 
               {/* CHEQUE DETAILS IF CHEQUE TYPE */}
-              {depositForm.type === 'CHEQUE_DEPOSIT' && (
+              {txForm.type === 'CHEQUE_DEPOSIT' && (
                 <div className="p-3 bg-purple-50/60 border border-purple-100 rounded-2xl space-y-3">
                   <div className="grid grid-cols-2 gap-3">
                     <div>
@@ -700,9 +768,9 @@ export default function FinanceDashboardPage() {
                         type="text"
                         required
                         placeholder="e.g. 049182"
-                        value={depositForm.chequeNo}
-                        onChange={(e) => setDepositForm({ ...depositForm, chequeNo: e.target.value })}
-                        className="w-full p-2 bg-white border border-purple-200 rounded-xl focus:outline-none focus:border-purple-500 font-mono"
+                        value={txForm.chequeNo}
+                        onChange={(e) => setTxForm({ ...txForm, chequeNo: e.target.value })}
+                        className="w-full p-2 bg-white border border-purple-200 rounded-xl focus:outline-none focus:purple-500 font-mono"
                       />
                     </div>
                     <div>
@@ -711,9 +779,9 @@ export default function FinanceDashboardPage() {
                       </label>
                       <input
                         type="date"
-                        value={depositForm.chequeDate}
-                        onChange={(e) => setDepositForm({ ...depositForm, chequeDate: e.target.value })}
-                        className="w-full p-2 bg-white border border-purple-200 rounded-xl focus:outline-none focus:border-purple-500 font-semibold"
+                        value={txForm.chequeDate}
+                        onChange={(e) => setTxForm({ ...txForm, chequeDate: e.target.value })}
+                        className="w-full p-2 bg-white border border-purple-200 rounded-xl focus:outline-none focus:purple-500 font-semibold"
                       />
                     </div>
                   </div>
@@ -723,13 +791,13 @@ export default function FinanceDashboardPage() {
               {/* REFERENCE NO */}
               <div>
                 <label className="block mb-1 text-slate-500 uppercase tracking-wider text-[10px]">
-                  Deposit Slip / Ref No (Optional)
+                  Deposit Slip / Cheque Ref / Voucher No (Optional)
                 </label>
                 <input
                   type="text"
                   placeholder="e.g. SLIP-89201"
-                  value={depositForm.referenceNo}
-                  onChange={(e) => setDepositForm({ ...depositForm, referenceNo: e.target.value })}
+                  value={txForm.referenceNo}
+                  onChange={(e) => setTxForm({ ...txForm, referenceNo: e.target.value })}
                   className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-emerald-500 font-semibold"
                 />
               </div>
@@ -741,9 +809,13 @@ export default function FinanceDashboardPage() {
                 </label>
                 <textarea
                   rows={2}
-                  placeholder="e.g. Friday collection cash deposited by treasurer"
-                  value={depositForm.notes}
-                  onChange={(e) => setDepositForm({ ...depositForm, notes: e.target.value })}
+                  placeholder={
+                    txForm.type === 'WITHDRAWAL'
+                      ? 'e.g. Cash withdrawn from ATM/branch for monthly utility expenses'
+                      : 'e.g. Friday collection deposited by treasurer'
+                  }
+                  value={txForm.notes}
+                  onChange={(e) => setTxForm({ ...txForm, notes: e.target.value })}
                   className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-emerald-500 font-semibold"
                 ></textarea>
               </div>
@@ -752,7 +824,7 @@ export default function FinanceDashboardPage() {
               <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
                 <button
                   type="button"
-                  onClick={() => setShowDepositModal(false)}
+                  onClick={() => setShowTransactionModal(false)}
                   className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl"
                 >
                   Cancel
@@ -762,7 +834,7 @@ export default function FinanceDashboardPage() {
                   disabled={submitting}
                   className="px-5 py-2 bg-[#0F3D26] hover:bg-emerald-950 text-white font-extrabold rounded-xl shadow-md transition disabled:opacity-50"
                 >
-                  {submitting ? 'Saving...' : editingTransaction ? 'Update Deposit' : 'Confirm Deposit'}
+                  {submitting ? 'Saving...' : editingTransaction ? 'Update Record' : 'Confirm Transaction'}
                 </button>
               </div>
             </form>

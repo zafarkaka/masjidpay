@@ -113,8 +113,30 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* TOTAL BANK BALANCE */}
+        {/* ROW 1: PRIMARY CURRENT BALANCES & ACTUAL TOTAL */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {/* ACTUAL TOTAL BALANCE */}
+          <div className="bg-gradient-to-br from-[#0F3D26] to-emerald-950 text-white rounded-3xl p-5 shadow-sm space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="w-10 h-10 rounded-xl bg-white/10 text-emerald-300 flex items-center justify-center text-base">
+                <i className="fas fa-vault"></i>
+              </div>
+              <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-emerald-800/80 text-emerald-200 border border-emerald-700">
+                Liquid Net
+              </span>
+            </div>
+            <div>
+              <span className="text-3xl font-black text-white block">
+                IN ₹{(kpis.actualTotalBalance || kpis.currentBalance || 0).toLocaleString('en-IN')}
+              </span>
+              <span className="text-xs font-bold text-emerald-200 block mt-0.5">Actual Total Balance</span>
+              <span className="text-[11px] font-semibold text-emerald-300/80 block mt-0.5">
+                Current Cash (₹{(kpis.currentCashInHand || kpis.cashInHand || 0).toLocaleString('en-IN')}) + Banks (₹{(kpis.currentBankBalance || kpis.totalBankBalance || 0).toLocaleString('en-IN')})
+              </span>
+            </div>
+          </div>
+
+          {/* CURRENT BANK BALANCE */}
           <div className="bg-white border border-slate-200/90 rounded-3xl p-5 shadow-xs hover:border-emerald-300 transition space-y-3">
             <div className="flex items-center justify-between">
               <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center text-base">
@@ -126,60 +148,91 @@ export default function DashboardPage() {
             </div>
             <div>
               <span className="text-2xl font-black text-slate-900 block">
-                IN ₹{(kpis.totalBankBalance || 0).toLocaleString('en-IN')}
+                IN ₹{(kpis.currentBankBalance || kpis.totalBankBalance || 0).toLocaleString('en-IN')}
               </span>
-              <span className="text-xs font-bold text-slate-600 block mt-0.5">Total Bank Balance</span>
-              <span className="text-[11px] font-semibold text-emerald-700 block mt-0.5">All mosque accounts</span>
+              <span className="text-xs font-bold text-slate-600 block mt-0.5">Current Bank Balance</span>
+              <span className="text-[11px] font-semibold text-emerald-700 block mt-0.5">
+                Across all active accounts
+              </span>
             </div>
           </div>
 
-          {/* CASH IN HAND (HAND BALANCE) */}
+          {/* CURRENT CASH IN HAND */}
           <div className="bg-white border border-slate-200/90 rounded-3xl p-5 shadow-xs hover:border-amber-300 transition space-y-3">
             <div className="flex items-center justify-between">
               <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center text-base">
                 <i className="fas fa-hand-holding-dollar"></i>
               </div>
               <Link href="/dashboard/finance/opening-balance" className="text-[10px] font-bold text-amber-700 hover:underline">
-                Opening Balances →
+                Opening Balance →
               </Link>
             </div>
             <div>
               <span className="text-2xl font-black text-slate-900 block">
-                IN ₹{(kpis.cashInHand || 0).toLocaleString('en-IN')}
+                IN ₹{(kpis.currentCashInHand || kpis.cashInHand || 0).toLocaleString('en-IN')}
               </span>
-              <span className="text-xs font-bold text-slate-600 block mt-0.5">Cash in Hand (Hand Balance)</span>
-              <span className="text-[11px] font-semibold text-slate-400 block mt-0.5">Physical mosque cash</span>
+              <span className="text-xs font-bold text-slate-600 block mt-0.5">Current Cash in Hand</span>
+              <span className="text-[11px] font-semibold text-slate-400 block mt-0.5">
+                Physical cash in vault
+              </span>
             </div>
+          </div>
+        </div>
+
+        {/* ROW 2: DETAILED INFLOWS, OUTFLOWS & OPENING BREAKDOWN */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          {/* OPENING CASH */}
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-3.5 shadow-xs space-y-1">
+            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Opening Cash</span>
+            <span className="text-base font-black text-slate-900 block">
+              ₹{(kpis.openingCashBalance || 0).toLocaleString('en-IN')}
+            </span>
+            <span className="text-[10px] text-slate-400 block">Day 1 baseline</span>
+          </div>
+
+          {/* OPENING BANK */}
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-3.5 shadow-xs space-y-1">
+            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Opening Bank</span>
+            <span className="text-base font-black text-slate-900 block">
+              ₹{(kpis.openingBankBalance || 0).toLocaleString('en-IN')}
+            </span>
+            <span className="text-[10px] text-slate-400 block">Day 1 baseline</span>
           </div>
 
           {/* TOTAL INCOME */}
-          <div className="bg-white border border-slate-200/90 rounded-3xl p-5 shadow-xs hover:border-emerald-300 transition space-y-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center text-base">
-              <i className="fas fa-arrow-trend-up"></i>
-            </div>
-            <div>
-              <span className="text-2xl font-black text-slate-900 block">
-                IN ₹{(kpis.totalIncome || 0).toLocaleString('en-IN')}
-              </span>
-              <span className="text-xs font-bold text-slate-600 block mt-0.5">Total Income</span>
-              <span className="text-[11px] font-semibold text-emerald-700 block mt-0.5">All sources</span>
-            </div>
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-3.5 shadow-xs space-y-1">
+            <span className="text-[9px] font-bold text-emerald-700 uppercase tracking-wider block">Total Income</span>
+            <span className="text-base font-black text-emerald-800 block">
+              +₹{(kpis.totalIncome || 0).toLocaleString('en-IN')}
+            </span>
+            <span className="text-[10px] text-emerald-600 block">All sources</span>
           </div>
 
           {/* TOTAL EXPENSES */}
-          <div className="bg-white border border-slate-200/90 rounded-3xl p-5 shadow-xs hover:border-rose-300 transition space-y-3">
-            <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-base">
-              <i className="fas fa-arrow-trend-down"></i>
-            </div>
-            <div>
-              <span className="text-2xl font-black text-slate-900 block">
-                IN ₹{(kpis.totalExpenses || 0).toLocaleString('en-IN')}
-              </span>
-              <span className="text-xs font-bold text-slate-600 block mt-0.5">Total Expenses</span>
-              <span className="text-[11px] font-semibold text-rose-600 block mt-0.5">
-                IN ₹{(kpis.totalExpenses || 0).toLocaleString('en-IN')} this month
-              </span>
-            </div>
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-3.5 shadow-xs space-y-1">
+            <span className="text-[9px] font-bold text-rose-600 uppercase tracking-wider block">Total Expenses</span>
+            <span className="text-base font-black text-rose-600 block">
+              -₹{(kpis.totalExpenses || 0).toLocaleString('en-IN')}
+            </span>
+            <span className="text-[10px] text-rose-500 block">Expenses & payroll</span>
+          </div>
+
+          {/* CASH DEPOSITED */}
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-3.5 shadow-xs space-y-1">
+            <span className="text-[9px] font-bold text-blue-700 uppercase tracking-wider block">Cash Deposited</span>
+            <span className="text-base font-black text-blue-700 block">
+              ₹{(kpis.cashDeposited || 0).toLocaleString('en-IN')}
+            </span>
+            <span className="text-[10px] text-blue-500 block">Moved to bank</span>
+          </div>
+
+          {/* CASH WITHDRAWN */}
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-3.5 shadow-xs space-y-1">
+            <span className="text-[9px] font-bold text-purple-700 uppercase tracking-wider block">Cash Withdrawn</span>
+            <span className="text-base font-black text-purple-700 block">
+              ₹{(kpis.cashWithdrawn || 0).toLocaleString('en-IN')}
+            </span>
+            <span className="text-[10px] text-purple-500 block">Moved to hand</span>
           </div>
         </div>
       </div>
