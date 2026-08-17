@@ -146,7 +146,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         { label: 'Recurring Donations', href: '/dashboard/recurring-donations', icon: 'fa-rotate' },
         { label: 'Campaigns', href: '/dashboard/campaigns', icon: 'fa-bullhorn' },
         { label: 'Payment Links & QR', href: '/dashboard/payment-links', icon: 'fa-qrcode' },
-        { label: 'Public Donation Page', href: `/donate/${user?.masjidSlug || 'jama-masjid'}`, icon: 'fa-external-link-alt', external: true },
       ],
     },
     {
