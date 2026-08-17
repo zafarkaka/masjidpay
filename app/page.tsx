@@ -84,28 +84,6 @@ export default function HomePage() {
             </div>
           </Link>
 
-          {/* CENTER PRODUCT PILL TABS */}
-          <nav className="hidden lg:flex items-center bg-white/80 border border-[#D4AF37]/30 rounded-full px-4 py-1.5 shadow-xs gap-1 text-xs font-extrabold">
-            <Link
-              href="#capabilities"
-              className="px-4 py-2 text-[#064E3B] hover:text-[#102A25] rounded-full transition flex items-center gap-1.5"
-            >
-              <i className="fas fa-layer-group text-[#D4AF37]"></i> Capabilities
-            </Link>
-            <Link
-              href="/donate/jama-masjid"
-              className="px-4 py-2 text-[#0F766E] hover:text-[#064E3B] rounded-full transition flex items-center gap-1.5"
-            >
-              <i className="fas fa-heart text-rose-500"></i> Public Contribution Portal
-            </Link>
-            <Link
-              href="/masjid/jama-masjid/transparency"
-              className="px-4 py-2 text-slate-700 hover:text-[#064E3B] rounded-full transition flex items-center gap-1.5"
-            >
-              <i className="fas fa-scale-balanced text-[#D4AF37]"></i> Transparency
-            </Link>
-          </nav>
-
           {/* ACTION BUTTONS */}
           <div className="flex items-center gap-3">
             <Link
