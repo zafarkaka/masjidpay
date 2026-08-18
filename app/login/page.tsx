@@ -11,6 +11,14 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // STEP-UP ACCESS CODE (2FA) STATE
+  const [step, setStep] = useState<1 | 2>(1); // 1 = Password, 2 = Access PIN
+  const [twoFactorToken, setTwoFactorToken] = useState('');
+  const [accessPin, setAccessPin] = useState('');
+  const [pinMasjidName, setPinMasjidName] = useState('');
+  const [verifyingPin, setVerifyingPin] = useState(false);
+  const [showPin, setShowPin] = useState(false);
+
   // FORGOT PASSWORD STATE
   const [showForgotModal, setShowForgotModal] = useState(false);
   const [forgotStep, setForgotStep] = useState<1 | 2>(1);
@@ -24,7 +32,8 @@ export default function LoginPage() {
   const [forgotSuccess, setForgotSuccess] = useState('');
   const [forgotError, setForgotError] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // STEP 1: SUBMIT EMAIL & PASSWORD
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
@@ -42,7 +51,16 @@ export default function LoginPage() {
         throw new Error(data.error || 'Login failed');
       }
 
-      // Automatically redirect based on authenticated user role
+      // If Step-Up 2FA PIN is required for this user/masjid
+      if (data.requirePin && data.twoFactorToken) {
+        setTwoFactorToken(data.twoFactorToken);
+        setPinMasjidName(data.masjidName || 'Your Mosque Portal');
+        setStep(2);
+        setAccessPin('');
+        return;
+      }
+
+      // Standard direct login
       if (data.user.role === 'SUPER_ADMIN') {
         router.push('/super-admin/masjids');
       } else if (data.user.masjidStatus === 'PENDING') {
@@ -57,7 +75,48 @@ export default function LoginPage() {
     }
   };
 
-  // STEP 1: SEND RESET OTP VIA RESEND API
+  // STEP 2: VERIFY ACCESS CODE / SECURITY PIN
+  const handleVerifyPinSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!accessPin.trim()) {
+      setError('Please enter your Access Code / Security PIN.');
+      return;
+    }
+
+    setVerifyingPin(true);
+    setError('');
+
+    try {
+      const res = await fetch('/api/auth/verify-pin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          twoFactorToken,
+          accessPin: accessPin.trim(),
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Invalid Access Code');
+      }
+
+      if (data.user.role === 'SUPER_ADMIN') {
+        router.push('/super-admin/masjids');
+      } else if (data.user.masjidStatus === 'PENDING') {
+        router.push('/status');
+      } else {
+        router.push('/dashboard');
+      }
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setVerifyingPin(false);
+    }
+  };
+
+  // SEND RESET OTP VIA RESEND API
   const handleSendResetOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!forgotEmail) {
@@ -91,7 +150,7 @@ export default function LoginPage() {
     }
   };
 
-  // STEP 2: VERIFY OTP AND RESET PASSWORD
+  // VERIFY OTP AND RESET PASSWORD
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!otpCode || !newPassword) {
@@ -101,24 +160,27 @@ export default function LoginPage() {
 
     setResettingPassword(true);
     setForgotError('');
-    setForgotSuccess('');
 
     try {
       const res = await fetch('/api/auth/reset-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: forgotEmail.trim().toLowerCase(), otp: otpCode.trim(), newPassword, otpToken }),
+        body: JSON.stringify({
+          email: forgotEmail.trim().toLowerCase(),
+          otpToken,
+          otp: otpCode.trim(),
+          newPassword,
+        }),
       });
 
       const data = await res.json();
       if (res.ok) {
-        setForgotSuccess('Password reset successfully! Auto-filling your credentials...');
-        setEmail(forgotEmail);
-        setPassword(newPassword);
-        setTimeout(() => {
-          setShowForgotModal(false);
-          setForgotStep(1);
-        }, 2000);
+        alert('✓ Password reset successfully! You can now log in.');
+        setShowForgotModal(false);
+        setForgotStep(1);
+        setForgotEmail('');
+        setOtpCode('');
+        setNewPassword('');
       } else {
         setForgotError(data.error || 'Failed to reset password.');
       }
@@ -139,89 +201,167 @@ export default function LoginPage() {
           <span>Masjid<span className="text-[#064E3B]">Pay</span></span>
         </Link>
         <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-          Account Login
+          {step === 1 ? 'Account Login' : 'Security PIN Verification'}
         </h2>
         <p className="mt-1 text-xs text-slate-600 font-medium">
-          Access your financial control center
+          {step === 1 ? 'Access your financial control center' : `Organization: ${pinMasjidName}`}
         </p>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="masjid-card p-6 sm:p-8 bg-white shadow-xl border border-[#D4AF37]/30 rounded-3xl space-y-6">
           {error && (
-            <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-2">
+            <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-2 animate-in fade-in">
               <i className="fas fa-exclamation-circle text-rose-500 shrink-0"></i>
               <span>{error}</span>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                Email Address
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                  <i className="fas fa-envelope text-sm"></i>
-                </div>
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 rounded-2xl border border-[#D4AF37]/40 bg-[#FFF9EC] focus:border-[#064E3B] text-xs font-semibold outline-none transition"
-                  placeholder="admin@jamamasjid.org"
-                />
-              </div>
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                  Password
+          {/* STEP 1: EMAIL & PASSWORD FORM */}
+          {step === 1 && (
+            <form onSubmit={handlePasswordSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Email Address
                 </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                    <i className="fas fa-envelope text-sm"></i>
+                  </div>
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 rounded-2xl border border-[#D4AF37]/40 bg-[#FFF9EC] focus:border-[#064E3B] text-xs font-semibold outline-none transition"
+                    placeholder="admin@jamamasjid.org"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                    Password
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setForgotEmail(email);
+                      setShowForgotModal(true);
+                    }}
+                    className="text-xs font-bold text-[#064E3B] hover:underline"
+                  >
+                    Forgot Password?
+                  </button>
+                </div>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                    <i className="fas fa-lock text-sm"></i>
+                  </div>
+                  <input
+                    type="password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 rounded-2xl border border-[#D4AF37]/40 bg-[#FFF9EC] focus:border-[#064E3B] text-xs font-semibold outline-none transition"
+                    placeholder="••••••••"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3.5 px-4 bg-[#064E3B] hover:bg-[#102A25] text-white font-extrabold rounded-2xl shadow-lg transition disabled:opacity-50 flex items-center justify-center gap-2 text-xs"
+              >
+                {loading ? (
+                  <>
+                    <i className="fas fa-circle-notch fa-spin"></i> Authenticating...
+                  </>
+                ) : (
+                  <>
+                    <i className="fas fa-arrow-right"></i> Continue to Sign In
+                  </>
+                )}
+              </button>
+            </form>
+          )}
+
+          {/* STEP 2: SECURITY ACCESS CODE / PIN FORM */}
+          {step === 2 && (
+            <form onSubmit={handleVerifyPinSubmit} className="space-y-4 animate-in fade-in zoom-in-95 duration-200">
+              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-3">
+                <div className="w-8 h-8 rounded-xl bg-emerald-700 text-white flex items-center justify-center text-sm font-bold shrink-0">
+                  <i className="fas fa-key"></i>
+                </div>
+                <div>
+                  <span className="text-xs font-black text-emerald-950 block">Two-Factor PIN Protected</span>
+                  <span className="text-[11px] font-semibold text-emerald-800 block">Logged in as {email}</span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Enter Organization Access PIN *
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                    <i className="fas fa-shield-halved text-sm text-emerald-700"></i>
+                  </div>
+                  <input
+                    type={showPin ? 'text' : 'password'}
+                    required
+                    autoFocus
+                    maxLength={12}
+                    value={accessPin}
+                    onChange={(e) => setAccessPin(e.target.value)}
+                    className="w-full pl-10 pr-10 py-3 rounded-2xl border border-[#D4AF37]/40 bg-[#FFF9EC] focus:border-[#064E3B] text-sm font-mono font-black tracking-widest outline-none transition"
+                    placeholder="Enter PIN"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPin(!showPin)}
+                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 text-xs"
+                  >
+                    <i className={`fas ${showPin ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                  </button>
+                </div>
+                <span className="text-[10px] text-slate-400 mt-1 block">
+                  Enter the access code generated by your mosque administrator.
+                </span>
+              </div>
+
+              <div className="space-y-2 pt-2">
+                <button
+                  type="submit"
+                  disabled={verifyingPin}
+                  className="w-full py-3.5 px-4 bg-[#064E3B] hover:bg-[#102A25] text-white font-extrabold rounded-2xl shadow-lg transition disabled:opacity-50 flex items-center justify-center gap-2 text-xs"
+                >
+                  {verifyingPin ? (
+                    <>
+                      <i className="fas fa-circle-notch fa-spin"></i> Verifying Access Code...
+                    </>
+                  ) : (
+                    <>
+                      <i className="fas fa-unlock-keyhole"></i> Verify & Enter Dashboard
+                    </>
+                  )}
+                </button>
+
                 <button
                   type="button"
                   onClick={() => {
-                    setForgotEmail(email);
-                    setShowForgotModal(true);
+                    setStep(1);
+                    setError('');
                   }}
-                  className="text-xs font-bold text-[#064E3B] hover:underline"
+                  className="w-full py-2 text-xs font-bold text-slate-500 hover:text-slate-800 transition"
                 >
-                  Forgot Password?
+                  ← Back to Email & Password
                 </button>
               </div>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                  <i className="fas fa-lock text-sm"></i>
-                </div>
-                <input
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 rounded-2xl border border-[#D4AF37]/40 bg-[#FFF9EC] focus:border-[#064E3B] text-xs font-semibold outline-none transition"
-                  placeholder="••••••••"
-                />
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3.5 px-4 bg-[#064E3B] hover:bg-[#102A25] text-white font-extrabold rounded-2xl shadow-lg transition disabled:opacity-50 flex items-center justify-center gap-2 text-xs"
-            >
-              {loading ? (
-                <>
-                  <i className="fas fa-circle-notch fa-spin"></i> Authenticating...
-                </>
-              ) : (
-                <>
-                  <i className="fas fa-sign-in-alt"></i> Sign In to Dashboard
-                </>
-              )}
-            </button>
-          </form>
+            </form>
+          )}
 
           {/* REGISTER LINK & WHATSAPP SUPPORT BUTTON */}
           <div className="border-t border-slate-100 pt-4 space-y-3 text-center">
@@ -253,117 +393,128 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* FORGOT PASSWORD MODAL WITH RESEND OTP */}
+      {/* FORGOT PASSWORD MODAL */}
       {showForgotModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-5 shadow-2xl border border-slate-100">
-            <div className="flex justify-between items-center border-b pb-3">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-[#D4AF37]/30 space-y-4 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-sm">
+                <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center text-sm font-bold">
                   <i className="fas fa-key"></i>
                 </div>
-                <h3 className="text-base font-extrabold text-slate-900">Reset Account Password</h3>
+                <h3 className="text-sm font-black text-slate-900">Reset Account Password</h3>
               </div>
-              <button onClick={() => setShowForgotModal(false)} className="text-slate-400 hover:text-slate-600">
-                <i className="fas fa-times"></i>
+              <button
+                onClick={() => {
+                  setShowForgotModal(false);
+                  setForgotStep(1);
+                  setForgotError('');
+                  setForgotSuccess('');
+                }}
+                className="text-slate-400 hover:text-slate-600 p-1 text-base"
+              >
+                ✕
               </button>
             </div>
 
-            {forgotSuccess && (
-              <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-2xl text-xs font-bold text-emerald-800 flex items-center gap-2">
-                <i className="fas fa-check-circle text-emerald-600"></i> {forgotSuccess}
-              </div>
-            )}
-
             {forgotError && (
-              <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-2xl text-xs font-bold text-rose-800 flex items-center gap-2">
-                <i className="fas fa-exclamation-circle text-rose-600"></i> {forgotError}
+              <div className="p-3 bg-rose-50 text-rose-700 text-xs font-bold rounded-xl border border-rose-200">
+                {forgotError}
+              </div>
+            )}
+            {forgotSuccess && (
+              <div className="p-3 bg-emerald-50 text-emerald-800 text-xs font-bold rounded-xl border border-emerald-200">
+                {forgotSuccess}
               </div>
             )}
 
-            {forgotStep === 1 ? (
-              <form onSubmit={handleSendResetOtp} className="space-y-4">
-                <p className="text-xs text-slate-600">
-                  Enter your registered official email address. A 6-digit verification code will be dispatched to your inbox.
+            {/* MODAL STEP 1: REQUEST OTP */}
+            {forgotStep === 1 && (
+              <form onSubmit={handleSendResetOtp} className="space-y-3.5 text-xs font-bold text-slate-700">
+                <p className="text-slate-500 font-semibold">
+                  Enter your registered mosque admin email address to receive a secure password reset OTP code.
                 </p>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-                    Official Admin Email
+                  <label className="block mb-1 text-slate-500 uppercase tracking-wider text-[10px]">
+                    Registered Email Address *
                   </label>
                   <input
                     type="email"
                     required
+                    placeholder="e.g. admin@jamamasjid.org"
                     value={forgotEmail}
                     onChange={(e) => setForgotEmail(e.target.value)}
-                    placeholder="admin@jamamasjid.org"
-                    className="w-full px-4 py-3 rounded-2xl border border-slate-300 focus:border-emerald-700 text-xs font-semibold outline-none"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-emerald-500 font-semibold"
                   />
                 </div>
 
-                <div className="flex gap-2">
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
                   <button
                     type="button"
                     onClick={() => setShowForgotModal(false)}
-                    className="w-1/2 py-3 bg-slate-100 text-slate-700 font-bold rounded-2xl text-xs"
+                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={sendingOtp}
-                    className="w-1/2 py-3 bg-[#064E3B] text-white font-extrabold rounded-2xl text-xs shadow-md disabled:opacity-50"
+                    className="px-5 py-2 bg-[#064E3B] hover:bg-[#102A25] text-white font-extrabold rounded-xl shadow-md transition disabled:opacity-50"
                   >
-                    {sendingOtp ? 'Sending...' : 'Send OTP'}
+                    {sendingOtp ? 'Sending OTP...' : 'Send Reset Code'}
                   </button>
                 </div>
               </form>
-            ) : (
-              <form onSubmit={handleResetPassword} className="space-y-4">
+            )}
+
+            {/* MODAL STEP 2: VERIFY OTP & ENTER NEW PASSWORD */}
+            {forgotStep === 2 && (
+              <form onSubmit={handleResetPassword} className="space-y-3.5 text-xs font-bold text-slate-700">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-                    6-Digit Verification Code
+                  <label className="block mb-1 text-slate-500 uppercase tracking-wider text-[10px]">
+                    6-Digit OTP Code *
                   </label>
                   <input
                     type="text"
                     required
                     maxLength={6}
+                    placeholder="123456"
                     value={otpCode}
                     onChange={(e) => setOtpCode(e.target.value)}
-                    placeholder="123456"
-                    className="w-full px-4 py-3 text-center tracking-widest text-lg font-bold rounded-2xl border border-slate-300 focus:border-emerald-700 outline-none"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-emerald-500 font-mono font-black text-base text-center tracking-widest"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-                    New Secure Password
+                  <label className="block mb-1 text-slate-500 uppercase tracking-wider text-[10px]">
+                    New Password *
                   </label>
                   <input
                     type="password"
                     required
                     minLength={6}
+                    placeholder="Enter new password (min 6 chars)"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="Minimum 6 characters"
-                    className="w-full px-4 py-3 rounded-2xl border border-slate-300 focus:border-emerald-700 text-xs font-semibold outline-none"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-emerald-500 font-semibold"
                   />
                 </div>
 
-                <div className="flex gap-2">
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
                   <button
                     type="button"
                     onClick={() => setForgotStep(1)}
-                    className="w-1/2 py-3 bg-slate-100 text-slate-700 font-bold rounded-2xl text-xs"
+                    className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs"
                   >
-                    Back
+                    ← Back
                   </button>
                   <button
                     type="submit"
                     disabled={resettingPassword}
-                    className="w-1/2 py-3 bg-[#064E3B] text-white font-extrabold rounded-2xl text-xs shadow-md disabled:opacity-50"
+                    className="px-5 py-2 bg-[#064E3B] hover:bg-[#102A25] text-white font-extrabold rounded-xl shadow-md transition disabled:opacity-50"
                   >
-                    {resettingPassword ? 'Resetting...' : 'Reset Password'}
+                    {resettingPassword ? 'Updating...' : 'Save New Password'}
                   </button>
                 </div>
               </form>

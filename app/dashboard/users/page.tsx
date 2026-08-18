@@ -123,6 +123,7 @@ export default function UsersPermissionsPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showPinModal, setShowPinModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
 
   // Add User Form State
@@ -135,6 +136,12 @@ export default function UsersPermissionsPage() {
   const [permissions, setPermissions] = useState<Record<string, boolean>>({});
   const [submitting, setSubmitting] = useState(false);
   const [newPassword, setNewPassword] = useState('');
+
+  // Access PIN Modal State
+  const [userPin, setUserPin] = useState('');
+  const [pinSubmitting, setPinSubmitting] = useState(false);
+  const [pinSuccess, setPinSuccess] = useState('');
+  const [pinError, setPinError] = useState('');
 
   const loadUsers = () => {
     setLoading(true);
@@ -283,6 +290,78 @@ export default function UsersPermissionsPage() {
     }
   };
 
+  // Open PIN Modal
+  const handleOpenPinModal = (user: any) => {
+    setSelectedUser(user);
+    setUserPin('');
+    setPinError('');
+    setPinSuccess('');
+    setShowPinModal(true);
+  };
+
+  // Save / Update User Access PIN
+  const handleSaveUserPin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedUser || !userPin.trim()) return;
+    setPinSubmitting(true);
+    setPinError('');
+    setPinSuccess('');
+
+    try {
+      const res = await fetch(`/api/masjid/users/${selectedUser.id}/pin`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          accessPin: userPin.trim(),
+          enable: true,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setPinError(data.error || 'Failed to update access PIN');
+      } else {
+        setPinSuccess(`✓ Access PIN successfully set for ${selectedUser.name}!`);
+        setUserPin('');
+        loadUsers();
+      }
+    } catch (err: any) {
+      setPinError(err.message || 'An error occurred');
+    } finally {
+      setPinSubmitting(false);
+    }
+  };
+
+  // Revoke / Disable User Access PIN
+  const handleRevokeUserPin = async () => {
+    if (!selectedUser) return;
+    if (!confirm(`Are you sure you want to revoke and disable the Access PIN for ${selectedUser.name}? Standard password login will apply.`)) return;
+
+    setPinSubmitting(true);
+    setPinError('');
+    setPinSuccess('');
+
+    try {
+      const res = await fetch(`/api/masjid/users/${selectedUser.id}/pin`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enable: false }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setPinError(data.error || 'Failed to revoke access PIN');
+      } else {
+        setPinSuccess(`✓ Access PIN disabled for ${selectedUser.name}`);
+        loadUsers();
+      }
+    } catch (err: any) {
+      setPinError(err.message || 'An error occurred');
+    } finally {
+      setPinSubmitting(false);
+    }
+  };
+
   // Toggle User Active/Suspended
   const handleToggleStatus = async (user: any) => {
     const nextStatus = user.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE';
@@ -410,6 +489,7 @@ export default function UsersPermissionsPage() {
                 <th className="py-3 px-4">USER & CONTACT</th>
                 <th className="py-3 px-3">DESIGNATED ROLE</th>
                 <th className="py-3 px-3">PERMISSIONS GRANTED</th>
+                <th className="py-3 px-3 text-center">2FA ACCESS PIN</th>
                 <th className="py-3 px-3 text-center">ACCOUNT STATUS</th>
                 <th className="py-3 px-4 text-right">ACTIONS</th>
               </tr>
@@ -454,6 +534,25 @@ export default function UsersPermissionsPage() {
                     </td>
 
                     <td className="py-3 px-3 text-center">
+                      {u.accessPinEnabled ? (
+                        <div className="inline-flex flex-col items-center">
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-900 border border-emerald-300 flex items-center gap-1">
+                            <i className="fas fa-shield-halved text-emerald-700"></i> PIN Active
+                          </span>
+                          {u.lastPinUsedAt && (
+                            <span className="text-[9px] text-slate-400 mt-0.5">
+                              Used {new Date(u.lastPinUsedAt).toLocaleDateString('en-IN')}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold text-slate-400 bg-slate-100 border border-slate-200">
+                          Password Only
+                        </span>
+                      )}
+                    </td>
+
+                    <td className="py-3 px-3 text-center">
                       <span
                         className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
                           u.status === 'ACTIVE'
@@ -467,6 +566,14 @@ export default function UsersPermissionsPage() {
 
                     <td className="py-3 px-4 text-right">
                       <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          onClick={() => handleOpenPinModal(u)}
+                          className="px-2.5 py-1 bg-white hover:bg-slate-100 text-emerald-800 border border-emerald-300 font-bold rounded-lg text-xs transition shadow-xs flex items-center gap-1"
+                          title="Configure Access PIN"
+                        >
+                          <i className="fas fa-shield-halved text-[10px] text-emerald-700"></i> Access PIN
+                        </button>
+
                         <button
                           onClick={() => handleOpenEditModal(u)}
                           className="px-2.5 py-1 bg-white hover:bg-slate-100 text-[#064E3B] border border-[#064E3B]/30 font-bold rounded-lg text-xs transition shadow-xs flex items-center gap-1"
@@ -933,6 +1040,110 @@ export default function UsersPermissionsPage() {
                   className="px-5 py-2.5 bg-[#064E3B] text-white rounded-xl text-xs font-extrabold shadow-md"
                 >
                   {submitting ? 'Updating...' : 'Set New Password'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ACCESS PIN / SECURITY CODE MANAGEMENT MODAL */}
+      {showPinModal && selectedUser && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl space-y-4 border border-emerald-200 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex justify-between items-center border-b pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-2xl bg-emerald-700 text-white flex items-center justify-center text-sm font-bold shadow-sm">
+                  <i className="fas fa-shield-halved"></i>
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900">Security Access PIN</h3>
+                  <p className="text-xs text-slate-500 font-medium">User: <strong>{selectedUser.name}</strong> ({selectedUser.email})</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowPinModal(false)}
+                className="text-slate-400 hover:text-slate-600 p-1 text-base"
+              >
+                ✕
+              </button>
+            </div>
+
+            {pinError && (
+              <div className="p-3 bg-rose-50 text-rose-700 text-xs font-bold rounded-xl border border-rose-200">
+                {pinError}
+              </div>
+            )}
+            {pinSuccess && (
+              <div className="p-3 bg-emerald-50 text-emerald-800 text-xs font-bold rounded-xl border border-emerald-200">
+                {pinSuccess}
+              </div>
+            )}
+
+            <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-extrabold text-slate-700">Current 2FA Status</span>
+                {selectedUser.accessPinEnabled ? (
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-900 border border-emerald-300">
+                    Active PIN Protection
+                  </span>
+                ) : (
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold text-slate-500 bg-slate-200">
+                    Disabled (Password Only)
+                  </span>
+                )}
+              </div>
+              <p className="text-[11px] text-slate-500 leading-relaxed">
+                When enabled, this user will be required to enter this custom Access Code after verifying their password to enter the dashboard.
+              </p>
+            </div>
+
+            <form onSubmit={handleSaveUserPin} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                  {selectedUser.accessPinEnabled ? 'Rotate / Update Access PIN' : 'Assign New Access PIN'}
+                </label>
+                <input
+                  type="text"
+                  required
+                  minLength={4}
+                  maxLength={12}
+                  value={userPin}
+                  onChange={(e) => setUserPin(e.target.value)}
+                  placeholder="e.g. 8492 or SECURE99"
+                  className="w-full px-3.5 py-2.5 border rounded-xl text-sm font-mono font-black text-center tracking-widest outline-none focus:border-emerald-700 bg-[#FFF9EC]"
+                />
+                <span className="text-[10px] text-slate-400 mt-1 block">
+                  Must be at least 4 characters. It is securely hashed before saving in the database.
+                </span>
+              </div>
+
+              <div className="flex flex-col gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="submit"
+                  disabled={pinSubmitting || !userPin.trim()}
+                  className="w-full py-2.5 bg-[#064E3B] hover:bg-[#102A25] text-white rounded-xl text-xs font-extrabold shadow-md transition disabled:opacity-50 flex items-center justify-center gap-1.5"
+                >
+                  <i className="fas fa-check"></i> {pinSubmitting ? 'Saving...' : 'Set / Update Access PIN'}
+                </button>
+
+                {selectedUser.accessPinEnabled && (
+                  <button
+                    type="button"
+                    onClick={handleRevokeUserPin}
+                    disabled={pinSubmitting}
+                    className="w-full py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-extrabold transition disabled:opacity-50 flex items-center justify-center gap-1"
+                  >
+                    <i className="fas fa-ban"></i> Revoke & Disable Access PIN
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => setShowPinModal(false)}
+                  className="w-full py-1.5 text-slate-500 hover:text-slate-800 text-xs font-bold transition"
+                >
+                  Close
                 </button>
               </div>
             </form>

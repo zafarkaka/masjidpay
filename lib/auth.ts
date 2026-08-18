@@ -48,6 +48,18 @@ export function verifyOtpToken(token: string): { email: string; otp: string; pur
   }
 }
 
+export function signTwoFactorToken(payload: { userId: string; email: string; masjidId?: string; purpose: string }): string {
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: '10m' });
+}
+
+export function verifyTwoFactorToken(token: string): { userId: string; email: string; masjidId?: string; purpose: string } | null {
+  try {
+    return jwt.verify(token, JWT_SECRET) as { userId: string; email: string; masjidId?: string; purpose: string };
+  } catch (error) {
+    return null;
+  }
+}
+
 export const AUTH_COOKIE_OPTIONS = {
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',

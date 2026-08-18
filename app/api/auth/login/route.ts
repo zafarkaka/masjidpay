@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { verifyPassword, hashPassword, signToken, TOKEN_NAME, AUTH_COOKIE_OPTIONS } from '@/lib/auth';
+import { verifyPassword, hashPassword, signToken, signTwoFactorToken, TOKEN_NAME, AUTH_COOKIE_OPTIONS } from '@/lib/auth';
 import { recordAuditLog } from '@/lib/audit';
 
 export async function POST(req: NextRequest) {
@@ -90,14 +90,50 @@ export async function POST(req: NextRequest) {
       let masjidId: string | undefined;
       let masjidSlug: string | undefined;
       let masjidStatus: string | undefined = 'APPROVED';
+      let masjidName: string | undefined;
 
-      if (user.role !== 'SUPER_ADMIN' && user.masjidUsers?.length > 0) {
-        const primaryMasjidUser = user.masjidUsers[0];
-        if (primaryMasjidUser && primaryMasjidUser.masjid) {
-          masjidId = primaryMasjidUser.masjid.id;
-          masjidSlug = primaryMasjidUser.masjid.slug;
-          masjidStatus = primaryMasjidUser.masjid.status;
-        }
+      const primaryMasjidUser = user.masjidUsers?.[0];
+      if (user.role !== 'SUPER_ADMIN' && primaryMasjidUser?.masjid) {
+        masjidId = primaryMasjidUser.masjid.id;
+        masjidSlug = primaryMasjidUser.masjid.slug;
+        masjidStatus = primaryMasjidUser.masjid.status;
+        masjidName = primaryMasjidUser.masjid.name;
+      }
+
+      // CHECK IF 2FA ACCESS PIN IS ENABLED FOR THIS USER OR MASJID
+      const isPinRequired =
+        Boolean(primaryMasjidUser?.accessPinEnabled && primaryMasjidUser?.accessPin) ||
+        Boolean(user.accessPinEnabled && user.accessPin) ||
+        Boolean(primaryMasjidUser?.masjid?.orgAccessPinEnabled && primaryMasjidUser?.masjid?.orgAccessPin);
+
+      if (isPinRequired) {
+        const twoFactorToken = signTwoFactorToken({
+          userId: user.id,
+          email: user.email,
+          masjidId,
+          purpose: 'ACCESS_PIN_VERIFY',
+        });
+
+        try {
+          await recordAuditLog({
+            masjidId,
+            userId: user.id,
+            userEmail: user.email,
+            userRole: user.role,
+            action: 'LOGIN_PASSWORD_VERIFIED_AWAITING_PIN',
+            entity: 'Auth',
+            entityId: user.id,
+          });
+        } catch (e) {}
+
+        return NextResponse.json({
+          requirePin: true,
+          twoFactorToken,
+          email: user.email,
+          name: user.name,
+          masjidName: masjidName || 'Mosque Portal',
+          message: 'Security PIN verification required',
+        });
       }
 
       const sessionPayload = {

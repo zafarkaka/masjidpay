@@ -201,6 +201,8 @@ export async function GET(req: NextRequest) {
         customTitle: mu.customTitle || mu.role.replace('_', ' '),
         status: mu.status || 'ACTIVE',
         permissions: parsedPermissions,
+        accessPinEnabled: Boolean(mu.accessPinEnabled),
+        lastPinUsedAt: mu.lastPinUsedAt,
         createdAt: mu.createdAt,
       };
     });
