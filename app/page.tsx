@@ -5,8 +5,6 @@ import Link from 'next/link';
 
 export default function HomePage() {
   const [activeCategory, setActiveCategory] = useState('ALL');
-  const [searchCity, setSearchCity] = useState('');
-  const [searchFund, setSearchFund] = useState('ALL');
 
   const categories = [
     { id: 'ALL', label: 'All Capabilities', icon: 'fa-mosque' },
@@ -131,7 +129,7 @@ export default function HomePage() {
           {/* MAIN HEADLINE WITH ROYAL GOLD GRADIENT KEYWORDS */}
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-[#FFF9EC] tracking-tight leading-[1.15] max-w-4xl mx-auto drop-shadow-sm">
             Complete Financial Transparency & Member Collections for{' '}
-            <span className="gold-gradient-text underline decoration-[#D4AF37]/40 decoration-wavy decoration-2">
+            <span className="gold-gradient-text">
               Your Masjid
             </span>
           </h1>
@@ -140,53 +138,6 @@ export default function HomePage() {
           <p className="mt-4 text-base sm:text-lg text-[#FFF9EC]/90 max-w-3xl mx-auto font-medium leading-relaxed drop-shadow-xs">
             Replace manual registers. Track monthly member collections, Zakat vaults, construction donations, staff payroll, and dispatch automated WhatsApp & PDF receipts with 100% audit integrity.
           </p>
-
-          {/* 3. AIRBNB PILL-SHAPED GLOBAL SEARCH BAR WITH ROYAL GOLD SEARCH ORB */}
-          <div className="pt-4 max-w-3xl mx-auto">
-            <div className="search-pill bg-white p-2 sm:p-2.5 flex flex-col sm:flex-row items-center gap-2 sm:gap-0 justify-between text-left shadow-2xl">
-              {/* WHERE SEGMENT */}
-              <div className="px-5 py-2 sm:py-1 w-full sm:w-1/3 border-b sm:border-b-0 sm:border-r border-[#e8dfc8]">
-                <span className="block text-[10px] font-extrabold uppercase tracking-widest text-[#064E3B]">
-                  Mosque Search
-                </span>
-                <input
-                  type="text"
-                  placeholder="Find by name or city..."
-                  value={searchCity}
-                  onChange={(e) => setSearchCity(e.target.value)}
-                  className="w-full text-xs font-bold text-[#102A25] placeholder-slate-400 outline-none bg-transparent"
-                />
-              </div>
-
-              {/* FUND TYPE SEGMENT */}
-              <div className="px-5 py-2 sm:py-1 w-full sm:w-1/3 border-b sm:border-b-0 sm:border-r border-[#e8dfc8]">
-                <span className="block text-[10px] font-extrabold uppercase tracking-widest text-[#0F766E]">
-                  Fund Allocation
-                </span>
-                <select
-                  value={searchFund}
-                  onChange={(e) => setSearchFund(e.target.value)}
-                  className="w-full text-xs font-bold text-[#102A25] outline-none bg-transparent cursor-pointer"
-                >
-                  <option value="ALL">All Funds (General, Zakat)</option>
-                  <option value="ZAKAT">Zakat & Sadaqah Vault</option>
-                  <option value="MEMBERS">Monthly Member Amount</option>
-                  <option value="CONSTRUCTION">Construction & Renovation</option>
-                </select>
-              </div>
-
-              {/* ACTION ORB BUTTON */}
-              <div className="w-full sm:w-auto px-2 flex justify-end">
-                <Link
-                  href="/donate/jama-masjid"
-                  className="w-full sm:w-auto px-6 py-3.5 bg-[#D4AF37] hover:bg-[#B8860B] text-[#102A25] hover:text-white font-black rounded-full text-xs shadow-md transition flex items-center justify-center gap-2"
-                >
-                  <i className="fas fa-magnifying-glass"></i>
-                  <span>Find Mosque Portals</span>
-                </Link>
-              </div>
-            </div>
-          </div>
 
           {/* 4 LIVE KPI TRUST BADGES */}
           <div className="pt-6 grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-3xl mx-auto text-xs text-[#FFF9EC]/90 font-bold">
