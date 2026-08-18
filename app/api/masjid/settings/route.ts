@@ -85,6 +85,7 @@ export async function PUT(req: NextRequest) {
         bankIfsc: body.bankIfsc !== undefined ? body.bankIfsc : masjid.bankIfsc,
         upiId: body.upiId !== undefined ? body.upiId : masjid.upiId,
         financialYear: body.financialYear || masjid.financialYear,
+        communityAccessCode: body.communityAccessCode !== undefined ? body.communityAccessCode : masjid.communityAccessCode,
       },
     });
 

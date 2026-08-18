@@ -21,6 +21,7 @@ export default function SettingsPage() {
     bankIfsc: '',
     upiId: '',
     financialYear: '2026-2027',
+    communityAccessCode: '7860',
   });
 
   useEffect(() => {
@@ -43,6 +44,7 @@ export default function SettingsPage() {
             bankIfsc: data.masjid.bankIfsc || data.gateway?.bankIfsc || '',
             upiId: data.masjid.upiId || data.gateway?.upiId || '',
             financialYear: data.masjid.financialYear || '2026-2027',
+            communityAccessCode: data.masjid.communityAccessCode || '7860',
           });
         }
         setLoading(false);
@@ -212,6 +214,35 @@ export default function SettingsPage() {
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
                 className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition"
               />
+            </div>
+
+            {/* VIEWER SECRET ACCESS CODE BOX */}
+            <div className="sm:col-span-2 p-4 bg-emerald-50/70 border border-emerald-200 rounded-2xl space-y-2">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <label className="block text-[11px] font-black text-emerald-950 uppercase tracking-wider flex items-center gap-1.5">
+                  <i className="fas fa-key text-emerald-700"></i> Secret Code for Dashboard Viewer (Read-Only)
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const randomCode = Math.floor(1000 + Math.random() * 9000).toString();
+                    setForm({ ...form, communityAccessCode: randomCode });
+                  }}
+                  className="text-[11px] font-bold text-emerald-800 hover:text-emerald-950 underline self-start sm:self-auto cursor-pointer"
+                >
+                  Generate 4-Digit Code
+                </button>
+              </div>
+              <input
+                type="text"
+                placeholder="e.g. 7860 or community123"
+                value={form.communityAccessCode}
+                onChange={(e) => setForm({ ...form, communityAccessCode: e.target.value })}
+                className="w-full px-3.5 py-2.5 bg-white border border-emerald-300 rounded-xl text-xs outline-none focus:ring-2 focus:ring-emerald-600 font-mono font-bold text-emerald-900 tracking-wider shadow-xs transition"
+              />
+              <p className="text-[11px] text-emerald-800 leading-relaxed font-medium">
+                Share this secret code with your mosque community members and donors. They can click <strong>&quot;View as Community (Read Only)&quot;</strong> on the login page to inspect live financial records, collections, and balance statements without edit permissions.
+              </p>
             </div>
           </div>
         </div>
