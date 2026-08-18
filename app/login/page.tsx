@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -8,6 +8,7 @@ export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -31,6 +32,26 @@ export default function LoginPage() {
   const [resettingPassword, setResettingPassword] = useState(false);
   const [forgotSuccess, setForgotSuccess] = useState('');
   const [forgotError, setForgotError] = useState('');
+
+  // COMMUNITY MODAL STATE
+  const [showCommunityModal, setShowCommunityModal] = useState(false);
+  const [masjidList, setMasjidList] = useState<any[]>([]);
+  const [selectedMasjidSlug, setSelectedMasjidSlug] = useState('');
+  const [enteredCommunityCode, setEnteredCommunityCode] = useState('');
+  const [communityError, setCommunityError] = useState('');
+  const [verifyingCommunity, setVerifyingCommunity] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/auth/community-login')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.masjids) {
+          setMasjidList(data.masjids);
+          if (data.masjids.length > 0) setSelectedMasjidSlug(data.masjids[0].slug);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // STEP 1: SUBMIT EMAIL & PASSWORD
   const handlePasswordSubmit = async (e: React.FormEvent) => {
@@ -116,6 +137,41 @@ export default function LoginPage() {
     }
   };
 
+  // COMMUNITY READ-ONLY LOGIN SUBMIT
+  const handleCommunityLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!enteredCommunityCode.trim()) {
+      setCommunityError('Please enter the Community Access Code.');
+      return;
+    }
+
+    setVerifyingCommunity(true);
+    setCommunityError('');
+
+    try {
+      const res = await fetch('/api/auth/community-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          slug: selectedMasjidSlug,
+          communityCode: enteredCommunityCode.trim(),
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setShowCommunityModal(false);
+        router.push('/dashboard');
+      } else {
+        setCommunityError(data.error || 'Invalid Community Access Code.');
+      }
+    } catch (err: any) {
+      setCommunityError(err.message || 'An error occurred.');
+    } finally {
+      setVerifyingCommunity(false);
+    }
+  };
+
   // SEND RESET OTP VIA RESEND API
   const handleSendResetOtp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -192,26 +248,35 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center bg-[#FFF9EC] py-12 sm:px-6 lg:px-8 font-sans text-slate-800">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <Link href="/" className="inline-flex items-center gap-3 text-2xl font-bold text-slate-900 mb-2">
-          <div className="w-10 h-10 rounded-2xl bg-[#064E3B] text-[#F4D06F] border border-[#D4AF37]/50 flex items-center justify-center shadow-lg shadow-emerald-950/20">
-            <i className="fas fa-mosque text-lg"></i>
-          </div>
-          <span>Masjid<span className="text-[#064E3B]">Pay</span></span>
-        </Link>
-        <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-          {step === 1 ? 'Account Login' : 'Security PIN Verification'}
-        </h2>
-        <p className="mt-1 text-xs text-slate-600 font-medium">
-          {step === 1 ? 'Access your financial control center' : `Organization: ${pinMasjidName}`}
-        </p>
-      </div>
+    <div className="min-h-screen flex flex-col justify-center bg-[#FCFBF7] py-10 px-4 sm:px-6 lg:px-8 font-sans text-slate-800">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+        {/* HEADER BRANDING */}
+        <div className="text-left mb-5">
+          <h1 className="text-2xl font-serif font-bold text-slate-900 tracking-tight">
+            {step === 1 ? 'Login to your mosque' : 'Security PIN Verification'}
+          </h1>
+          <p className="text-xs text-slate-500 font-medium mt-0.5">
+            {step === 1 ? 'Access your financial control center' : `Organization: ${pinMasjidName}`}
+          </p>
+        </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="masjid-card p-6 sm:p-8 bg-white shadow-xl border border-[#D4AF37]/30 rounded-3xl space-y-6">
+        {/* TOP PILL SWITCHER: LOGIN / REGISTER MOSQUE */}
+        <div className="p-1 bg-[#F5EFE6] rounded-2xl flex items-center mb-6 border border-[#EADBCE]">
+          <div className="w-1/2 py-2 text-center text-xs font-extrabold text-[#064E3B] bg-white rounded-xl shadow-xs border border-slate-200/80">
+            Login
+          </div>
+          <Link
+            href="/register"
+            className="w-1/2 py-2 text-center text-xs font-bold text-slate-600 hover:text-slate-900 rounded-xl transition"
+          >
+            Register Mosque
+          </Link>
+        </div>
+
+        {/* LOGIN CARD */}
+        <div className="bg-white p-6 sm:p-7 shadow-xl border border-[#EADBCE] rounded-3xl space-y-4">
           {error && (
-            <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-2 animate-in fade-in">
+            <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-2 animate-in fade-in">
               <i className="fas fa-exclamation-circle text-rose-500 shrink-0"></i>
               <span>{error}</span>
             </div>
@@ -219,29 +284,29 @@ export default function LoginPage() {
 
           {/* STEP 1: EMAIL & PASSWORD FORM */}
           {step === 1 && (
-            <form onSubmit={handlePasswordSubmit} className="space-y-4">
+            <form onSubmit={handlePasswordSubmit} className="space-y-3.5">
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-bold text-slate-700 mb-1">
                   Email Address
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                    <i className="fas fa-envelope text-sm"></i>
+                    <i className="far fa-envelope text-sm"></i>
                   </div>
                   <input
                     type="email"
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 rounded-2xl border border-[#D4AF37]/40 bg-[#FFF9EC] focus:border-[#064E3B] text-xs font-semibold outline-none transition"
+                    className="w-full pl-10 pr-3.5 py-2.5 bg-[#FAF8F5] border border-slate-200 rounded-2xl text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#064E3B] transition"
                     placeholder="admin@jamamasjid.org"
                   />
                 </div>
               </div>
 
               <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-bold text-slate-700">
                     Password
                   </label>
                   <button
@@ -257,38 +322,45 @@ export default function LoginPage() {
                 </div>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                    <i className="fas fa-lock text-sm"></i>
+                    <i className="fas fa-lock text-xs"></i>
                   </div>
                   <input
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 rounded-2xl border border-[#D4AF37]/40 bg-[#FFF9EC] focus:border-[#064E3B] text-xs font-semibold outline-none transition"
+                    className="w-full pl-10 pr-10 py-2.5 bg-[#FAF8F5] border border-slate-200 rounded-2xl text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#064E3B] transition"
                     placeholder="••••••••"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 text-xs"
+                  >
+                    <i className={`far ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                  </button>
                 </div>
               </div>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-3.5 px-4 bg-[#064E3B] hover:bg-[#102A25] text-white font-extrabold rounded-2xl shadow-lg transition disabled:opacity-50 flex items-center justify-center gap-2 text-xs"
-              >
-                {loading ? (
-                  <>
-                    <i className="fas fa-circle-notch fa-spin"></i> Authenticating...
-                  </>
-                ) : (
-                  <>
-                    <i className="fas fa-arrow-right"></i> Continue to Sign In
-                  </>
-                )}
-              </button>
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-3 px-4 bg-[#1E5D42] hover:bg-[#164732] text-white font-extrabold rounded-2xl shadow-md transition disabled:opacity-50 flex items-center justify-center gap-2 text-xs"
+                >
+                  {loading ? (
+                    <>
+                      <i className="fas fa-circle-notch fa-spin"></i> Authenticating...
+                    </>
+                  ) : (
+                    'Sign In to Dashboard'
+                  )}
+                </button>
+              </div>
             </form>
           )}
 
-          {/* STEP 2: SECURITY ACCESS CODE / PIN FORM */}
+          {/* STEP 2: SECURITY ACCESS PIN FORM */}
           {step === 2 && (
             <form onSubmit={handleVerifyPinSubmit} className="space-y-4 animate-in fade-in zoom-in-95 duration-200">
               <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-3">
@@ -316,7 +388,7 @@ export default function LoginPage() {
                     maxLength={12}
                     value={accessPin}
                     onChange={(e) => setAccessPin(e.target.value)}
-                    className="w-full pl-10 pr-10 py-3 rounded-2xl border border-[#D4AF37]/40 bg-[#FFF9EC] focus:border-[#064E3B] text-sm font-mono font-black tracking-widest outline-none transition"
+                    className="w-full pl-10 pr-10 py-3 rounded-2xl border border-slate-200 bg-[#FAF8F5] focus:border-[#064E3B] text-sm font-mono font-black tracking-widest outline-none transition"
                     placeholder="Enter PIN"
                   />
                   <button
@@ -336,16 +408,14 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={verifyingPin}
-                  className="w-full py-3.5 px-4 bg-[#064E3B] hover:bg-[#102A25] text-white font-extrabold rounded-2xl shadow-lg transition disabled:opacity-50 flex items-center justify-center gap-2 text-xs"
+                  className="w-full py-3 px-4 bg-[#1E5D42] hover:bg-[#164732] text-white font-extrabold rounded-2xl shadow-md transition disabled:opacity-50 flex items-center justify-center gap-2 text-xs"
                 >
                   {verifyingPin ? (
                     <>
                       <i className="fas fa-circle-notch fa-spin"></i> Verifying Access Code...
                     </>
                   ) : (
-                    <>
-                      <i className="fas fa-unlock-keyhole"></i> Verify & Enter Dashboard
-                    </>
+                    'Verify & Enter Dashboard'
                   )}
                 </button>
 
@@ -363,40 +433,142 @@ export default function LoginPage() {
             </form>
           )}
 
-          {/* REGISTER LINK & WHATSAPP SUPPORT BUTTON */}
-          <div className="border-t border-slate-100 pt-4 space-y-3 text-center">
-            <div className="text-xs text-slate-500">
-              Need to register a new masjid?{' '}
-              <Link href="/register" className="font-bold text-[#064E3B] hover:underline">
-                Register Here
-              </Link>
+          {/* OR CONTINUE WITH DIVIDER */}
+          <div className="relative py-2">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-slate-200"></div>
             </div>
+            <div className="relative flex justify-center text-[10px] uppercase tracking-widest font-extrabold text-slate-400">
+              <span className="bg-white px-3">OR CONTINUE WITH</span>
+            </div>
+          </div>
 
-            <div className="p-3 bg-[#25D366]/10 border border-[#25D366]/30 rounded-2xl flex items-center justify-between text-xs">
-              <span className="font-bold text-slate-800">Support WhatsApp:</span>
-              <a
-                href="https://wa.me/919894977003?text=Assalamu%20Alaikum%2C%20I%20need%20support%20with%20MasjidPay%20SaaS"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-extrabold text-[#128C7E] hover:underline flex items-center gap-1"
-              >
-                <i className="fab fa-whatsapp text-sm text-[#25D366]"></i> +91 98949 77003
-              </a>
-            </div>
+          {/* VIEW AS COMMUNITY (READ ONLY) BUTTON */}
+          <button
+            type="button"
+            onClick={() => setShowCommunityModal(true)}
+            className="w-full py-2.5 px-4 bg-white hover:bg-[#FAF8F5] text-slate-800 font-bold rounded-2xl border border-slate-300 transition text-xs flex items-center justify-center gap-2 shadow-xs"
+          >
+            <i className="fas fa-key text-slate-600 text-xs"></i>
+            <span>View as Community (Read Only)</span>
+          </button>
+        </div>
 
-            <div className="pt-2 text-center">
-              <Link href="/super-admin/login" className="text-[11px] font-extrabold text-slate-400 hover:text-[#064E3B] transition flex items-center justify-center gap-1">
-                <i className="fas fa-shield-halved text-[10px]"></i> Super Admin Portal Login →
-              </Link>
-            </div>
+        {/* FOOTER LINKS */}
+        <div className="mt-6 text-center space-y-2">
+          <div className="text-xs text-slate-500">
+            Need support?{' '}
+            <a
+              href="https://wa.me/919894977003?text=Assalamu%20Alaikum%2C%20I%20need%20support%20with%20MasjidPay"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-bold text-[#064E3B] hover:underline"
+            >
+              WhatsApp Support (+91 98949 77003)
+            </a>
+          </div>
+
+          <div>
+            <Link href="/super-admin/login" className="text-[11px] font-extrabold text-slate-400 hover:text-[#064E3B] transition flex items-center justify-center gap-1">
+              <i className="fas fa-shield-halved text-[10px]"></i> Super Admin Portal Login →
+            </Link>
           </div>
         </div>
       </div>
 
+      {/* COMMUNITY READ-ONLY ACCESS MODAL */}
+      {showCommunityModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl space-y-4 border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-2xl bg-[#064E3B] text-[#F4D06F] flex items-center justify-center text-base font-bold shadow-xs">
+                  <i className="fas fa-key"></i>
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900">Community Access</h3>
+                  <p className="text-xs text-slate-500 font-medium">Read-Only Mosque Financial View</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowCommunityModal(false)}
+                className="text-slate-400 hover:text-slate-600 p-1 text-base"
+              >
+                ✕
+              </button>
+            </div>
+
+            {communityError && (
+              <div className="p-3 bg-rose-50 text-rose-700 text-xs font-bold rounded-xl border border-rose-200">
+                {communityError}
+              </div>
+            )}
+
+            <form onSubmit={handleCommunityLogin} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Select Mosque *
+                </label>
+                <select
+                  required
+                  value={selectedMasjidSlug}
+                  onChange={(e) => setSelectedMasjidSlug(e.target.value)}
+                  className="w-full p-2.5 bg-[#FAF8F5] border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-[#064E3B]"
+                >
+                  {masjidList.length === 0 ? (
+                    <option value="jama-masjid">Jama Masjid Vaniyambadi</option>
+                  ) : (
+                    masjidList.map((m) => (
+                      <option key={m.id} value={m.slug}>
+                        {m.name} ({m.city || 'Mosque'})
+                      </option>
+                    ))
+                  )}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Community Access Code *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. 7860 or community123"
+                  value={enteredCommunityCode}
+                  onChange={(e) => setEnteredCommunityCode(e.target.value)}
+                  className="w-full p-2.5 bg-[#FAF8F5] border border-slate-200 rounded-xl text-xs font-mono font-bold text-center tracking-widest text-slate-900 focus:outline-none focus:border-[#064E3B]"
+                />
+                <span className="text-[10px] text-slate-400 block mt-1">
+                  Enter the read-only access code provided by your mosque committee.
+                </span>
+              </div>
+
+              <div className="pt-2 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowCommunityModal(false)}
+                  className="px-4 py-2 bg-slate-100 text-slate-600 font-bold rounded-xl text-xs"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={verifyingCommunity || !enteredCommunityCode.trim()}
+                  className="px-5 py-2 bg-[#064E3B] hover:bg-emerald-950 text-white font-extrabold rounded-xl text-xs shadow-md transition disabled:opacity-50"
+                >
+                  {verifyingCommunity ? 'Verifying...' : 'Unlock Read-Only View'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* FORGOT PASSWORD MODAL */}
       {showForgotModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-[#D4AF37]/30 space-y-4 animate-in fade-in zoom-in-95 duration-150">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center text-sm font-bold">
@@ -432,7 +604,7 @@ export default function LoginPage() {
             {forgotStep === 1 && (
               <form onSubmit={handleSendResetOtp} className="space-y-3.5 text-xs font-bold text-slate-700">
                 <p className="text-slate-500 font-semibold">
-                  Enter your registered mosque admin email address to receive a secure password reset OTP code.
+                  Enter your registered mosque admin email address to receive a password reset OTP code.
                 </p>
 
                 <div>

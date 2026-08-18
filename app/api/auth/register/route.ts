@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const name = body.name || body.adminName;
     const email = body.email || body.adminEmail;
-    const { password, phone, masjidName, address, city, state, country, zipCode, currency } = body;
+    const { password, phone, masjidName, address, city, state, country, zipCode, currency, communityAccessCode } = body;
 
     if (!name || !email || !password || !masjidName) {
       return NextResponse.json({ error: 'Name, email, password, and masjid name are required' }, { status: 400 });
@@ -50,6 +50,7 @@ export async function POST(req: NextRequest) {
         phone: phone || null,
         email: normalizedEmail,
         currency: currency || 'INR',
+        communityAccessCode: communityAccessCode?.trim() || '7860',
         status: 'PENDING',
         openingBalance: 0,
       },

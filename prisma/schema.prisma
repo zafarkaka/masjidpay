@@ -59,11 +59,12 @@ model Masjid {
   bankAccNo       String?
   bankIfsc        String?
   upiId           String?
-  financialYear   String       @default("2026-2027")
-  orgAccessPin    String?      // Optional organization-wide master security access PIN
-  orgAccessPinEnabled Boolean  @default(false)
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  financialYear       String       @default("2026-2027")
+  communityAccessCode String?      @default("7860") // Code shared with members for read-only dashboard access
+  orgAccessPin        String?      // Optional organization-wide master security access PIN
+  orgAccessPinEnabled Boolean      @default(false)
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
 
   masjidUsers         MasjidUser[]
   donors              Donor[]
