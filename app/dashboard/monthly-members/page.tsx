@@ -20,7 +20,6 @@ export default function MonthlyMembersPage() {
   const [joiningDate, setJoiningDate] = useState(new Date().toISOString().split('T')[0]);
   const [email, setEmail] = useState('');
   const [address, setAddress] = useState('');
-  const [canViewReports, setCanViewReports] = useState(true);
 
   // Edit Member Modal State
   const [editingMember, setEditingMember] = useState<any>(null);
@@ -30,7 +29,6 @@ export default function MonthlyMembersPage() {
     monthlyAmount: '100',
     email: '',
     address: '',
-    canViewReports: true,
   });
 
   // Delete Member Modal State
@@ -45,7 +43,6 @@ export default function MonthlyMembersPage() {
   const [submitting, setSubmitting] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
-  const [copiedId, setCopiedId] = useState<string | null>(null);
   const [isViewer, setIsViewer] = useState(false);
 
   const loadMembers = () => {
@@ -75,31 +72,6 @@ export default function MonthlyMembersPage() {
     loadMembers();
   }, []);
 
-  // TOGGLE MEMBER REPORT & COLLECTION ACCESS TICK OPTION
-  const handleToggleAccess = async (memberId: string, currentVal: boolean) => {
-    try {
-      const res = await fetch('/api/members', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ memberId, canViewReports: !currentVal }),
-      });
-      if (res.ok) {
-        setMembers((prev) =>
-          prev.map((m) => (m.id === memberId ? { ...m, canViewReports: !currentVal } : m))
-        );
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const handleCopyLink = (member: any) => {
-    const portalUrl = `${window.location.origin}/masjid/${masjidSlug}/transparency`;
-    navigator.clipboard.writeText(portalUrl);
-    setCopiedId(member.id);
-    setTimeout(() => setCopiedId(null), 2500);
-  };
-
   // REGISTER SINGLE MEMBER
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -123,7 +95,6 @@ export default function MonthlyMembersPage() {
           address,
           monthlyAmount: Number(monthlyAmount),
           joiningDate,
-          canViewReports,
         }),
       });
 
@@ -135,7 +106,6 @@ export default function MonthlyMembersPage() {
         setEmail('');
         setAddress('');
         setMonthlyAmount('100');
-        setCanViewReports(true);
         loadMembers();
       } else {
         setErrorMsg(data.error || 'Failed to register member.');
@@ -156,7 +126,6 @@ export default function MonthlyMembersPage() {
       monthlyAmount: String(mbr.monthlyAmount || 100),
       email: mbr.email || '',
       address: mbr.address || '',
-      canViewReports: mbr.canViewReports !== false,
     });
     setErrorMsg('');
   };
@@ -179,7 +148,6 @@ export default function MonthlyMembersPage() {
           email: editForm.email,
           address: editForm.address,
           monthlyAmount: Number(editForm.monthlyAmount),
-          canViewReports: editForm.canViewReports,
         }),
       });
 
@@ -493,20 +461,6 @@ export default function MonthlyMembersPage() {
                 ></textarea>
               </div>
 
-              <div className="p-3 bg-emerald-50/70 border border-emerald-200 rounded-xl">
-                <label className="flex items-center gap-2.5 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={canViewReports}
-                    onChange={(e) => setCanViewReports(e.target.checked)}
-                    className="w-4 h-4 rounded text-emerald-700 accent-emerald-800"
-                  />
-                  <span className="text-xs font-semibold text-slate-900">
-                    Allow Member Transparency Access (View Collections & Financial Reports)
-                  </span>
-                </label>
-              </div>
-
               <div className="flex items-center justify-start gap-3 pt-2 border-t border-slate-100">
                 <button
                   type="submit"
@@ -630,7 +584,7 @@ export default function MonthlyMembersPage() {
                 </span>
               </div>
               <p className="text-[11px] text-slate-400 mt-0.5">
-                Use the checkbox to toggle report & collection transparency access per member
+                View, filter, edit and track records of registered members
               </p>
             </div>
             <span className="text-[11px] text-slate-400">
@@ -720,7 +674,6 @@ export default function MonthlyMembersPage() {
                     <th className="py-2.5 px-4 whitespace-nowrap">Full Name</th>
                     <th className="py-2.5 px-4 whitespace-nowrap">Phone Number</th>
                     <th className="py-2.5 px-4 whitespace-nowrap">Monthly Rate</th>
-                    <th className="py-2.5 px-4 whitespace-nowrap">Report & Collection Access</th>
                     <th className="py-2.5 px-4 text-right whitespace-nowrap">Actions</th>
                   </tr>
                 </thead>
@@ -746,32 +699,12 @@ export default function MonthlyMembersPage() {
                         IN ₹{mbr.monthlyAmount?.toLocaleString('en-IN')}
                       </td>
 
-                      {/* ADMIN TICK CHECKBOX OPTION */}
-                      <td className="py-3 px-4 whitespace-nowrap">
-                        <label className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-50 border border-slate-200 transition ${isViewer ? 'cursor-not-allowed opacity-75' : 'cursor-pointer hover:border-emerald-300'}`}>
-                          <input
-                            type="checkbox"
-                            disabled={isViewer}
-                            checked={mbr.canViewReports !== false}
-                            onChange={() => !isViewer && handleToggleAccess(mbr.id, mbr.canViewReports !== false)}
-                            className="w-3.5 h-3.5 rounded text-emerald-700 accent-emerald-800"
-                          />
-                          <span
-                            className={`text-[11px] font-semibold ${
-                              mbr.canViewReports !== false ? 'text-emerald-800' : 'text-slate-400'
-                            }`}
-                          >
-                            {mbr.canViewReports !== false ? '☑ Granted Access' : '☐ Restricted'}
-                          </span>
-                        </label>
-                      </td>
-
                       <td className="py-3 px-4 text-right whitespace-nowrap space-x-1.5">
                         {/* EDIT BUTTON */}
                         {!isViewer && (
                           <button
                             onClick={() => handleOpenEdit(mbr)}
-                            className="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200/80 font-semibold rounded-lg text-[11px] transition inline-flex items-center gap-1"
+                            className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200/80 font-semibold rounded-lg text-[11px] transition inline-flex items-center gap-1"
                             title="Edit member details"
                           >
                             <i className="fas fa-pen-to-square text-[10px]"></i> Edit
@@ -782,20 +715,12 @@ export default function MonthlyMembersPage() {
                         {!isViewer && (
                           <button
                             onClick={() => setDeletingMember(mbr)}
-                            className="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/80 font-semibold rounded-lg text-[11px] transition inline-flex items-center gap-1"
+                            className="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/80 font-semibold rounded-lg text-[11px] transition inline-flex items-center gap-1"
                             title="Delete member"
                           >
                             <i className="fas fa-trash-can text-[10px]"></i> Delete
                           </button>
                         )}
-
-                        {/* COPY LINK */}
-                        <button
-                          onClick={() => handleCopyLink(mbr)}
-                          className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 font-semibold rounded-lg text-[11px] transition inline-flex items-center gap-1"
-                        >
-                          {copiedId === mbr.id ? '✓ Copied' : '🔗 Copy Report Link'}
-                        </button>
 
                         {/* COLLECT FEE */}
                         {!isViewer && (
@@ -898,20 +823,6 @@ export default function MonthlyMembersPage() {
                   onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
                   className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 outline-none focus:border-emerald-600"
                 ></textarea>
-              </div>
-
-              <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-lg">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={editForm.canViewReports}
-                    onChange={(e) => setEditForm({ ...editForm, canViewReports: e.target.checked })}
-                    className="w-3.5 h-3.5 rounded text-emerald-700 accent-emerald-800"
-                  />
-                  <span className="text-xs font-semibold text-slate-800">
-                    Allow Transparency Portal & Report Access
-                  </span>
-                </label>
               </div>
 
               <div className="flex justify-end gap-2.5 pt-2.5 border-t border-slate-100">
