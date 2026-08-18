@@ -191,46 +191,46 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center bg-[#FCFBF7] py-10 px-4 sm:px-6 lg:px-8 font-sans text-slate-800">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+    <div className="min-h-screen flex flex-col justify-center bg-[#FCFBF7] py-4 sm:py-8 px-3 sm:px-6 lg:px-8 font-sans text-slate-800">
+      <div className="w-full max-w-sm sm:max-w-md mx-auto">
         {/* HEADER BRANDING */}
-        <div className="text-left mb-5">
-          <h1 className="text-2xl font-serif font-bold text-slate-900 tracking-tight">
+        <div className="text-left mb-3 sm:mb-4">
+          <h1 className="text-xl sm:text-2xl font-serif font-bold text-slate-900 tracking-tight">
             Register your mosque
           </h1>
-          <p className="text-xs text-slate-500 font-medium mt-0.5">
+          <p className="text-[11px] sm:text-xs text-slate-500 font-medium mt-0.5">
             Create an account to get started
           </p>
         </div>
 
         {/* TOP PILL SWITCHER: LOGIN / REGISTER MOSQUE */}
-        <div className="p-1 bg-[#F5EFE6] rounded-2xl flex items-center mb-6 border border-[#EADBCE]">
+        <div className="p-1 bg-[#F5EFE6] rounded-xl sm:rounded-2xl flex items-center mb-3 sm:mb-4 border border-[#EADBCE]">
           <Link
             href="/login"
-            className="w-1/2 py-2 text-center text-xs font-bold text-slate-600 hover:text-slate-900 rounded-xl transition"
+            className="w-1/2 py-1.5 sm:py-2 text-center text-xs font-bold text-slate-600 hover:text-slate-900 rounded-lg sm:rounded-xl transition"
           >
             Login
           </Link>
-          <div className="w-1/2 py-2 text-center text-xs font-extrabold text-[#064E3B] bg-white rounded-xl shadow-xs border border-slate-200/80">
+          <div className="w-1/2 py-1.5 sm:py-2 text-center text-xs font-extrabold text-[#064E3B] bg-white rounded-lg sm:rounded-xl shadow-xs border border-slate-200/80">
             Register Mosque
           </div>
         </div>
 
         {/* REGISTRATION FORM CARD */}
-        <div className="bg-white p-6 sm:p-7 shadow-xl border border-[#EADBCE] rounded-3xl space-y-4">
+        <div className="bg-white p-4 sm:p-6 shadow-lg border border-[#EADBCE] rounded-2xl sm:rounded-3xl space-y-3 sm:space-y-4">
           {error && (
-            <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-2">
+            <div className="p-2.5 sm:p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-2">
               <i className="fas fa-exclamation-circle text-rose-500 shrink-0"></i>
               <span>{error}</span>
             </div>
           )}
 
           {registrationSuccess ? (
-            <div className="p-6 bg-emerald-50 rounded-2xl border border-emerald-200 text-center space-y-3">
-              <div className="w-12 h-12 rounded-full bg-emerald-700 text-white flex items-center justify-center mx-auto text-xl font-bold">
+            <div className="p-5 bg-emerald-50 rounded-2xl border border-emerald-200 text-center space-y-2.5">
+              <div className="w-10 h-10 rounded-full bg-emerald-700 text-white flex items-center justify-center mx-auto text-lg font-bold">
                 ✓
               </div>
-              <h3 className="text-base font-bold text-emerald-950">Registration Submitted!</h3>
+              <h3 className="text-sm font-bold text-emerald-950">Registration Submitted!</h3>
               <p className="text-xs text-emerald-800 leading-relaxed">
                 Your mosque registration for <strong>{masjidName}</strong> has been submitted. Our Super Admin team will review and approve your portal shortly.
               </p>
@@ -244,15 +244,15 @@ export default function RegisterPage() {
               </div>
             </div>
           ) : (
-            <form onSubmit={handleInitiateRegistration} className="space-y-3.5">
+            <form onSubmit={handleInitiateRegistration} className="space-y-2.5 sm:space-y-3">
               {/* MOSQUE NAME */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-[11px] sm:text-xs font-bold text-slate-700 mb-0.5 sm:mb-1">
                   Mosque Name
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                    <i className="far fa-building text-sm"></i>
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                    <i className="far fa-building text-xs"></i>
                   </div>
                   <input
                     type="text"
@@ -260,19 +260,19 @@ export default function RegisterPage() {
                     placeholder="e.g. Jama Masjid"
                     value={masjidName}
                     onChange={(e) => setMasjidName(e.target.value)}
-                    className="w-full pl-10 pr-3.5 py-2.5 bg-[#FAF8F5] border border-slate-200 rounded-2xl text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#064E3B] transition"
+                    className="w-full pl-9 pr-3 py-2 sm:py-2.5 bg-[#FAF8F5] border border-slate-200 rounded-xl sm:rounded-2xl text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#064E3B] transition"
                   />
                 </div>
               </div>
 
               {/* ADDRESS */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-[11px] sm:text-xs font-bold text-slate-700 mb-0.5 sm:mb-1">
                   Address
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                    <i className="fas fa-location-dot text-sm"></i>
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                    <i className="fas fa-location-dot text-xs"></i>
                   </div>
                   <input
                     type="text"
@@ -280,24 +280,24 @@ export default function RegisterPage() {
                     placeholder="Mosque Location"
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
-                    className="w-full pl-10 pr-3.5 py-2.5 bg-[#FAF8F5] border border-slate-200 rounded-2xl text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#064E3B] transition"
+                    className="w-full pl-9 pr-3 py-2 sm:py-2.5 bg-[#FAF8F5] border border-slate-200 rounded-xl sm:rounded-2xl text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#064E3B] transition"
                   />
                 </div>
               </div>
 
               {/* COUNTRY */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-[11px] sm:text-xs font-bold text-slate-700 mb-0.5 sm:mb-1">
                   Country
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                    <i className="fas fa-globe text-sm"></i>
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                    <i className="fas fa-globe text-xs"></i>
                   </div>
                   <select
                     value={country}
                     onChange={(e) => setCountry(e.target.value)}
-                    className="w-full pl-10 pr-8 py-2.5 bg-[#FAF8F5] border border-slate-200 rounded-2xl text-xs font-bold text-slate-800 focus:outline-none focus:border-[#064E3B] appearance-none transition"
+                    className="w-full pl-9 pr-8 py-2 sm:py-2.5 bg-[#FAF8F5] border border-slate-200 rounded-xl sm:rounded-2xl text-xs font-bold text-slate-800 focus:outline-none focus:border-[#064E3B] appearance-none transition"
                   >
                     <option value="IN">IN  India (₹)</option>
                     <option value="AE">AE  United Arab Emirates (AED)</option>
@@ -305,22 +305,22 @@ export default function RegisterPage() {
                     <option value="US">US  United States ($)</option>
                     <option value="GB">GB  United Kingdom (£)</option>
                   </select>
-                  <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-400 text-xs">
+                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400 text-xs">
                     <i className="fas fa-chevron-down"></i>
                   </div>
                 </div>
-                <span className="text-[10px] text-slate-400 block mt-1">
+                <span className="text-[10px] text-slate-400 block mt-0.5">
                   Currency will be set based on your country.
                 </span>
               </div>
 
               {/* COMMUNITY ACCESS CODE */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-[11px] sm:text-xs font-bold text-slate-700 mb-0.5 sm:mb-1">
                   Community Access Code
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                     <i className="fas fa-key text-xs"></i>
                   </div>
                   <input
@@ -328,41 +328,41 @@ export default function RegisterPage() {
                     placeholder="e.g. 7860 or community123"
                     value={communityAccessCode}
                     onChange={(e) => setCommunityAccessCode(e.target.value)}
-                    className="w-full pl-10 pr-3.5 py-2.5 bg-[#FAF8F5] border border-slate-200 rounded-2xl text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#064E3B] transition"
+                    className="w-full pl-9 pr-3 py-2 sm:py-2.5 bg-[#FAF8F5] border border-slate-200 rounded-xl sm:rounded-2xl text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#064E3B] transition"
                   />
                 </div>
-                <span className="text-[10px] text-slate-400 block mt-1">
+                <span className="text-[10px] text-slate-400 block mt-0.5">
                   Share this code with members for read-only access.
                 </span>
               </div>
 
               {/* EMAIL ADDRESS */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-[11px] sm:text-xs font-bold text-slate-700 mb-0.5 sm:mb-1">
                   Email Address
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                    <i className="far fa-envelope text-sm"></i>
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                    <i className="far fa-envelope text-xs"></i>
                   </div>
                   <input
                     type="email"
                     required
-                    placeholder="zafukaka@gmail.com"
+                    placeholder="admin@jamamasjid.org"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full pl-10 pr-3.5 py-2.5 bg-[#FAF8F5] border border-slate-200 rounded-2xl text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#064E3B] transition"
+                    className="w-full pl-9 pr-3 py-2 sm:py-2.5 bg-[#FAF8F5] border border-slate-200 rounded-xl sm:rounded-2xl text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#064E3B] transition"
                   />
                 </div>
               </div>
 
               {/* PHONE NUMBER (OPTIONAL) */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-[11px] sm:text-xs font-bold text-slate-700 mb-0.5 sm:mb-1">
                   Phone Number (Optional)
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                     <i className="fas fa-phone text-xs"></i>
                   </div>
                   <input
@@ -370,18 +370,18 @@ export default function RegisterPage() {
                     placeholder="Enter phone number"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    className="w-full pl-10 pr-3.5 py-2.5 bg-[#FAF8F5] border border-slate-200 rounded-2xl text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#064E3B] transition"
+                    className="w-full pl-9 pr-3 py-2 sm:py-2.5 bg-[#FAF8F5] border border-slate-200 rounded-xl sm:rounded-2xl text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#064E3B] transition"
                   />
                 </div>
               </div>
 
               {/* PASSWORD */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-[11px] sm:text-xs font-bold text-slate-700 mb-0.5 sm:mb-1">
                   Password
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                     <i className="fas fa-lock text-xs"></i>
                   </div>
                   <input
@@ -391,12 +391,12 @@ export default function RegisterPage() {
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-10 pr-10 py-2.5 bg-blue-50/50 border border-blue-200/80 rounded-2xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#064E3B] transition"
+                    className="w-full pl-9 pr-9 py-2 sm:py-2.5 bg-[#FAF8F5] border border-slate-200 rounded-xl sm:rounded-2xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#064E3B] transition"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 text-xs"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 text-xs"
                   >
                     <i className={`far ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
                   </button>
@@ -405,11 +405,11 @@ export default function RegisterPage() {
 
               {/* CONFIRM PASSWORD */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-[11px] sm:text-xs font-bold text-slate-700 mb-0.5 sm:mb-1">
                   Confirm Password
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                     <i className="fas fa-lock text-xs"></i>
                   </div>
                   <input
@@ -419,12 +419,12 @@ export default function RegisterPage() {
                     placeholder="Confirm password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full pl-10 pr-10 py-2.5 bg-[#FAF8F5] border border-slate-200 rounded-2xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#064E3B] transition"
+                    className="w-full pl-9 pr-9 py-2 sm:py-2.5 bg-[#FAF8F5] border border-slate-200 rounded-xl sm:rounded-2xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#064E3B] transition"
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 text-xs"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 text-xs"
                   >
                     <i className={`far ${showConfirmPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
                   </button>
@@ -432,11 +432,11 @@ export default function RegisterPage() {
               </div>
 
               {/* SUBMIT BUTTON */}
-              <div className="pt-2">
+              <div className="pt-1">
                 <button
                   type="submit"
                   disabled={sendingOtp}
-                  className="w-full py-3 px-4 bg-[#1E5D42] hover:bg-[#164732] text-white font-extrabold rounded-2xl shadow-md transition disabled:opacity-50 flex items-center justify-center gap-2 text-xs"
+                  className="w-full py-2.5 sm:py-3 px-4 bg-[#1E5D42] hover:bg-[#164732] text-white font-extrabold rounded-xl sm:rounded-2xl shadow-md transition disabled:opacity-50 flex items-center justify-center gap-2 text-xs"
                 >
                   {sendingOtp ? (
                     <>
@@ -451,12 +451,12 @@ export default function RegisterPage() {
           )}
 
           {/* OR CONTINUE WITH DIVIDER */}
-          <div className="relative py-2">
+          <div className="relative py-1 sm:py-1.5">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-slate-200"></div>
             </div>
-            <div className="relative flex justify-center text-[10px] uppercase tracking-widest font-extrabold text-slate-400">
-              <span className="bg-white px-3">OR CONTINUE WITH</span>
+            <div className="relative flex justify-center text-[9px] uppercase tracking-widest font-extrabold text-slate-400">
+              <span className="bg-white px-2.5">OR CONTINUE WITH</span>
             </div>
           </div>
 
@@ -464,7 +464,7 @@ export default function RegisterPage() {
           <button
             type="button"
             onClick={() => setShowCommunityModal(true)}
-            className="w-full py-2.5 px-4 bg-white hover:bg-[#FAF8F5] text-slate-800 font-bold rounded-2xl border border-slate-300 transition text-xs flex items-center justify-center gap-2 shadow-xs"
+            className="w-full py-2 sm:py-2.5 px-3 bg-white hover:bg-[#FAF8F5] text-slate-800 font-bold rounded-xl sm:rounded-2xl border border-slate-300 transition text-xs flex items-center justify-center gap-2 shadow-xs"
           >
             <i className="fas fa-key text-slate-600 text-xs"></i>
             <span>View as Community (Read Only)</span>
@@ -475,10 +475,10 @@ export default function RegisterPage() {
       {/* OTP VERIFICATION MODAL */}
       {showOtpModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl space-y-4 border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
+          <div className="bg-white rounded-3xl max-w-md w-full p-5 sm:p-7 shadow-2xl space-y-4 border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div>
-                <h3 className="text-base font-black text-slate-900">Email Verification Code</h3>
+                <h3 className="text-sm sm:text-base font-black text-slate-900">Email Verification Code</h3>
                 <p className="text-xs text-slate-500 font-medium mt-0.5">
                   Code sent to <strong>{email}</strong>
                 </p>
@@ -492,7 +492,7 @@ export default function RegisterPage() {
             </div>
 
             {otpModalError && (
-              <div className="p-3 bg-rose-50 text-rose-700 text-xs font-bold rounded-xl border border-rose-200">
+              <div className="p-2.5 bg-rose-50 text-rose-700 text-xs font-bold rounded-xl border border-rose-200">
                 {otpModalError}
               </div>
             )}
@@ -510,7 +510,7 @@ export default function RegisterPage() {
                   value={otpCode}
                   onChange={(e) => setOtpCode(e.target.value)}
                   placeholder="123456"
-                  className="w-full px-4 py-3 border border-slate-200 rounded-2xl text-center text-lg font-mono font-black tracking-widest outline-none focus:border-[#064E3B] bg-[#FAF8F5]"
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl sm:rounded-2xl text-center text-lg font-mono font-black tracking-widest outline-none focus:border-[#064E3B] bg-[#FAF8F5]"
                 />
               </div>
 
@@ -538,23 +538,31 @@ export default function RegisterPage() {
       {/* COMMUNITY READ-ONLY ACCESS MODAL */}
       {showCommunityModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl space-y-4 border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-2xl bg-[#064E3B] text-[#F4D06F] flex items-center justify-center text-base font-bold shadow-xs">
-                  <i className="fas fa-key"></i>
-                </div>
-                <div>
-                  <h3 className="text-base font-black text-slate-900">Community Access</h3>
-                  <p className="text-xs text-slate-500 font-medium">Read-Only Mosque Financial View</p>
-                </div>
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl space-y-5 border border-[#EADBCE] animate-in fade-in zoom-in-95 duration-150 relative">
+            <button
+              onClick={() => setShowCommunityModal(false)}
+              className="absolute top-5 right-5 text-slate-400 hover:text-slate-600 p-1 text-base"
+            >
+              ✕
+            </button>
+
+            {/* KEY ICON */}
+            <div className="text-center space-y-2 pt-1">
+              <div className="w-12 h-12 rounded-2xl bg-[#FFF9EC] border border-[#D4AF37]/50 text-[#B45309] flex items-center justify-center text-lg mx-auto shadow-xs">
+                <i className="fas fa-key"></i>
               </div>
-              <button
-                onClick={() => setShowCommunityModal(false)}
-                className="text-slate-400 hover:text-slate-600 p-1 text-base"
-              >
-                ✕
-              </button>
+              <h2 className="text-2xl font-serif font-bold text-slate-900 tracking-tight">
+                Community Access
+              </h2>
+              <p className="text-xs text-slate-500 font-medium">
+                Enter the Community Access Code to view mosque data
+              </p>
+            </div>
+
+            {/* READ-ONLY PILL NOTICE */}
+            <div className="px-4 py-2.5 bg-[#FFF9EC] border border-[#D4AF37]/40 rounded-2xl flex items-center gap-2.5 text-xs font-bold text-[#92400E]">
+              <span className="w-2 h-2 rounded-full bg-[#D97706] shrink-0"></span>
+              <span>Read-only access — no changes can be made</span>
             </div>
 
             {communityError && (
@@ -564,59 +572,52 @@ export default function RegisterPage() {
             )}
 
             <form onSubmit={handleCommunityLogin} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Select Mosque *
-                </label>
-                <select
-                  required
-                  value={selectedMasjidSlug}
-                  onChange={(e) => setSelectedMasjidSlug(e.target.value)}
-                  className="w-full p-2.5 bg-[#FAF8F5] border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-[#064E3B]"
-                >
-                  {masjidList.length === 0 ? (
-                    <option value="jama-masjid">Jama Masjid Vaniyambadi</option>
-                  ) : (
-                    masjidList.map((m) => (
+              {masjidList.length > 1 && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Select Mosque
+                  </label>
+                  <select
+                    value={selectedMasjidSlug}
+                    onChange={(e) => setSelectedMasjidSlug(e.target.value)}
+                    className="w-full p-2.5 bg-[#FAF8F5] border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-[#064E3B]"
+                  >
+                    {masjidList.map((m) => (
                       <option key={m.id} value={m.slug}>
                         {m.name} ({m.city || 'Mosque'})
                       </option>
-                    ))
-                  )}
-                </select>
-              </div>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Community Access Code *
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  Community Access Code
                 </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. 7860 or community123"
-                  value={enteredCommunityCode}
-                  onChange={(e) => setEnteredCommunityCode(e.target.value)}
-                  className="w-full p-2.5 bg-[#FAF8F5] border border-slate-200 rounded-xl text-xs font-mono font-bold text-center tracking-widest text-slate-900 focus:outline-none focus:border-[#064E3B]"
-                />
-                <span className="text-[10px] text-slate-400 block mt-1">
-                  Enter the read-only access code provided by your mosque committee.
-                </span>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                    <i className="fas fa-key text-xs"></i>
+                  </div>
+                  <input
+                    type="text"
+                    required
+                    autoFocus
+                    placeholder="Enter Community Access Code"
+                    value={enteredCommunityCode}
+                    onChange={(e) => setEnteredCommunityCode(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 bg-[#FAF8F5] border border-slate-200 rounded-2xl text-xs font-semibold text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#064E3B] transition"
+                  />
+                </div>
               </div>
 
-              <div className="pt-2 flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowCommunityModal(false)}
-                  className="px-4 py-2 bg-slate-100 text-slate-600 font-bold rounded-xl text-xs"
-                >
-                  Cancel
-                </button>
+              <div className="pt-2">
                 <button
                   type="submit"
-                  disabled={verifyingCommunity || !enteredCommunityCode.trim()}
-                  className="px-5 py-2 bg-[#064E3B] hover:bg-emerald-950 text-white font-extrabold rounded-xl text-xs shadow-md transition disabled:opacity-50"
+                  disabled={verifyingCommunity}
+                  className="w-full py-3.5 px-4 bg-[#1E5D42] hover:bg-[#164732] text-white font-extrabold rounded-2xl shadow-md transition disabled:opacity-50 text-xs tracking-wide cursor-pointer"
                 >
-                  {verifyingCommunity ? 'Verifying...' : 'Unlock Read-Only View'}
+                  {verifyingCommunity ? 'Verifying Access Code...' : 'Access Dashboard'}
                 </button>
               </div>
             </form>

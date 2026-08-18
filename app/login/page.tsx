@@ -249,35 +249,35 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center bg-[#FCFBF7] py-10 px-4 sm:px-6 lg:px-8 font-sans text-slate-800">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+    <div className="min-h-screen flex flex-col justify-center bg-[#FCFBF7] py-4 sm:py-8 px-3 sm:px-6 lg:px-8 font-sans text-slate-800">
+      <div className="w-full max-w-sm sm:max-w-md mx-auto">
         {/* HEADER BRANDING */}
-        <div className="text-left mb-5">
-          <h1 className="text-2xl font-serif font-bold text-slate-900 tracking-tight">
+        <div className="text-left mb-3 sm:mb-4">
+          <h1 className="text-xl sm:text-2xl font-serif font-bold text-slate-900 tracking-tight">
             {step === 1 ? 'Login to your mosque' : 'Security PIN Verification'}
           </h1>
-          <p className="text-xs text-slate-500 font-medium mt-0.5">
+          <p className="text-[11px] sm:text-xs text-slate-500 font-medium mt-0.5">
             {step === 1 ? 'Access your financial control center' : `Organization: ${pinMasjidName}`}
           </p>
         </div>
 
         {/* TOP PILL SWITCHER: LOGIN / REGISTER MOSQUE */}
-        <div className="p-1 bg-[#F5EFE6] rounded-2xl flex items-center mb-6 border border-[#EADBCE]">
-          <div className="w-1/2 py-2 text-center text-xs font-extrabold text-[#064E3B] bg-white rounded-xl shadow-xs border border-slate-200/80">
+        <div className="p-1 bg-[#F5EFE6] rounded-xl sm:rounded-2xl flex items-center mb-3 sm:mb-4 border border-[#EADBCE]">
+          <div className="w-1/2 py-1.5 sm:py-2 text-center text-xs font-extrabold text-[#064E3B] bg-white rounded-lg sm:rounded-xl shadow-xs border border-slate-200/80">
             Login
           </div>
           <Link
             href="/register"
-            className="w-1/2 py-2 text-center text-xs font-bold text-slate-600 hover:text-slate-900 rounded-xl transition"
+            className="w-1/2 py-1.5 sm:py-2 text-center text-xs font-bold text-slate-600 hover:text-slate-900 rounded-lg sm:rounded-xl transition"
           >
             Register Mosque
           </Link>
         </div>
 
         {/* LOGIN CARD */}
-        <div className="bg-white p-6 sm:p-7 shadow-xl border border-[#EADBCE] rounded-3xl space-y-4">
+        <div className="bg-white p-4 sm:p-6 shadow-lg border border-[#EADBCE] rounded-2xl sm:rounded-3xl space-y-3 sm:space-y-4">
           {error && (
-            <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-2 animate-in fade-in">
+            <div className="p-2.5 sm:p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-2 animate-in fade-in">
               <i className="fas fa-exclamation-circle text-rose-500 shrink-0"></i>
               <span>{error}</span>
             </div>
@@ -285,29 +285,29 @@ export default function LoginPage() {
 
           {/* STEP 1: EMAIL & PASSWORD FORM */}
           {step === 1 && (
-            <form onSubmit={handlePasswordSubmit} className="space-y-3.5">
+            <form onSubmit={handlePasswordSubmit} className="space-y-2.5 sm:space-y-3">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-[11px] sm:text-xs font-bold text-slate-700 mb-0.5 sm:mb-1">
                   Email Address
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                    <i className="far fa-envelope text-sm"></i>
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                    <i className="far fa-envelope text-xs"></i>
                   </div>
                   <input
                     type="email"
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full pl-10 pr-3.5 py-2.5 bg-[#FAF8F5] border border-slate-200 rounded-2xl text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#064E3B] transition"
+                    className="w-full pl-9 pr-3 py-2 sm:py-2.5 bg-[#FAF8F5] border border-slate-200 rounded-xl sm:rounded-2xl text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#064E3B] transition"
                     placeholder="admin@jamamasjid.org"
                   />
                 </div>
               </div>
 
               <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block text-xs font-bold text-slate-700">
+                <div className="flex items-center justify-between mb-0.5 sm:mb-1">
+                  <label className="block text-[11px] sm:text-xs font-bold text-slate-700">
                     Password
                   </label>
                   <button
@@ -316,13 +316,13 @@ export default function LoginPage() {
                       setForgotEmail(email);
                       setShowForgotModal(true);
                     }}
-                    className="text-xs font-bold text-[#064E3B] hover:underline"
+                    className="text-[11px] sm:text-xs font-bold text-[#064E3B] hover:underline"
                   >
                     Forgot Password?
                   </button>
                 </div>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                     <i className="fas fa-lock text-xs"></i>
                   </div>
                   <input
@@ -330,24 +330,24 @@ export default function LoginPage() {
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-10 pr-10 py-2.5 bg-[#FAF8F5] border border-slate-200 rounded-2xl text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#064E3B] transition"
+                    className="w-full pl-9 pr-9 py-2 sm:py-2.5 bg-[#FAF8F5] border border-slate-200 rounded-xl sm:rounded-2xl text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#064E3B] transition"
                     placeholder="••••••••"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 text-xs"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 text-xs"
                   >
                     <i className={`far ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
                   </button>
                 </div>
               </div>
 
-              <div className="pt-2">
+              <div className="pt-1">
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3 px-4 bg-[#1E5D42] hover:bg-[#164732] text-white font-extrabold rounded-2xl shadow-md transition disabled:opacity-50 flex items-center justify-center gap-2 text-xs"
+                  className="w-full py-2.5 sm:py-3 px-4 bg-[#1E5D42] hover:bg-[#164732] text-white font-extrabold rounded-xl sm:rounded-2xl shadow-md transition disabled:opacity-50 flex items-center justify-center gap-2 text-xs"
                 >
                   {loading ? (
                     <>
@@ -363,24 +363,24 @@ export default function LoginPage() {
 
           {/* STEP 2: SECURITY ACCESS PIN FORM */}
           {step === 2 && (
-            <form onSubmit={handleVerifyPinSubmit} className="space-y-4 animate-in fade-in zoom-in-95 duration-200">
-              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-3">
-                <div className="w-8 h-8 rounded-xl bg-emerald-700 text-white flex items-center justify-center text-sm font-bold shrink-0">
+            <form onSubmit={handleVerifyPinSubmit} className="space-y-3 sm:space-y-4 animate-in fade-in zoom-in-95 duration-200">
+              <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl sm:rounded-2xl flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-lg bg-emerald-700 text-white flex items-center justify-center text-xs font-bold shrink-0">
                   <i className="fas fa-key"></i>
                 </div>
                 <div>
-                  <span className="text-xs font-black text-emerald-950 block">Two-Factor PIN Protected</span>
-                  <span className="text-[11px] font-semibold text-emerald-800 block">Logged in as {email}</span>
+                  <span className="text-[11px] font-black text-emerald-950 block">Two-Factor PIN Protected</span>
+                  <span className="text-[10px] font-semibold text-emerald-800 block">Logged in as {email}</span>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                <label className="block text-[11px] sm:text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
                   Enter Organization Access PIN *
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                    <i className="fas fa-shield-halved text-sm text-emerald-700"></i>
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                    <i className="fas fa-shield-halved text-xs text-emerald-700"></i>
                   </div>
                   <input
                     type={showPin ? 'text' : 'password'}
@@ -389,27 +389,27 @@ export default function LoginPage() {
                     maxLength={12}
                     value={accessPin}
                     onChange={(e) => setAccessPin(e.target.value)}
-                    className="w-full pl-10 pr-10 py-3 rounded-2xl border border-slate-200 bg-[#FAF8F5] focus:border-[#064E3B] text-sm font-mono font-black tracking-widest outline-none transition"
+                    className="w-full pl-9 pr-9 py-2.5 rounded-xl sm:rounded-2xl border border-slate-200 bg-[#FAF8F5] focus:border-[#064E3B] text-xs font-mono font-black tracking-widest outline-none transition"
                     placeholder="Enter PIN"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPin(!showPin)}
-                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 text-xs"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 text-xs"
                   >
                     <i className={`fas ${showPin ? 'fa-eye-slash' : 'fa-eye'}`}></i>
                   </button>
                 </div>
-                <span className="text-[10px] text-slate-400 mt-1 block">
+                <span className="text-[10px] text-slate-400 mt-0.5 block">
                   Enter the access code generated by your mosque administrator.
                 </span>
               </div>
 
-              <div className="space-y-2 pt-2">
+              <div className="space-y-1.5 pt-1">
                 <button
                   type="submit"
                   disabled={verifyingPin}
-                  className="w-full py-3 px-4 bg-[#1E5D42] hover:bg-[#164732] text-white font-extrabold rounded-2xl shadow-md transition disabled:opacity-50 flex items-center justify-center gap-2 text-xs"
+                  className="w-full py-2.5 sm:py-3 px-4 bg-[#1E5D42] hover:bg-[#164732] text-white font-extrabold rounded-xl sm:rounded-2xl shadow-md transition disabled:opacity-50 flex items-center justify-center gap-2 text-xs"
                 >
                   {verifyingPin ? (
                     <>
@@ -426,7 +426,7 @@ export default function LoginPage() {
                     setStep(1);
                     setError('');
                   }}
-                  className="w-full py-2 text-xs font-bold text-slate-500 hover:text-slate-800 transition"
+                  className="w-full py-1.5 text-xs font-bold text-slate-500 hover:text-slate-800 transition"
                 >
                   ← Back to Email & Password
                 </button>
@@ -435,12 +435,12 @@ export default function LoginPage() {
           )}
 
           {/* OR CONTINUE WITH DIVIDER */}
-          <div className="relative py-2">
+          <div className="relative py-1 sm:py-1.5">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-slate-200"></div>
             </div>
-            <div className="relative flex justify-center text-[10px] uppercase tracking-widest font-extrabold text-slate-400">
-              <span className="bg-white px-3">OR CONTINUE WITH</span>
+            <div className="relative flex justify-center text-[9px] uppercase tracking-widest font-extrabold text-slate-400">
+              <span className="bg-white px-2.5">OR CONTINUE WITH</span>
             </div>
           </div>
 
@@ -448,7 +448,7 @@ export default function LoginPage() {
           <button
             type="button"
             onClick={() => setShowCommunityModal(true)}
-            className="w-full py-2.5 px-4 bg-white hover:bg-[#FAF8F5] text-slate-800 font-bold rounded-2xl border border-slate-300 transition text-xs flex items-center justify-center gap-2 shadow-xs"
+            className="w-full py-2 sm:py-2.5 px-3 bg-white hover:bg-[#FAF8F5] text-slate-800 font-bold rounded-xl sm:rounded-2xl border border-slate-300 transition text-xs flex items-center justify-center gap-2 shadow-xs"
           >
             <i className="fas fa-key text-slate-600 text-xs"></i>
             <span>View as Community (Read Only)</span>
@@ -456,8 +456,8 @@ export default function LoginPage() {
         </div>
 
         {/* FOOTER LINKS */}
-        <div className="mt-6 text-center space-y-2">
-          <div className="text-xs text-slate-500">
+        <div className="mt-4 sm:mt-6 text-center space-y-1.5">
+          <div className="text-[11px] sm:text-xs text-slate-500">
             Need support?{' '}
             <a
               href="https://wa.me/919894977003?text=Assalamu%20Alaikum%2C%20I%20need%20support%20with%20MasjidPay"
@@ -470,8 +470,8 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <Link href="/super-admin/login" className="text-[11px] font-extrabold text-slate-400 hover:text-[#064E3B] transition flex items-center justify-center gap-1">
-              <i className="fas fa-shield-halved text-[10px]"></i> Super Admin Portal Login →
+            <Link href="/super-admin/login" className="text-[10px] sm:text-[11px] font-extrabold text-slate-400 hover:text-[#064E3B] transition flex items-center justify-center gap-1">
+              <i className="fas fa-shield-halved text-[9px]"></i> Super Admin Portal Login →
             </Link>
           </div>
         </div>
