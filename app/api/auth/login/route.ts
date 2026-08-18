@@ -100,11 +100,12 @@ export async function POST(req: NextRequest) {
         masjidName = primaryMasjidUser.masjid.name;
       }
 
-      // CHECK IF 2FA ACCESS PIN IS ENABLED FOR THIS USER OR MASJID
+      // CHECK IF 2FA ACCESS PIN IS ENABLED FOR THIS USER OR MASJID (Super Admins bypass mosque PINs)
       const isPinRequired =
-        Boolean(primaryMasjidUser?.accessPinEnabled && primaryMasjidUser?.accessPin) ||
+        user.role !== 'SUPER_ADMIN' &&
+        (Boolean(primaryMasjidUser?.accessPinEnabled && primaryMasjidUser?.accessPin) ||
         Boolean(user.accessPinEnabled && user.accessPin) ||
-        Boolean(primaryMasjidUser?.masjid?.orgAccessPinEnabled && primaryMasjidUser?.masjid?.orgAccessPin);
+        Boolean(primaryMasjidUser?.masjid?.orgAccessPinEnabled && primaryMasjidUser?.masjid?.orgAccessPin));
 
       if (isPinRequired) {
         const twoFactorToken = signTwoFactorToken({

@@ -25,6 +25,8 @@ export default function SuperAdminMasjidsPage() {
 
   const [newPassword, setNewPassword] = useState('');
   const [sendEmailNotice, setSendEmailNotice] = useState(true);
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [emailSentStatus, setEmailSentStatus] = useState('');
   const [manageSuccess, setManageSuccess] = useState('');
   const [manageError, setManageError] = useState('');
 
@@ -65,17 +67,17 @@ export default function SuperAdminMasjidsPage() {
   };
 
   const openManageModal = (masjid: any) => {
-    const adminUser = masjid.masjidUsers[0]?.user;
+    const adminUser = masjid?.masjidUsers?.[0]?.user;
     setManageMasjid(masjid);
     setActiveTab('DETAILS');
     setEditAdminName(adminUser?.name || '');
-    setEditAdminEmail(adminUser?.email || masjid.email || '');
-    setEditAdminPhone(adminUser?.phone || masjid.phone || '');
-    setEditMasjidName(masjid.name || '');
-    setEditCity(masjid.city || '');
-    setEditState(masjid.state || '');
-    setEditAddress(masjid.address || '');
-    setEditPhone(masjid.phone || '');
+    setEditAdminEmail(adminUser?.email || masjid?.email || '');
+    setEditAdminPhone(adminUser?.phone || masjid?.phone || '');
+    setEditMasjidName(masjid?.name || '');
+    setEditCity(masjid?.city || '');
+    setEditState(masjid?.state || '');
+    setEditAddress(masjid?.address || '');
+    setEditPhone(masjid?.phone || '');
     setNewPassword('');
     setManageSuccess('');
     setManageError('');
@@ -95,7 +97,7 @@ export default function SuperAdminMasjidsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           masjidId: manageMasjid.id,
-          userId: manageMasjid.masjidUsers[0]?.userId,
+          userId: manageMasjid?.masjidUsers?.[0]?.userId,
           action: 'UPDATE_ADMIN_DETAILS',
           adminName: editAdminName,
           adminEmail: editAdminEmail,
@@ -140,7 +142,7 @@ export default function SuperAdminMasjidsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           masjidId: manageMasjid.id,
-          userId: manageMasjid.masjidUsers[0]?.userId,
+          userId: manageMasjid?.masjidUsers?.[0]?.userId,
           action: 'RESET_ADMIN_PASSWORD',
           newPassword,
           sendEmailNotification: sendEmailNotice,
@@ -165,10 +167,8 @@ export default function SuperAdminMasjidsPage() {
 
   const handleSendWelcomeEmail = async () => {
     if (!manageMasjid) return;
-
-    setActionLoading(true);
-    setManageSuccess('');
-    setManageError('');
+    setSendingEmail(true);
+    setEmailSentStatus('');
 
     try {
       const res = await fetch('/api/super-admin/masjids', {
@@ -182,15 +182,14 @@ export default function SuperAdminMasjidsPage() {
 
       const data = await res.json();
       if (res.ok) {
-        setManageSuccess(data.message || 'Official Welcome & Activation email dispatched successfully!');
-        setTimeout(() => setManageSuccess(''), 6000);
+        setEmailSentStatus(data.message || 'Welcome email dispatched successfully!');
       } else {
-        setManageError(data.error || 'Failed to send welcome email');
+        setEmailSentStatus(`Error: ${data.error || 'Failed to send welcome email'}`);
       }
-    } catch (err: any) {
-      setManageError(err.message || 'An error occurred');
+    } catch (e: any) {
+      setEmailSentStatus(`Error: ${e.message || 'Network error'}`);
     } finally {
-      setActionLoading(false);
+      setSendingEmail(false);
     }
   };
 
@@ -207,31 +206,45 @@ export default function SuperAdminMasjidsPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold text-white tracking-tight">Masjid Approvals & Tenant Management</h1>
-          <p className="text-slate-400 text-sm mt-1">Approve, edit details, and reset admin passwords upon mosque request</p>
+          <h1 className="text-2xl font-black text-white tracking-tight">Masjid Approvals & Management</h1>
+          <p className="text-slate-400 text-xs mt-1">Review onboarding applications, activate accounts, and manage mosque settings</p>
+        </div>
+      </div>
+
+      {/* FILTER TABS & SEARCH */}
+      <div className="flex flex-col sm:flex-row gap-4 justify-between items-stretch sm:items-center bg-slate-900 p-4 rounded-2xl border border-slate-800">
+        <div className="flex flex-wrap gap-2">
+          {['ALL', 'PENDING', 'APPROVED', 'REJECTED', 'SUSPENDED'].map((st) => (
+            <button
+              key={st}
+              onClick={() => setStatusFilter(st)}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${
+                statusFilter === st
+                  ? 'bg-emerald-600 text-white shadow-sm'
+                  : 'bg-slate-800 text-slate-400 hover:text-white'
+              }`}
+            >
+              {st}
+            </button>
+          ))}
         </div>
 
-        {/* SEARCH & FILTERS */}
-        <div className="flex items-center gap-3">
+        <div className="flex gap-2">
           <input
             type="text"
-            placeholder="Search masjid..."
+            placeholder="Search mosque name, city, email..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && fetchMasjids()}
-            className="px-3.5 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 outline-none focus:border-emerald-500"
+            className="px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 outline-none focus:border-emerald-500 w-60"
           />
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3.5 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-slate-200 outline-none focus:border-emerald-500 font-semibold"
+          <button
+            type="button"
+            onClick={fetchMasjids}
+            className="px-4 py-2 bg-emerald-700 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold transition"
           >
-            <option value="ALL">All Statuses</option>
-            <option value="PENDING">Pending Approval</option>
-            <option value="APPROVED">Approved</option>
-            <option value="REJECTED">Rejected</option>
-            <option value="SUSPENDED">Suspended</option>
-          </select>
+            Search
+          </button>
         </div>
       </div>
 
@@ -261,7 +274,7 @@ export default function SuperAdminMasjidsPage() {
               </thead>
               <tbody className="divide-y divide-slate-800/60">
                 {masjids.map((masjid) => {
-                  const adminUser = masjid.masjidUsers[0]?.user;
+                  const adminUser = masjid?.masjidUsers?.[0]?.user;
                   return (
                     <tr key={masjid.id} className="hover:bg-slate-800/40">
                       <td className="p-4 font-bold text-white">
@@ -548,7 +561,7 @@ export default function SuperAdminMasjidsPage() {
               <form onSubmit={handleResetPassword} className="space-y-4">
                 <div className="p-3.5 bg-slate-950 rounded-2xl border border-slate-800 text-xs text-slate-300 space-y-1">
                   <span className="font-bold text-white block">Target Admin Account:</span>
-                  <p className="text-emerald-400 font-semibold">{manageMasjid.masjidUsers[0]?.user?.email || manageMasjid.email}</p>
+                  <p className="text-emerald-400 font-semibold">{manageMasjid?.masjidUsers?.[0]?.user?.email || manageMasjid?.email}</p>
                   <p className="text-[11px] text-slate-500">Reset the login password on behalf of this mosque administrator.</p>
                 </div>
 
@@ -615,7 +628,7 @@ export default function SuperAdminMasjidsPage() {
                   <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
                     <span className="font-extrabold text-white text-sm">Recipient Admin:</span>
                     <span className="px-2.5 py-1 bg-emerald-950 text-emerald-400 border border-emerald-800 rounded-lg font-mono font-bold text-xs">
-                      {manageMasjid.masjidUsers[0]?.user?.email || manageMasjid.email}
+                      {manageMasjid?.masjidUsers?.[0]?.user?.email || manageMasjid?.email}
                     </span>
                   </div>
 

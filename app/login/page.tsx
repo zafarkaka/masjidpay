@@ -61,9 +61,9 @@ export default function LoginPage() {
       }
 
       // Standard direct login
-      if (data.user.role === 'SUPER_ADMIN') {
+      if (data.user?.role === 'SUPER_ADMIN') {
         router.push('/super-admin/masjids');
-      } else if (data.user.masjidStatus === 'PENDING') {
+      } else if (data.user?.masjidStatus === 'PENDING') {
         router.push('/status');
       } else {
         router.push('/dashboard');
@@ -102,9 +102,9 @@ export default function LoginPage() {
         throw new Error(data.error || 'Invalid Access Code');
       }
 
-      if (data.user.role === 'SUPER_ADMIN') {
+      if (data.user?.role === 'SUPER_ADMIN') {
         router.push('/super-admin/masjids');
-      } else if (data.user.masjidStatus === 'PENDING') {
+      } else if (data.user?.masjidStatus === 'PENDING') {
         router.push('/status');
       } else {
         router.push('/dashboard');
