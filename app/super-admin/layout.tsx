@@ -9,9 +9,14 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
   const pathname = usePathname();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const isLoginPage = !pathname || pathname.startsWith('/super-admin/login');
-  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [pathname]);
 
   useEffect(() => {
     setMounted(true);
@@ -77,12 +82,6 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
     { label: 'Masjids Approval & Queue', href: '/super-admin/masjids', icon: 'fa-mosque' },
     { label: 'System Audit Logs', href: '/super-admin/audit', icon: 'fa-history' },
   ];
-
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  useEffect(() => {
-    setMobileMenuOpen(false);
-  }, [pathname]);
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-slate-950 text-slate-100 font-sans">

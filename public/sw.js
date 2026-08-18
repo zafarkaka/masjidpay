@@ -1,4 +1,4 @@
-const CACHE_NAME = 'masjidpay-pwa-v3';
+const CACHE_NAME = 'masjidpay-pwa-v4';
 const PRECACHE_ASSETS = [
   '/',
   '/manifest.json',
@@ -39,11 +39,12 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(event.request.url);
 
-  // Never intercept API routes or Next.js development hot-reload
+  // Never intercept API routes or Next.js development hot-reload or non-http
   if (
     url.pathname.startsWith('/api/') ||
     url.pathname.startsWith('/_next/webpack-hmr') ||
-    url.pathname.startsWith('/_next/static/webpack')
+    url.pathname.startsWith('/_next/static/webpack') ||
+    !url.protocol.startsWith('http')
   ) {
     return;
   }
@@ -51,10 +52,19 @@ self.addEventListener('fetch', (event) => {
   // Network-first strategy for navigation and HTML pages
   if (event.request.mode === 'navigate') {
     event.respondWith(
-      fetch(event.request).catch(() => {
-        return caches.match(event.request).then((cached) => {
-          return cached || caches.match('/');
-        });
+      fetch(event.request).catch(async () => {
+        const cached = await caches.match(event.request);
+        if (cached) return cached;
+        const rootCached = await caches.match('/');
+        if (rootCached) return rootCached;
+        return new Response(
+          '<!DOCTYPE html><html><head><meta charset="utf-8"><title>MasjidPay Offline</title></head><body style="font-family:system-ui;text-align:center;padding:50px;background:#f8fafc;"><h2>Connection Lost</h2><p>Please check your internet connection and reload.</p></body></html>',
+          {
+            status: 503,
+            statusText: 'Service Unavailable',
+            headers: { 'Content-Type': 'text/html; charset=utf-8' },
+          }
+        );
       })
     );
     return;
@@ -63,7 +73,19 @@ self.addEventListener('fetch', (event) => {
   // Stale-while-revalidate for static assets (css, js, images, fonts)
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
-      const fetchPromise = fetch(event.request)
+      if (cachedResponse) {
+        // Revalidate in background
+        fetch(event.request)
+          .then((networkResponse) => {
+            if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+              caches.open(CACHE_NAME).then((cache) => cache.put(event.request, networkResponse.clone()));
+            }
+          })
+          .catch(() => {});
+        return cachedResponse;
+      }
+
+      return fetch(event.request)
         .then((networkResponse) => {
           if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
             const responseToCache = networkResponse.clone();
@@ -73,9 +95,9 @@ self.addEventListener('fetch', (event) => {
           }
           return networkResponse;
         })
-        .catch(() => cachedResponse);
-
-      return cachedResponse || fetchPromise;
+        .catch(() => {
+          return new Response('', { status: 404, statusText: 'Not Found' });
+        });
     })
   );
 });
