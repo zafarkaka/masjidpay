@@ -137,13 +137,9 @@ export default function LoginPage() {
     }
   };
 
-  // COMMUNITY READ-ONLY LOGIN SUBMIT
+  // COMMUNITY / GUEST READ-ONLY LOGIN SUBMIT
   const handleCommunityLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!enteredCommunityCode.trim()) {
-      setCommunityError('Please enter the Community Access Code.');
-      return;
-    }
 
     setVerifyingCommunity(true);
     setCommunityError('');
@@ -153,7 +149,7 @@ export default function LoginPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          slug: selectedMasjidSlug,
+          slug: selectedMasjidSlug || (masjidList[0]?.slug) || 'jama-masjid',
           communityCode: enteredCommunityCode.trim(),
         }),
       });
@@ -163,7 +159,7 @@ export default function LoginPage() {
         setShowCommunityModal(false);
         router.push('/dashboard');
       } else {
-        setCommunityError(data.error || 'Invalid Community Access Code.');
+        setCommunityError(data.error || 'Failed to enter guest view.');
       }
     } catch (err: any) {
       setCommunityError(err.message || 'An error occurred.');
@@ -483,11 +479,11 @@ export default function LoginPage() {
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-2xl bg-[#064E3B] text-[#F4D06F] flex items-center justify-center text-base font-bold shadow-xs">
-                  <i className="fas fa-key"></i>
+                  <i className="fas fa-eye"></i>
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-slate-900">Community Access</h3>
-                  <p className="text-xs text-slate-500 font-medium">Read-Only Mosque Financial View</p>
+                  <h3 className="text-base font-black text-slate-900">Community & Guest Access</h3>
+                  <p className="text-xs text-slate-500 font-medium">Read-Only Financial Transparency</p>
                 </div>
               </div>
               <button
@@ -496,6 +492,15 @@ export default function LoginPage() {
               >
                 ✕
               </button>
+            </div>
+
+            <div className="p-3 bg-emerald-50/80 border border-emerald-200 rounded-2xl text-[11px] text-emerald-900 leading-relaxed space-y-1">
+              <p className="font-bold flex items-center gap-1.5 text-emerald-950">
+                <i className="fas fa-shield-halved text-emerald-700"></i> Read-Only Transparency Mode
+              </p>
+              <p className="text-slate-600">
+                You can browse financial income, expenditures, budgets, and collections. <strong>Editing, creating, and amendments are disabled.</strong>
+              </p>
             </div>
 
             {communityError && (
@@ -529,35 +534,32 @@ export default function LoginPage() {
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Community Access Code *
+                  Community Passcode <span className="text-slate-400 font-normal text-[10px]">(Optional for guest access)</span>
                 </label>
                 <input
                   type="text"
-                  required
-                  placeholder="e.g. 7860 or community123"
+                  placeholder="Optional (leave blank for open guest access)"
                   value={enteredCommunityCode}
                   onChange={(e) => setEnteredCommunityCode(e.target.value)}
                   className="w-full p-2.5 bg-[#FAF8F5] border border-slate-200 rounded-xl text-xs font-mono font-bold text-center tracking-widest text-slate-900 focus:outline-none focus:border-[#064E3B]"
                 />
-                <span className="text-[10px] text-slate-400 block mt-1">
-                  Enter the read-only access code provided by your mosque committee.
-                </span>
               </div>
 
               <div className="pt-2 flex justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setShowCommunityModal(false)}
-                  className="px-4 py-2 bg-slate-100 text-slate-600 font-bold rounded-xl text-xs"
+                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl text-xs"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  disabled={verifyingCommunity || !enteredCommunityCode.trim()}
-                  className="px-5 py-2 bg-[#064E3B] hover:bg-emerald-950 text-white font-extrabold rounded-xl text-xs shadow-md transition disabled:opacity-50"
+                  disabled={verifyingCommunity}
+                  className="px-5 py-2.5 bg-[#064E3B] hover:bg-emerald-950 text-white font-extrabold rounded-xl text-xs shadow-md transition disabled:opacity-50 flex items-center gap-2"
                 >
-                  {verifyingCommunity ? 'Verifying...' : 'Unlock Read-Only View'}
+                  <i className="fas fa-eye"></i>
+                  {verifyingCommunity ? 'Opening Guest View...' : 'View Mosque (Read Only)'}
                 </button>
               </div>
             </form>

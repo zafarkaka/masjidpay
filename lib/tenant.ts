@@ -66,6 +66,18 @@ export function requireTenantAccess(targetMasjidId?: string | null): UserSession
   return session;
 }
 
+/**
+ * Ensures the caller has WRITE permissions.
+ * Viewers and Community Guests cannot create, edit, amend, or delete records.
+ */
+export function requireTenantWriteAccess(targetMasjidId?: string | null): UserSession {
+  const session = requireTenantAccess(targetMasjidId);
+  if (session.role === 'VIEWER' || session.role === 'COMMUNITY_VIEWER') {
+    throw new TenantAccessError('Read-Only Access: Guests and Community Viewers cannot create, edit, amend, or delete records.');
+  }
+  return session;
+}
+
 export function isSuperAdmin(session: UserSession | null): boolean {
   return session?.role === 'SUPER_ADMIN';
 }

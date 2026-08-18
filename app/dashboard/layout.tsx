@@ -180,6 +180,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     },
   ];
 
+  const isViewer = user?.role === 'VIEWER' || user?.role === 'COMMUNITY_VIEWER';
+
+  const visibleNavGroups = isViewer
+    ? navGroups.filter((g) => g.group !== 'SYSTEM')
+    : navGroups;
+
   return (
     <div className={`min-h-screen flex text-slate-800 font-sans ${darkMode ? 'dark bg-slate-950 text-slate-100' : 'bg-[#f6faf6]'}`}>
       {/* MASJID ADMIN SIDEBAR MATCHING SCREENSHOT */}
@@ -195,16 +201,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <span className="font-extrabold text-sm text-slate-900 block leading-tight truncate" title={user?.masjidName || 'Mosque Dashboard'}>
                   {user?.masjidName || 'Mosque Dashboard'}
                 </span>
-                <span className="text-[10px] font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 inline-block mt-0.5">
-                  Verified Mosque
-                </span>
+                {isViewer ? (
+                  <span className="text-[10px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200 inline-block mt-0.5">
+                    👀 Guest (Read-Only)
+                  </span>
+                ) : (
+                  <span className="text-[10px] font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 inline-block mt-0.5">
+                    Verified Mosque
+                  </span>
+                )}
               </div>
             </div>
           </div>
 
           {/* NAVIGATION LINKS */}
           <nav className="p-4 space-y-5 overflow-y-auto max-h-[calc(100vh-280px)]">
-            {navGroups.map((group, idx) => (
+            {visibleNavGroups.map((group, idx) => (
               <div key={idx}>
                 <div className="px-3 mb-1.5 text-[9px] font-extrabold uppercase tracking-widest text-slate-400">
                   {group.group}
@@ -324,9 +336,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     <span className="font-extrabold text-sm text-slate-900 block leading-tight truncate">
                       {user?.masjidName || 'Mosque Dashboard'}
                     </span>
-                    <span className="text-[10px] font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 inline-block mt-0.5">
-                      Verified Mosque
-                    </span>
+                    {isViewer ? (
+                      <span className="text-[10px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200 inline-block mt-0.5">
+                        👀 Guest (Read-Only)
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 inline-block mt-0.5">
+                        Verified Mosque
+                      </span>
+                    )}
                   </div>
                 </div>
                 <button
@@ -340,7 +358,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
               {/* NAVIGATION LINKS */}
               <nav className="p-4 space-y-4">
-                {navGroups.map((group, idx) => (
+                {visibleNavGroups.map((group, idx) => (
                   <div key={idx}>
                     <div className="px-3 mb-1.5 text-[9px] font-extrabold uppercase tracking-widest text-slate-400">
                       {group.group}
@@ -474,6 +492,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
           </div>
         </header>
+
+        {/* READ-ONLY GUEST BANNER */}
+        {isViewer && (
+          <div className="bg-amber-500/15 border-b border-amber-500/30 px-4 sm:px-6 py-2.5 text-xs font-bold text-amber-950 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <i className="fas fa-shield-halved text-amber-700"></i>
+              <span>
+                <strong>Guest Transparency Mode:</strong> You are viewing live records in Read-Only Mode. Editing and amendments are disabled.
+              </span>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="text-amber-900 hover:text-black font-extrabold underline shrink-0 text-xs ml-3 cursor-pointer"
+            >
+              Exit Guest View
+            </button>
+          </div>
+        )}
 
         {/* PAGE BODY */}
         <main className="p-4 sm:p-6 md:p-8 flex-1 overflow-y-auto">{children}</main>

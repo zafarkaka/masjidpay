@@ -27,23 +27,14 @@ export async function GET() {
   }
 }
 
-// POST: Verify Community Access Code and create Read-Only Viewer Session
+// POST: Grant Read-Only Viewer Session for Guest / Community Member
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    const body = await req.json().catch(() => ({}));
     const { masjidId, slug, communityCode } = body;
 
-    if (!communityCode || (!masjidId && !slug)) {
-      return NextResponse.json(
-        { error: 'Please select a mosque and enter the Community Access Code' },
-        { status: 400 }
-      );
-    }
-
-    const cleanCode = String(communityCode).trim().toLowerCase();
-
-    // Find mosque
-    const masjid = await prisma.masjid.findFirst({
+    // Find mosque by id or slug, or fallback to first approved mosque
+    let masjid = await prisma.masjid.findFirst({
       where: {
         OR: [
           { id: masjidId || 'none' },
@@ -54,18 +45,28 @@ export async function POST(req: NextRequest) {
     });
 
     if (!masjid) {
+      masjid = await prisma.masjid.findFirst({ where: { status: 'APPROVED' } });
+    }
+
+    if (!masjid) {
+      masjid = await prisma.masjid.findFirst();
+    }
+
+    if (!masjid) {
       return NextResponse.json({ error: 'Mosque not found' }, { status: 404 });
     }
 
-    // Verify community access code (matches custom code or default 7860)
-    const expectedCode = (masjid.communityAccessCode || '7860').trim().toLowerCase();
-    const isMatch = cleanCode === expectedCode || cleanCode === '7860' || cleanCode === 'community123';
-
-    if (!isMatch) {
-      return NextResponse.json(
-        { error: 'Invalid Community Access Code for this mosque. Please request the code from your mosque committee.' },
-        { status: 401 }
-      );
+    // If mosque has configured a strict code and communityCode is provided, verify it
+    if (communityCode && communityCode.trim()) {
+      const cleanCode = String(communityCode).trim().toLowerCase();
+      const expectedCode = (masjid.communityAccessCode || '7860').trim().toLowerCase();
+      const isMatch = cleanCode === expectedCode || cleanCode === '7860' || cleanCode === 'community123' || cleanCode === 'guest';
+      if (!isMatch && masjid.communityAccessCode) {
+        return NextResponse.json(
+          { error: 'Invalid Community Access Code for this mosque.' },
+          { status: 401 }
+        );
+      }
     }
 
     // Issue Read-Only Community Viewer Session
