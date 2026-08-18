@@ -112,70 +112,48 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const navGroups: NavGroup[] = [
     {
-      group: 'GENERAL',
+      group: 'OVERVIEW',
       items: [{ label: 'Dashboard', href: '/dashboard', icon: 'fa-chart-pie' }],
     },
     {
-      group: 'INCOME',
-      items: [{ label: 'Mosque Income', href: '/dashboard/income', icon: 'fa-wallet' }],
-    },
-    {
-      group: 'EXPENSES',
-      items: [{ label: 'Mosque Expenses', href: '/dashboard/expenses', icon: 'fa-receipt' }],
-    },
-    {
-      group: 'FINANCE',
+      group: 'FINANCE & ACCOUNTS',
       items: [
+        { label: 'Mosque Income', href: '/dashboard/income', icon: 'fa-wallet' },
+        { label: 'Mosque Expenses', href: '/dashboard/expenses', icon: 'fa-receipt' },
         { label: 'Bank & Cash Deposits', href: '/dashboard/finance', icon: 'fa-building-columns' },
         { label: 'Opening Balances', href: '/dashboard/finance/opening-balance', icon: 'fa-scale-balanced' },
         { label: 'Monthly Finance Report', href: '/dashboard/finance/reports', icon: 'fa-file-invoice-dollar' },
       ],
     },
     {
-      group: 'MONTHLY MEMBERS',
+      group: 'MEMBERS & OPERATIONS',
       items: [
-        { label: 'Monthly Members', href: '/dashboard/monthly-members?tab=directory', icon: 'fa-users' },
-        { label: 'Record Member Amount', href: '/dashboard/member-collections', icon: 'fa-hand-holding-dollar' },
-        { label: 'Add Member', href: '/dashboard/monthly-members?tab=add', icon: 'fa-user-plus' },
+        { label: 'Monthly Members', href: '/dashboard/monthly-members', icon: 'fa-users' },
+        { label: 'Member Collections', href: '/dashboard/member-collections', icon: 'fa-hand-holding-dollar' },
+        { label: 'Staff & Payroll', href: '/dashboard/payroll', icon: 'fa-id-card' },
+        { label: 'Rental Management', href: '/dashboard/rentals', icon: 'fa-building' },
       ],
     },
     {
-      group: 'STAFF PAYROLL',
-      items: [{ label: 'Staff Management & Payroll', href: '/dashboard/payroll', icon: 'fa-id-card' }],
-    },
-    {
-      group: 'RENTALS',
-      items: [{ label: 'Rental Management', href: '/dashboard/rentals', icon: 'fa-building' }],
-    },
-    {
-      group: 'DOCUMENTS',
-      items: [{ label: 'Documents', href: '/dashboard/documents', icon: 'fa-folder-closed' }],
-    },
-    {
-      group: 'FUNDRAISING & PAYMENTS',
+      group: 'DONATIONS & PAYMENTS',
       items: [
         { label: 'Donations', href: '/dashboard/donations', icon: 'fa-heart' },
         { label: 'Recurring Donations', href: '/dashboard/recurring-donations', icon: 'fa-rotate' },
         { label: 'Campaigns', href: '/dashboard/campaigns', icon: 'fa-bullhorn' },
         { label: 'Payment Links & QR', href: '/dashboard/payment-links', icon: 'fa-qrcode' },
+        { label: 'Donor Directory', href: '/dashboard/donors', icon: 'fa-address-book' },
       ],
     },
     {
-      group: 'SYSTEM',
+      group: 'ADMINISTRATION & SYSTEM',
       items: [
+        { label: 'Documents', href: '/dashboard/documents', icon: 'fa-folder-closed' },
         { label: 'Users & Permissions', href: '/dashboard/users', icon: 'fa-user-shield' },
         { label: 'Mosque Profile', href: '/dashboard/settings', icon: 'fa-gear' },
-        { label: 'Payment Gateway (Razorpay & UPI)', href: '/dashboard/payment-gateway', icon: 'fa-credit-card' },
+        { label: 'Payment Gateway', href: '/dashboard/payment-gateway', icon: 'fa-credit-card' },
         { label: 'Data Backup', href: '/dashboard/backup', icon: 'fa-database' },
+        { label: 'Audit & Reports', href: '/dashboard/reports', icon: 'fa-file-lines' },
         { label: 'Recycle Bin', href: '/dashboard/recycle-bin', icon: 'fa-trash-can' },
-      ],
-    },
-    {
-      group: 'PEOPLE & REPORTS',
-      items: [
-        { label: 'Donor Directory', href: '/dashboard/donors', icon: 'fa-users' },
-        { label: 'Financial Reports', href: '/dashboard/reports', icon: 'fa-file-invoice-dollar' },
-        { label: 'Audit Logs', href: '/dashboard/audit', icon: 'fa-clock-rotate-left' },
       ],
     },
   ];
@@ -188,27 +166,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       items: [{ label: 'Dashboard', href: '/dashboard', icon: 'fa-table-cells-large' }],
     },
     {
-      group: 'INCOME',
-      items: [{ label: 'Mosque Income', href: '/dashboard/income', icon: 'fa-arrow-trend-up' }],
-    },
-    {
-      group: 'EXPENSES',
-      items: [{ label: 'Mosque Expenses', href: '/dashboard/expenses', icon: 'fa-arrow-trend-down' }],
-    },
-    {
-      group: 'COLLECTIONS & STAFF',
+      group: 'FINANCE & ACCOUNTS',
       items: [
-        { label: 'Monthly Member Collection', href: '/dashboard/member-collections', icon: 'fa-hand-holding-dollar' },
-        { label: 'Staff Management & Payroll', href: '/dashboard/payroll', icon: 'fa-id-card' },
+        { label: 'Mosque Income', href: '/dashboard/income', icon: 'fa-arrow-trend-up' },
+        { label: 'Mosque Expenses', href: '/dashboard/expenses', icon: 'fa-arrow-trend-down' },
       ],
     },
     {
-      group: 'RENTALS',
-      items: [{ label: 'Rental Management', href: '/dashboard/rentals', icon: 'fa-building' }],
-    },
-    {
-      group: 'MEMBERS',
-      items: [{ label: 'Monthly Members', href: '/dashboard/monthly-members', icon: 'fa-users' }],
+      group: 'COMMUNITY & OPERATIONS',
+      items: [
+        { label: 'Monthly Member Collection', href: '/dashboard/member-collections', icon: 'fa-hand-holding-dollar' },
+        { label: 'Monthly Members', href: '/dashboard/monthly-members', icon: 'fa-users' },
+        { label: 'Staff Management & Payroll', href: '/dashboard/payroll', icon: 'fa-id-card' },
+        { label: 'Rental Management', href: '/dashboard/rentals', icon: 'fa-building' },
+      ],
     },
   ];
 
@@ -216,51 +187,49 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className={`min-h-screen flex text-slate-800 font-sans ${darkMode ? 'dark bg-slate-950 text-slate-100' : 'bg-[#f6faf6]'}`}>
-      {/* MASJID ADMIN SIDEBAR MATCHING SCREENSHOT */}
-      <aside className="w-64 bg-white border-r border-slate-200 flex flex-col hidden md:flex shrink-0">
-        <div>
+      {/* MASJID ADMIN SIDEBAR - CLEAN, COMPACT & ORGANIZED */}
+      <aside className="w-60 bg-white border-r border-slate-200 h-screen sticky top-0 flex flex-col justify-between hidden md:flex shrink-0 z-30">
+        <div className="flex flex-col min-h-0 flex-1">
           {/* BRANDING */}
-          <div className="p-6 border-b border-slate-100 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-emerald-700 text-white flex items-center justify-center text-lg shadow-md shadow-emerald-700/20 shrink-0">
-                <i className="fas fa-mosque"></i>
-              </div>
-              <div className="overflow-hidden">
-                <span className="font-extrabold text-sm text-slate-900 block leading-tight truncate" title={user?.masjidName || 'Mosque Dashboard'}>
-                  {user?.masjidName || 'Mosque Dashboard'}
+          <div className="p-3.5 border-b border-slate-100 flex items-center gap-2.5 shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-emerald-700 text-white flex items-center justify-center text-base shadow-xs shrink-0">
+              <i className="fas fa-mosque"></i>
+            </div>
+            <div className="overflow-hidden flex-1">
+              <span className="font-extrabold text-xs text-slate-900 block leading-tight truncate" title={user?.masjidName || 'Mosque Dashboard'}>
+                {user?.masjidName || 'Mosque Dashboard'}
+              </span>
+              {isViewer ? (
+                <span className="text-[9px] font-bold text-amber-800 bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200 inline-block mt-0.5">
+                  👀 Guest (Read-Only)
                 </span>
-                {isViewer ? (
-                  <span className="text-[10px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200 inline-block mt-0.5">
-                    👀 Guest (Read-Only)
-                  </span>
-                ) : (
-                  <span className="text-[10px] font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 inline-block mt-0.5">
-                    Verified Mosque
-                  </span>
-                )}
-              </div>
+              ) : (
+                <span className="text-[9px] font-semibold text-emerald-800 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200 inline-block mt-0.5">
+                  Verified Mosque
+                </span>
+              )}
             </div>
           </div>
 
           {/* NAVIGATION LINKS */}
-          <nav className="p-4 space-y-5 overflow-y-auto max-h-[calc(100vh-280px)]">
+          <nav className="flex-1 overflow-y-auto p-2 space-y-3">
             {visibleNavGroups.map((group, idx) => (
               <div key={idx}>
-                <div className="px-3 mb-1.5 text-[9px] font-extrabold uppercase tracking-widest text-slate-400">
+                <div className="px-2 mb-1 text-[9px] font-extrabold uppercase tracking-wider text-slate-400">
                   {group.group}
                 </div>
                 <div className="space-y-0.5">
                   {group.items.map((item) => {
-                    const active = pathname === item.href || (item.href.includes('/dashboard/monthly-members') && pathname === '/dashboard/monthly-members');
+                    const active = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href.split('?')[0]));
                     return (
                       <Link
                         key={item.href}
                         href={item.href}
                         target={item.external ? '_blank' : undefined}
-                        className={`flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-bold transition ${
+                        className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition ${
                           active
-                            ? 'bg-[#0F3D26] text-white shadow-sm'
-                            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
+                            ? 'bg-[#0F3D26] text-white shadow-xs'
+                            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'
                         }`}
                       >
                         <i className={`fas ${item.icon} text-xs w-4 text-center ${active ? 'text-white' : 'text-emerald-700'}`}></i>
@@ -275,30 +244,30 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
 
         {/* BOTTOM SIDEBAR CONTROLS */}
-        <div className="p-4 border-t border-slate-100 bg-slate-50/50 space-y-3">
+        <div className="p-2.5 border-t border-slate-100 bg-slate-50/70 space-y-2 shrink-0">
           {/* DARK MODE TOGGLE */}
           <button
             type="button"
             onClick={() => setDarkMode(!darkMode)}
-            className="w-full flex items-center justify-between px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200/60 rounded-xl transition"
+            className="w-full flex items-center justify-between px-2.5 py-1.5 text-[11px] font-bold text-slate-700 hover:bg-slate-200/60 rounded-lg transition"
           >
-            <span className="flex items-center gap-2.5">
-              <i className={`fas ${darkMode ? 'fa-sun text-amber-500' : 'fa-moon text-slate-500'}`}></i>
+            <span className="flex items-center gap-2">
+              <i className={`fas ${darkMode ? 'fa-sun text-amber-500' : 'fa-moon text-slate-500'} text-xs`}></i>
               <span>{darkMode ? 'Light Theme' : 'Dark Theme'}</span>
             </span>
-            <span className={`text-[10px] px-2 py-0.5 rounded-md font-extrabold ${darkMode ? 'bg-amber-950 text-amber-400' : 'bg-slate-200 text-slate-600'}`}>
+            <span className={`text-[9px] px-1.5 py-0.5 rounded font-extrabold ${darkMode ? 'bg-amber-950 text-amber-400' : 'bg-slate-200 text-slate-600'}`}>
               {darkMode ? 'ON' : 'OFF'}
             </span>
           </button>
 
           {/* LANGUAGE SELECTOR */}
-          <div className="px-3 py-1.5 bg-slate-100/80 rounded-xl">
+          <div className="px-2 py-1 bg-slate-100/90 rounded-lg">
             <div className="relative flex items-center">
               <select
                 value={selectedLanguage}
                 onChange={(e) => setSelectedLanguage(e.target.value)}
                 aria-label="Language selection"
-                className="w-full pl-7 pr-4 py-1 bg-transparent text-xs font-bold text-slate-700 outline-none appearance-none cursor-pointer"
+                className="w-full pl-6 pr-3 py-0.5 bg-transparent text-[11px] font-bold text-slate-700 outline-none appearance-none cursor-pointer"
               >
                 <option value="en">English (US)</option>
                 <option value="ur">Urdu (اردو)</option>
@@ -306,7 +275,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <option value="hi">Hindi (हिन्दी)</option>
                 <option value="ar">Arabic (العربية)</option>
               </select>
-              <i className="fas fa-globe absolute left-0 top-1.5 text-slate-400 text-xs pointer-events-none"></i>
+              <i className="fas fa-globe absolute left-0 top-1 text-slate-400 text-xs pointer-events-none"></i>
             </div>
           </div>
 
@@ -314,16 +283,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <button
             type="button"
             onClick={handleShareApp}
-            className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200/60 rounded-xl transition"
+            className="w-full flex items-center gap-2 px-2.5 py-1.5 text-[11px] font-bold text-slate-700 hover:bg-slate-200/60 rounded-lg transition"
           >
-            <i className="fas fa-share-nodes text-slate-600"></i>
+            <i className="fas fa-share-nodes text-slate-600 text-xs"></i>
             <span>{shareCopied ? '✓ Link Copied!' : 'Share App'}</span>
           </button>
 
           {/* USER PROFILE FOOTER */}
-          <div className="pt-2 border-t flex items-center justify-between">
-            <div className="flex items-center gap-2.5 overflow-hidden">
-              <div className="w-7 h-7 rounded-full bg-emerald-800 text-white font-black text-[11px] flex items-center justify-center shrink-0">
+          <div className="pt-1.5 border-t border-slate-200/80 flex items-center justify-between">
+            <div className="flex items-center gap-2 overflow-hidden">
+              <div className="w-6 h-6 rounded-full bg-emerald-800 text-white font-black text-[10px] flex items-center justify-center shrink-0">
                 {user?.name?.[0] || 'M'}
               </div>
               <div className="overflow-hidden">
@@ -333,7 +302,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <button
               onClick={handleLogout}
               title="Sign Out"
-              className="text-slate-400 hover:text-rose-600 transition text-xs p-1 rounded-lg"
+              className="text-slate-400 hover:text-rose-600 transition text-xs p-1 rounded"
             >
               <i className="fas fa-right-from-bracket"></i>
             </button>
@@ -352,24 +321,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           />
 
           {/* SLIDE-OVER DRAWER CONTENT */}
-          <aside className="relative w-72 max-w-[85vw] bg-white h-full shadow-2xl flex flex-col justify-between z-10 overflow-y-auto animate-in slide-in-from-left duration-200">
-            <div>
+          <aside className="relative w-68 max-w-[85vw] bg-white h-full shadow-2xl flex flex-col justify-between z-10 animate-in slide-in-from-left duration-200">
+            <div className="flex flex-col min-h-0 flex-1">
               {/* BRANDING & CLOSE BUTTON */}
-              <div className="p-5 border-b border-slate-100 flex items-center justify-between gap-3">
+              <div className="p-3.5 border-b border-slate-100 flex items-center justify-between gap-2.5 shrink-0">
                 <div className="flex items-center gap-2.5 overflow-hidden">
-                  <div className="w-9 h-9 rounded-2xl bg-emerald-700 text-white flex items-center justify-center text-base shadow-sm shrink-0">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-700 text-white flex items-center justify-center text-sm shadow-xs shrink-0">
                     <i className="fas fa-mosque"></i>
                   </div>
                   <div className="overflow-hidden">
-                    <span className="font-extrabold text-sm text-slate-900 block leading-tight truncate">
+                    <span className="font-extrabold text-xs text-slate-900 block leading-tight truncate">
                       {user?.masjidName || 'Mosque Dashboard'}
                     </span>
                     {isViewer ? (
-                      <span className="text-[10px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200 inline-block mt-0.5">
+                      <span className="text-[9px] font-bold text-amber-800 bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200 inline-block mt-0.5">
                         👀 Guest (Read-Only)
                       </span>
                     ) : (
-                      <span className="text-[10px] font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 inline-block mt-0.5">
+                      <span className="text-[9px] font-semibold text-emerald-800 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200 inline-block mt-0.5">
                         Verified Mosque
                       </span>
                     )}
@@ -377,7 +346,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </div>
                 <button
                   onClick={() => setMobileMenuOpen(false)}
-                  className="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg text-base"
+                  className="text-slate-400 hover:text-slate-700 p-1 rounded-lg text-base"
                   aria-label="Close menu"
                 >
                   ✕
@@ -385,25 +354,25 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </div>
 
               {/* NAVIGATION LINKS */}
-              <nav className="p-4 space-y-4">
+              <nav className="flex-1 overflow-y-auto p-2.5 space-y-3">
                 {visibleNavGroups.map((group, idx) => (
                   <div key={idx}>
-                    <div className="px-3 mb-1.5 text-[9px] font-extrabold uppercase tracking-widest text-slate-400">
+                    <div className="px-2 mb-1 text-[9px] font-extrabold uppercase tracking-wider text-slate-400">
                       {group.group}
                     </div>
                     <div className="space-y-0.5">
                       {group.items.map((item) => {
-                        const active = pathname === item.href || (item.href.includes('/dashboard/monthly-members') && pathname === '/dashboard/monthly-members');
+                        const active = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href.split('?')[0]));
                         return (
                           <Link
                             key={item.href}
                             href={item.href}
                             onClick={() => setMobileMenuOpen(false)}
                             target={item.external ? '_blank' : undefined}
-                            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition ${
+                            className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs font-bold transition ${
                               active
-                                ? 'bg-[#0F3D26] text-white shadow-sm'
-                                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
+                                ? 'bg-[#0F3D26] text-white shadow-xs'
+                                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'
                             }`}
                           >
                             <i className={`fas ${item.icon} text-xs w-4 text-center ${active ? 'text-white' : 'text-emerald-700'}`}></i>
@@ -418,30 +387,30 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
 
             {/* BOTTOM SIDEBAR CONTROLS */}
-            <div className="p-4 border-t border-slate-100 bg-slate-50/50 space-y-3 shrink-0">
+            <div className="p-2.5 border-t border-slate-100 bg-slate-50/70 space-y-2 shrink-0">
               {/* DARK MODE TOGGLE */}
               <button
                 type="button"
                 onClick={() => setDarkMode(!darkMode)}
-                className="w-full flex items-center justify-between px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200/60 rounded-xl transition"
+                className="w-full flex items-center justify-between px-2.5 py-1.5 text-[11px] font-bold text-slate-700 hover:bg-slate-200/60 rounded-lg transition"
               >
-                <span className="flex items-center gap-2.5">
-                  <i className={`fas ${darkMode ? 'fa-sun text-amber-500' : 'fa-moon text-slate-500'}`}></i>
+                <span className="flex items-center gap-2">
+                  <i className={`fas ${darkMode ? 'fa-sun text-amber-500' : 'fa-moon text-slate-500'} text-xs`}></i>
                   <span>{darkMode ? 'Light Theme' : 'Dark Theme'}</span>
                 </span>
-                <span className={`text-[10px] px-2 py-0.5 rounded-md font-extrabold ${darkMode ? 'bg-amber-950 text-amber-400' : 'bg-slate-200 text-slate-600'}`}>
+                <span className={`text-[9px] px-1.5 py-0.5 rounded font-extrabold ${darkMode ? 'bg-amber-950 text-amber-400' : 'bg-slate-200 text-slate-600'}`}>
                   {darkMode ? 'ON' : 'OFF'}
                 </span>
               </button>
 
               {/* LANGUAGE SELECTOR */}
-              <div className="px-3 py-1.5 bg-slate-100/80 rounded-xl">
+              <div className="px-2 py-1 bg-slate-100/90 rounded-lg">
                 <div className="relative flex items-center">
                   <select
                     value={selectedLanguage}
                     onChange={(e) => setSelectedLanguage(e.target.value)}
                     aria-label="Language selection"
-                    className="w-full pl-7 pr-4 py-1 bg-transparent text-xs font-bold text-slate-700 outline-none appearance-none cursor-pointer"
+                    className="w-full pl-6 pr-3 py-0.5 bg-transparent text-[11px] font-bold text-slate-700 outline-none appearance-none cursor-pointer"
                   >
                     <option value="en">English (US)</option>
                     <option value="ur">Urdu (اردو)</option>
@@ -449,7 +418,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     <option value="hi">Hindi (हिन्दी)</option>
                     <option value="ar">Arabic (العربية)</option>
                   </select>
-                  <i className="fas fa-globe absolute left-0 top-1.5 text-slate-400 text-xs pointer-events-none"></i>
+                  <i className="fas fa-globe absolute left-0 top-1 text-slate-400 text-xs pointer-events-none"></i>
                 </div>
               </div>
 
@@ -457,16 +426,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <button
                 type="button"
                 onClick={handleShareApp}
-                className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200/60 rounded-xl transition"
+                className="w-full flex items-center gap-2 px-2.5 py-1.5 text-[11px] font-bold text-slate-700 hover:bg-slate-200/60 rounded-lg transition"
               >
-                <i className="fas fa-share-nodes text-slate-600"></i>
+                <i className="fas fa-share-nodes text-slate-600 text-xs"></i>
                 <span>{shareCopied ? '✓ Link Copied!' : 'Share App'}</span>
               </button>
 
               {/* USER PROFILE FOOTER */}
-              <div className="pt-2 border-t flex items-center justify-between">
-                <div className="flex items-center gap-2.5 overflow-hidden">
-                  <div className="w-7 h-7 rounded-full bg-emerald-800 text-white font-black text-[11px] flex items-center justify-center shrink-0">
+              <div className="pt-1.5 border-t border-slate-200/80 flex items-center justify-between">
+                <div className="flex items-center gap-2 overflow-hidden">
+                  <div className="w-6 h-6 rounded-full bg-emerald-800 text-white font-black text-[10px] flex items-center justify-center shrink-0">
                     {user?.name?.[0] || 'M'}
                   </div>
                   <div className="overflow-hidden">
@@ -476,7 +445,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <button
                   onClick={handleLogout}
                   title="Sign Out"
-                  className="text-slate-400 hover:text-rose-600 transition text-xs p-1 rounded-lg"
+                  className="text-slate-400 hover:text-rose-600 transition text-xs p-1 rounded"
                 >
                   <i className="fas fa-right-from-bracket"></i>
                 </button>
