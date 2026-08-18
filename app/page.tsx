@@ -923,9 +923,14 @@ export default function HomePage() {
         </div>
 
         {/* BOTTOM LEGAL BAND */}
-        <div className="max-w-7xl mx-auto pt-8 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between text-slate-500 text-[11px] gap-4">
-          <div>
-            © {new Date().getFullYear()} MasjidPay SaaS (masjidpay.org). All rights reserved.
+        <div className="max-w-7xl mx-auto pt-8 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between text-slate-500 text-[11px] gap-4 text-center sm:text-left">
+          <div className="space-y-1">
+            <div>
+              © {new Date().getFullYear()} MasjidPay SaaS (masjidpay.org). All rights reserved.
+            </div>
+            <div className="text-slate-400 text-[10.5px]">
+              Crafted with ❤️ by <span className="text-[#F4D06F] font-semibold">Mohammed Ayaan Kaka</span> · Limratech
+            </div>
           </div>
           <div className="flex items-center gap-4 text-slate-400">
             <span>Sharia Compliant</span>
