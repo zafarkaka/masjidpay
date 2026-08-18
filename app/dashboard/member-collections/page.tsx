@@ -644,109 +644,224 @@ JazakAllah Khair!
         </div>
       </div>
 
-      {/* INCOME RECORDS LIST HEADER MATCHING SCREENSHOT */}
-      <div className="flex items-center justify-between pt-2">
+      {/* INCOME RECORDS LIST HEADER */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-b border-slate-200/80 pb-3">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg bg-[#0F3D26] text-white flex items-center justify-center text-xs">
+            <i className="fas fa-list-check"></i>
+          </div>
+          <div>
+            <h2 className="text-sm font-extrabold text-slate-900 leading-tight">Collection Transactions</h2>
+            <p className="text-[11px] text-slate-500">
+              Showing {filteredCollections.length} records • Total: <strong className="text-emerald-800 font-bold font-mono">IN ₹{filteredCollections.reduce((sum, c) => sum + (Number(c.amount) || 0), 0).toLocaleString('en-IN')}</strong>
+            </p>
+          </div>
+        </div>
+
         <div className="flex items-center gap-2">
-          <h2 className="text-base font-extrabold text-slate-900">Income Records</h2>
-          <span className="w-6 h-6 rounded-full bg-slate-200 text-slate-700 text-xs font-bold flex items-center justify-center">
-            {filteredCollections.length}
+          <span className="px-2.5 py-1 bg-emerald-50 text-emerald-900 border border-emerald-200 rounded-lg text-xs font-bold font-mono">
+            {filteredCollections.length} Transactions
           </span>
         </div>
       </div>
 
-      {/* COLLECTION CARDS MATCHING SCREENSHOT */}
+      {/* COMPACT CLASSIC TABLE / SLIM TRANSACTION LIST */}
       {loading ? (
-        <div className="p-12 text-center text-slate-400 text-xs font-semibold">
-          <i className="fas fa-circle-notch fa-spin text-emerald-700 text-2xl mb-2"></i>
+        <div className="p-10 text-center text-slate-400 text-xs font-semibold bg-white border border-slate-200 rounded-2xl">
+          <i className="fas fa-circle-notch fa-spin text-emerald-700 text-xl mb-2"></i>
           <p>Loading collection records...</p>
         </div>
       ) : filteredCollections.length === 0 ? (
-        <div className="p-12 text-center text-slate-400 text-xs font-semibold masjid-card bg-white border border-slate-200 rounded-3xl">
-          No collection records found.
+        <div className="p-10 text-center text-slate-400 text-xs font-semibold bg-white border border-slate-200 rounded-2xl">
+          No collection records found. Use &quot;Record New Payment&quot; to add transactions.
         </div>
       ) : (
-        <div className="space-y-4">
-          {filteredCollections.map((col) => (
-            <div key={col.id} className="masjid-card bg-white border border-slate-200/90 shadow-sm rounded-3xl p-5 space-y-4">
-              {/* TOP HEADER ROW: NAME, PHONE, AMOUNT, DATE */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b pb-3">
-                <div>
-                  <h3 className="text-base font-extrabold text-slate-900">{col.memberName}</h3>
-                  <span className="text-xs font-mono font-semibold text-slate-500">{col.memberPhone}</span>
-                </div>
+        <div className="bg-white border border-slate-200/90 shadow-sm rounded-2xl overflow-hidden">
+          {/* DESKTOP & TABLET CLASSIC SLIM TABLE */}
+          <div className="overflow-x-auto hidden sm:block">
+            <table className="w-full text-left border-collapse">
+              <thead className="bg-slate-50/90 border-b border-slate-200 text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider">
+                <tr>
+                  <th className="py-2.5 px-3.5 whitespace-nowrap">Date</th>
+                  <th className="py-2.5 px-3.5 whitespace-nowrap">Member / Contributor</th>
+                  <th className="py-2.5 px-3.5 whitespace-nowrap">Period / Month(s)</th>
+                  <th className="py-2.5 px-3.5 whitespace-nowrap">Category</th>
+                  <th className="py-2.5 px-3.5 whitespace-nowrap">Amount</th>
+                  <th className="py-2.5 px-3.5 text-right whitespace-nowrap">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-xs">
+                {filteredCollections.map((col) => (
+                  <tr key={col.id} className="hover:bg-emerald-50/30 transition group">
+                    {/* DATE */}
+                    <td className="py-2.5 px-3.5 whitespace-nowrap font-mono text-[11px] text-slate-600">
+                      {new Date(col.paymentDate).toLocaleDateString('en-GB', {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric',
+                      })}
+                    </td>
 
-                <div className="text-right">
-                  <span className="px-3 py-1 bg-emerald-100 text-emerald-900 text-sm font-black rounded-xl inline-block">
+                    {/* MEMBER */}
+                    <td className="py-2.5 px-3.5">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-slate-900 text-xs block leading-tight">
+                          {col.memberName}
+                        </span>
+                        {col.memberPhone && (
+                          <span className="font-mono text-[10px] text-slate-400 font-semibold">
+                            ({col.memberPhone})
+                          </span>
+                        )}
+                      </div>
+                      {col.memberAddress && (
+                        <span className="text-[10px] text-slate-400 block truncate max-w-xs leading-tight mt-0.5">
+                          {col.memberAddress}
+                        </span>
+                      )}
+                    </td>
+
+                    {/* PERIOD / MONTH */}
+                    <td className="py-2.5 px-3.5 text-slate-700 font-semibold text-xs whitespace-nowrap">
+                      <span className="truncate max-w-xs block font-medium" title={col.forMonths}>
+                        {col.forMonths || 'Monthly Fee'}
+                      </span>
+                    </td>
+
+                    {/* CATEGORY BADGE */}
+                    <td className="py-2.5 px-3.5 whitespace-nowrap">
+                      <span className="px-2 py-0.5 bg-slate-100 border border-slate-200/80 text-slate-700 rounded-md text-[10px] font-bold uppercase tracking-wider">
+                        {col.paymentType || 'Monthly'}
+                      </span>
+                    </td>
+
+                    {/* AMOUNT */}
+                    <td className="py-2.5 px-3.5 whitespace-nowrap">
+                      <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-900 font-black font-mono text-xs rounded-md border border-emerald-200/60 inline-block">
+                        IN ₹{col.amount?.toLocaleString('en-IN')}
+                      </span>
+                    </td>
+
+                    {/* ACTIONS */}
+                    <td className="py-2.5 px-3.5 text-right whitespace-nowrap space-x-1">
+                      {/* PDF SLIP BUTTON */}
+                      <button
+                        type="button"
+                        onClick={() => handleDownloadPDF(col)}
+                        className="px-2 py-1 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-lg text-[11px] font-bold transition inline-flex items-center gap-1"
+                        title="Print / Download PDF Receipt"
+                      >
+                        <i className="fas fa-file-pdf text-emerald-800 text-[10px]"></i>
+                        <span className="text-[10px]">PDF</span>
+                      </button>
+
+                      {/* WHATSAPP BUTTON */}
+                      <button
+                        type="button"
+                        onClick={() => handleWhatsAppShare(col)}
+                        className="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-lg text-[11px] font-bold transition inline-flex items-center gap-1"
+                        title="Send WhatsApp Receipt"
+                      >
+                        <i className="fab fa-whatsapp text-emerald-600 text-[11px]"></i>
+                        <span className="text-[10px]">Share</span>
+                      </button>
+
+                      {/* EDIT BUTTON */}
+                      {!isViewer && (
+                        <button
+                          type="button"
+                          onClick={() => handleStartEdit(col)}
+                          className="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200/70 rounded-lg text-[11px] font-bold transition inline-flex items-center gap-1"
+                          title="Edit transaction"
+                        >
+                          <i className="fas fa-pen text-[10px]"></i>
+                        </button>
+                      )}
+
+                      {/* DELETE BUTTON */}
+                      {!isViewer && (
+                        <button
+                          type="button"
+                          onClick={() => setDeletingId(col.id)}
+                          className="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/70 rounded-lg text-[11px] font-bold transition inline-flex items-center gap-1"
+                          title="Delete transaction"
+                        >
+                          <i className="fas fa-trash-can text-[10px]"></i>
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* MOBILE SLIM CARD VIEW */}
+          <div className="sm:hidden divide-y divide-slate-100">
+            {filteredCollections.map((col) => (
+              <div key={col.id} className="p-3.5 space-y-2 hover:bg-slate-50 transition">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <span className="font-bold text-slate-900 text-xs block leading-tight">
+                      {col.memberName}
+                    </span>
+                    <span className="font-mono text-[10px] text-slate-400 block mt-0.5">
+                      {col.memberPhone || '-'} • {new Date(col.paymentDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                    </span>
+                  </div>
+
+                  <span className="px-2 py-0.5 bg-emerald-50 text-emerald-900 font-extrabold font-mono text-xs rounded border border-emerald-200">
                     IN ₹{col.amount?.toLocaleString('en-IN')}
                   </span>
-                  <span className="text-[11px] text-slate-400 font-semibold block mt-0.5">
-                    {new Date(col.paymentDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                </div>
+
+                <div className="flex items-center justify-between text-[11px] text-slate-600 pt-0.5">
+                  <span className="font-medium truncate max-w-[180px]">{col.forMonths || 'Monthly'}</span>
+                  <span className="px-1.5 py-0.2 bg-slate-100 text-slate-600 rounded text-[9px] font-bold uppercase">
+                    {col.paymentType || 'Monthly'}
                   </span>
                 </div>
-              </div>
 
-              {/* BODY CALLOUT ROW: SHOP / DETAILS & CATEGORY BADGE */}
-              <div className="p-3 bg-[#faf8f5] border border-slate-200/60 rounded-2xl flex items-center justify-between text-xs">
-                <div>
-                  <span className="font-bold text-slate-800 block">{col.forMonths || 'Monthly Fee'}</span>
-                  <span className="text-[11px] text-slate-400 truncate max-w-md block">{col.memberAddress || 'Address N/A'}</span>
+                {/* COMPACT ACTIONS */}
+                <div className="flex items-center justify-end gap-1.5 pt-1 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => handleDownloadPDF(col)}
+                    className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[10px] font-bold flex items-center gap-1"
+                  >
+                    <i className="fas fa-file-pdf text-emerald-800"></i> PDF
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleWhatsAppShare(col)}
+                    className="px-2 py-1 bg-emerald-100/70 hover:bg-emerald-100 text-emerald-800 rounded text-[10px] font-bold flex items-center gap-1"
+                  >
+                    <i className="fab fa-whatsapp text-emerald-700"></i> WhatsApp
+                  </button>
+
+                  {!isViewer && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => handleStartEdit(col)}
+                        className="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded text-[10px] font-bold"
+                      >
+                        <i className="fas fa-pen"></i>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDeletingId(col.id)}
+                        className="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded text-[10px] font-bold"
+                      >
+                        <i className="fas fa-trash-can"></i>
+                      </button>
+                    </>
+                  )}
                 </div>
-
-                <span className="px-2.5 py-1 bg-white border border-slate-300 text-slate-700 text-[10px] font-bold rounded-lg uppercase">
-                  {col.paymentType || 'General Rent'}
-                </span>
               </div>
-
-              {/* ACTION BUTTONS ROW */}
-              <div className={`grid ${isViewer ? 'grid-cols-2' : 'grid-cols-4'} gap-2 pt-1`}>
-                {/* 1. EDIT BUTTON */}
-                {!isViewer && (
-                  <button
-                    type="button"
-                    onClick={() => handleStartEdit(col)}
-                    className="py-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-700 text-xs font-bold transition flex items-center justify-center gap-1.5"
-                    title="Edit Record"
-                  >
-                    <i className="fas fa-pen-to-square text-[#0F3D26]"></i>
-                  </button>
-                )}
-
-                {/* 2. DOWNLOAD PDF BUTTON */}
-                <button
-                  type="button"
-                  onClick={() => handleDownloadPDF(col)}
-                  className="py-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-700 text-xs font-bold transition flex items-center justify-center gap-1.5"
-                  title="Download PDF Receipt"
-                >
-                  <i className="fas fa-file-pdf text-emerald-800"></i>
-                  {isViewer && <span className="text-xs font-bold">PDF Slip</span>}
-                </button>
-
-                {/* 3. WHATSAPP BUTTON */}
-                <button
-                  type="button"
-                  onClick={() => handleWhatsAppShare(col)}
-                  className="py-2.5 bg-slate-50 hover:bg-emerald-50 border border-slate-200 rounded-xl text-emerald-800 text-xs font-bold transition flex items-center justify-center gap-1.5"
-                  title="Share WhatsApp Receipt"
-                >
-                  <i className="fab fa-whatsapp text-emerald-600 text-sm"></i>
-                  {isViewer && <span className="text-xs font-bold">WhatsApp</span>}
-                </button>
-
-                {/* 4. DELETE BUTTON */}
-                {!isViewer && (
-                  <button
-                    type="button"
-                    onClick={() => setDeletingId(col.id)}
-                    className="py-2.5 bg-slate-50 hover:bg-rose-50 border border-slate-200 rounded-xl text-rose-700 text-xs font-bold transition flex items-center justify-center gap-1.5"
-                    title="Delete Record"
-                  >
-                    <i className="fas fa-trash-can text-rose-600"></i>
-                  </button>
-                )}
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       )}
 
