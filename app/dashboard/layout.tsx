@@ -3,14 +3,15 @@
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { useLanguage, SupportedLanguage } from '@/context/LanguageContext';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
+  const { language, setLanguage, languages } = useLanguage();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
-  const [selectedLanguage, setSelectedLanguage] = useState('en');
   const [shareCopied, setShareCopied] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -264,16 +265,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div className="px-2 py-1 bg-slate-100/90 rounded-lg">
             <div className="relative flex items-center">
               <select
-                value={selectedLanguage}
-                onChange={(e) => setSelectedLanguage(e.target.value)}
+                value={language}
+                onChange={(e) => setLanguage(e.target.value as SupportedLanguage)}
                 aria-label="Language selection"
                 className="w-full pl-6 pr-3 py-0.5 bg-transparent text-[11px] font-bold text-slate-700 outline-none appearance-none cursor-pointer"
               >
-                <option value="en">English (US)</option>
-                <option value="ur">Urdu (اردو)</option>
-                <option value="ta">Tamil (தமிழ்)</option>
-                <option value="hi">Hindi (हिन्दी)</option>
-                <option value="ar">Arabic (العربية)</option>
+                {languages.map((l) => (
+                  <option key={l.code} value={l.code}>
+                    {l.nativeLabel} ({l.label})
+                  </option>
+                ))}
               </select>
               <i className="fas fa-globe absolute left-0 top-1 text-slate-400 text-xs pointer-events-none"></i>
             </div>
@@ -407,16 +408,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <div className="px-2 py-1 bg-slate-100/90 rounded-lg">
                 <div className="relative flex items-center">
                   <select
-                    value={selectedLanguage}
-                    onChange={(e) => setSelectedLanguage(e.target.value)}
+                    value={language}
+                    onChange={(e) => setLanguage(e.target.value as SupportedLanguage)}
                     aria-label="Language selection"
                     className="w-full pl-6 pr-3 py-0.5 bg-transparent text-[11px] font-bold text-slate-700 outline-none appearance-none cursor-pointer"
                   >
-                    <option value="en">English (US)</option>
-                    <option value="ur">Urdu (اردو)</option>
-                    <option value="ta">Tamil (தமிழ்)</option>
-                    <option value="hi">Hindi (हिन्दी)</option>
-                    <option value="ar">Arabic (العربية)</option>
+                    {languages.map((l) => (
+                      <option key={l.code} value={l.code}>
+                        {l.nativeLabel} ({l.label})
+                      </option>
+                    ))}
                   </select>
                   <i className="fas fa-globe absolute left-0 top-1 text-slate-400 text-xs pointer-events-none"></i>
                 </div>

@@ -1,6 +1,7 @@
 import './globals.css';
 import type { Metadata, Viewport } from 'next';
 import PwaInstallPrompt from '@/components/PwaInstallPrompt';
+import { LanguageProvider } from '@/context/LanguageContext';
 
 export const metadata: Metadata = {
   title: 'MasjidPay · Masjid Financial Management SaaS Engine',
@@ -65,14 +66,38 @@ export default function RootLayout({
                   );
                 });
               }
+
+              // Google Translate Initialization
+              function googleTranslateElementInit() {
+                if (window.google && window.google.translate) {
+                  new window.google.translate.TranslateElement(
+                    {
+                      pageLanguage: 'en',
+                      includedLanguages: 'en,ur,ta,hi,ar',
+                      autoDisplay: false,
+                      layout: window.google.translate.TranslateElement.InlineLayout.SIMPLE
+                    },
+                    'google_translate_element'
+                  );
+                }
+              }
             `,
           }}
         />
+        <script
+          src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"
+          async
+          defer
+        />
       </head>
       <body className="min-h-screen bg-[#FFF9EC] text-[#1c2e28] antialiased font-sans">
-        {children}
-        <PwaInstallPrompt />
+        <div id="google_translate_element" style={{ display: 'none' }}></div>
+        <LanguageProvider>
+          {children}
+          <PwaInstallPrompt />
+        </LanguageProvider>
       </body>
     </html>
   );
 }
+
