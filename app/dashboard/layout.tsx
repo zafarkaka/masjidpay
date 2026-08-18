@@ -182,9 +182,37 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const isViewer = user?.role === 'VIEWER' || user?.role === 'COMMUNITY_VIEWER';
 
-  const visibleNavGroups = isViewer
-    ? navGroups.filter((g) => g.group !== 'SYSTEM')
-    : navGroups;
+  const communityNavGroups: NavGroup[] = [
+    {
+      group: 'OVERVIEW',
+      items: [{ label: 'Dashboard', href: '/dashboard', icon: 'fa-table-cells-large' }],
+    },
+    {
+      group: 'INCOME',
+      items: [{ label: 'Mosque Income', href: '/dashboard/income', icon: 'fa-arrow-trend-up' }],
+    },
+    {
+      group: 'EXPENSES',
+      items: [{ label: 'Mosque Expenses', href: '/dashboard/expenses', icon: 'fa-arrow-trend-down' }],
+    },
+    {
+      group: 'COLLECTIONS & STAFF',
+      items: [
+        { label: 'Monthly Member Collection', href: '/dashboard/member-collections', icon: 'fa-hand-holding-dollar' },
+        { label: 'Staff Management & Payroll', href: '/dashboard/payroll', icon: 'fa-id-card' },
+      ],
+    },
+    {
+      group: 'RENTALS',
+      items: [{ label: 'Rental Management', href: '/dashboard/rentals', icon: 'fa-building' }],
+    },
+    {
+      group: 'MEMBERS',
+      items: [{ label: 'Monthly Members', href: '/dashboard/monthly-members', icon: 'fa-users' }],
+    },
+  ];
+
+  const visibleNavGroups = isViewer ? communityNavGroups : navGroups;
 
   return (
     <div className={`min-h-screen flex text-slate-800 font-sans ${darkMode ? 'dark bg-slate-950 text-slate-100' : 'bg-[#f6faf6]'}`}>
@@ -495,11 +523,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* READ-ONLY GUEST BANNER */}
         {isViewer && (
-          <div className="bg-amber-500/15 border-b border-amber-500/30 px-4 sm:px-6 py-2.5 text-xs font-bold text-amber-950 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <i className="fas fa-shield-halved text-amber-700"></i>
-              <span>
-                <strong>Guest Transparency Mode:</strong> You are viewing live records in Read-Only Mode. Editing and amendments are disabled.
+          <div className="bg-[#FFF9EC] border-b border-[#D4AF37]/30 px-4 sm:px-6 py-2.5 flex items-center justify-between">
+            <div className="flex items-center gap-2.5 px-3.5 py-1.5 bg-white border border-[#D4AF37]/40 rounded-2xl shadow-xs">
+              <span className="text-sm">👁</span>
+              <span className="text-xs font-black text-slate-800 tracking-tight">Viewing as Community</span>
+              <span className="px-2.5 py-0.5 bg-[#FDE68A] text-[#78350F] rounded-lg text-[10px] font-black uppercase tracking-wider">
+                Read Only
               </span>
             </div>
             <button
