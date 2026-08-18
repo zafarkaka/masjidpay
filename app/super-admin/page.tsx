@@ -6,8 +6,10 @@ import Link from 'next/link';
 export default function SuperAdminOverviewPage() {
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     fetch('/api/super-admin/stats')
       .then((res) => res.json())
       .then((data) => {
@@ -17,7 +19,7 @@ export default function SuperAdminOverviewPage() {
       .catch(() => setLoading(false));
   }, []);
 
-  if (loading) {
+  if (!mounted || loading) {
     return (
       <div className="flex items-center justify-center h-64 text-slate-400 text-sm">
         <i className="fas fa-circle-notch fa-spin text-emerald-400 text-2xl mr-3"></i> Loading platform stats...

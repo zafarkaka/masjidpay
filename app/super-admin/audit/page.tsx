@@ -5,8 +5,10 @@ import { useEffect, useState } from 'react';
 export default function SuperAdminAuditPage() {
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     fetch('/api/super-admin/audit')
       .then((res) => res.json())
       .then((data) => {
@@ -24,7 +26,7 @@ export default function SuperAdminAuditPage() {
       </div>
 
       <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
-        {loading ? (
+        {!mounted || loading ? (
           <div className="p-8 text-center text-slate-400 text-sm">
             <i className="fas fa-circle-notch fa-spin text-emerald-400 mr-2"></i> Loading audit history...
           </div>

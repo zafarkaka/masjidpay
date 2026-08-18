@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 export default function SuperAdminMasjidsPage() {
   const [masjids, setMasjids] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMasjid, setSelectedMasjid] = useState<any>(null);
@@ -43,6 +44,7 @@ export default function SuperAdminMasjidsPage() {
   };
 
   useEffect(() => {
+    setMounted(true);
     fetchMasjids();
   }, [statusFilter]);
 
@@ -250,7 +252,7 @@ export default function SuperAdminMasjidsPage() {
 
       {/* MASJIDS LIST TABLE */}
       <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
-        {loading ? (
+        {!mounted || loading ? (
           <div className="p-8 text-center text-slate-400 text-sm">
             <i className="fas fa-circle-notch fa-spin text-emerald-400 mr-2"></i> Loading masjids...
           </div>
