@@ -187,11 +187,17 @@ export default function HomePage() {
 
         {/* HERO CONTENT */}
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-20 py-16 lg:py-24 space-y-6">
-          {/* BISMILLAH & ARABESQUE WATERMARK BADGE */}
-          <div className="inline-flex items-center gap-2.5 px-5 py-2 rounded-full bg-[#102A25]/80 border border-[#D4AF37]/50 text-[#F4D06F] text-xs font-extrabold shadow-lg backdrop-blur-sm">
-            <span className="text-[#D4AF37] font-serif text-sm">﷽</span>
-            <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37] animate-pulse"></span>
-            <span>Unified Multi-Tenant Financial Management Built for Masjids</span>
+          {/* BISMILLAH & ARABESQUE WATERMARK BADGE - ENLARGED & PROMINENT */}
+          <div className="inline-flex flex-wrap items-center justify-center gap-2.5 sm:gap-4 px-6 sm:px-9 py-2.5 sm:py-3.5 rounded-full bg-[#102A25]/90 border-2 border-[#D4AF37]/60 text-[#F4D06F] shadow-2xl shadow-[#102A25]/50 backdrop-blur-md transition-all duration-300 hover:border-[#D4AF37] hover:scale-[1.01]">
+            <span className="text-[#F4D06F] text-lg sm:text-2xl font-serif font-bold tracking-wide leading-none drop-shadow-xs" dir="rtl">
+              بِسْمِ ٱللَّٰهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ
+            </span>
+            <span className="text-[#D4AF37] text-base sm:text-lg font-black leading-none hidden xs:inline">
+              •
+            </span>
+            <span className="text-xs sm:text-sm md:text-[15px] font-black text-[#FFF9EC] tracking-wide">
+              Unified Multi-Tenant Financial Management Built for Masjids
+            </span>
           </div>
 
           {/* MAIN HEADLINE WITH ROYAL GOLD GRADIENT KEYWORDS */}
