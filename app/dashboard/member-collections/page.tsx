@@ -362,20 +362,22 @@ JazakAllah Khair!
     return (
       m.name?.toLowerCase().includes(q) ||
       m.phone?.includes(q) ||
-      m.memberNo?.toLowerCase().includes(q)
+      m.memberNo?.toLowerCase().includes(q) ||
+      m.address?.toLowerCase().includes(q)
     );
-  }).slice(0, 6);
+  }).slice(0, 30);
 
-  // Suggestions for modal search
+  // Suggestions for modal search - comprehensive search by name, phone, memberNo, address
   const modalSuggestions = members.filter((m) => {
     if (!modalMemberSearch) return true;
     const q = modalMemberSearch.toLowerCase();
     return (
       m.name?.toLowerCase().includes(q) ||
       m.phone?.includes(q) ||
-      m.memberNo?.toLowerCase().includes(q)
+      m.memberNo?.toLowerCase().includes(q) ||
+      m.address?.toLowerCase().includes(q)
     );
-  }).slice(0, 6);
+  }).slice(0, 50);
 
   const handleSelectSearchSuggestion = (member: any) => {
     setSearchQuery(member.name);
@@ -390,6 +392,16 @@ JazakAllah Khair!
     setModalMemberSearch(member.name);
     setShowModalSuggestions(false);
     detectPendingMonths(member, collections);
+  };
+
+  const handleClearSelectedMember = () => {
+    setSelectedMemberId('');
+    setModalMemberSearch('');
+    setMemberName('');
+    setMemberPhone('');
+    setMemberAddress('');
+    setPendingMonthsDetected([]);
+    setShowModalSuggestions(false);
   };
 
   // FILTERED COLLECTIONS
@@ -751,74 +763,134 @@ JazakAllah Khair!
 
             <form onSubmit={handleCreateCollection} className="space-y-4">
               {/* SMART AUTO-SUGGEST MEMBER SEARCH */}
-              <div className="relative">
-                <label className="block text-[11px] font-extrabold text-slate-700 uppercase mb-1">
-                  Search & Auto-Fill Member *
-                </label>
-                <div className="relative">
-                  <i className="fas fa-user-magnifying-glass absolute left-3.5 top-3.5 text-slate-400 text-xs"></i>
-                  <input
-                    type="text"
-                    value={modalMemberSearch}
-                    onFocus={() => setShowModalSuggestions(true)}
-                    onChange={(e) => {
-                      setModalMemberSearch(e.target.value);
-                      setShowModalSuggestions(true);
-                      setMemberName(e.target.value);
-                    }}
-                    placeholder="Type name, phone or member number..."
-                    className="w-full pl-9 pr-8 py-2.5 bg-[#FFF9EC] border border-[#D4AF37]/50 rounded-2xl text-xs font-bold text-slate-900 outline-none focus:border-[#064E3B]"
-                  />
-                  {modalMemberSearch && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="block text-[11px] font-extrabold text-slate-700 uppercase">
+                    Select / Search Member <span className="text-rose-500">*</span>
+                  </label>
+                  {selectedMemberId && (
                     <button
                       type="button"
-                      onClick={() => {
-                        setModalMemberSearch('');
-                        setSelectedMemberId('');
-                      }}
-                      className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 text-xs"
+                      onClick={handleClearSelectedMember}
+                      className="text-[11px] font-bold text-emerald-800 hover:text-emerald-950 flex items-center gap-1"
                     >
-                      <i className="fas fa-times"></i>
+                      <i className="fas fa-arrows-rotate text-[10px]"></i> Change Member
                     </button>
                   )}
                 </div>
 
-                {/* MODAL AUTOCOMPLETE SUGGESTIONS */}
-                {showModalSuggestions && modalSuggestions.length > 0 && (
-                  <div
-                    className="absolute left-0 right-0 top-full mt-1 bg-white border border-emerald-300 rounded-2xl shadow-2xl z-50 overflow-hidden divide-y divide-slate-100 max-h-48 overflow-y-auto"
-                    onMouseLeave={() => setShowModalSuggestions(false)}
-                  >
-                    <div className="p-1.5 bg-emerald-50 text-[10px] font-black uppercase text-emerald-800 flex justify-between items-center">
-                      <span>✨ Select Member to Auto-Fill</span>
-                      <button
-                        type="button"
-                        onClick={() => setShowModalSuggestions(false)}
-                        className="text-slate-400 hover:text-slate-600 px-1"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                    {modalSuggestions.map((m) => (
-                      <button
-                        key={m.id}
-                        type="button"
-                        onClick={() => handleSelectModalMember(m)}
-                        className="w-full px-3 py-2 text-left hover:bg-emerald-50 transition flex items-center justify-between text-xs group"
-                      >
-                        <div>
-                          <span className="font-extrabold text-slate-900 group-hover:text-emerald-800 block">
-                            {m.name}
-                          </span>
-                          <span className="text-[10px] text-slate-400 font-mono">
-                            {m.memberNo || 'MBR'} • 📞 {m.phone}
+                {/* SELECTED MEMBER SUMMARY CARD */}
+                {selectedMemberId ? (
+                  <div className="p-3.5 bg-emerald-50/90 border-2 border-emerald-500/40 rounded-2xl flex items-center justify-between shadow-xs animate-in fade-in duration-150">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-[#0F3D26] text-white flex items-center justify-center font-black text-sm shrink-0 shadow-xs">
+                        {memberName?.charAt(0) || 'M'}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-black text-slate-900">{memberName}</span>
+                          <span className="px-1.5 py-0.5 bg-emerald-200/80 text-emerald-900 font-mono font-bold text-[10px] rounded-md">
+                            {members.find((m) => m.id === selectedMemberId)?.memberNo || 'MBR'}
                           </span>
                         </div>
-                        <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md">
-                          IN ₹{m.monthlyAmount || 100}
-                        </span>
-                      </button>
-                    ))}
+                        <p className="text-[11px] text-slate-600 font-mono mt-0.5">
+                          📞 {memberPhone} • <span className="font-bold text-emerald-800">IN ₹{baseMonthlyRate}/month</span>
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleClearSelectedMember}
+                      className="px-2.5 py-1.5 bg-white hover:bg-emerald-100 border border-emerald-300 text-emerald-900 rounded-xl text-xs font-bold transition shadow-2xs"
+                    >
+                      Change
+                    </button>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <div className="relative">
+                      <i className="fas fa-magnifying-glass absolute left-3.5 top-3.5 text-slate-400 text-xs"></i>
+                      <input
+                        type="text"
+                        value={modalMemberSearch}
+                        onFocus={() => setShowModalSuggestions(true)}
+                        onChange={(e) => {
+                          setModalMemberSearch(e.target.value);
+                          setShowModalSuggestions(true);
+                          setMemberName(e.target.value);
+                        }}
+                        placeholder="Search member by name, phone or ID (e.g. MBR-101)..."
+                        className="w-full pl-9 pr-8 py-2.5 bg-[#FFF9EC] border border-[#D4AF37]/60 rounded-2xl text-xs font-bold text-slate-900 outline-none focus:border-emerald-700 focus:bg-white transition"
+                      />
+                      {modalMemberSearch && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setModalMemberSearch('');
+                            setSelectedMemberId('');
+                          }}
+                          className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 text-xs p-1"
+                        >
+                          <i className="fas fa-times"></i>
+                        </button>
+                      )}
+                    </div>
+
+                    {/* MODAL AUTOCOMPLETE SUGGESTIONS POPUP */}
+                    {showModalSuggestions && (
+                      <div
+                        className="absolute left-0 right-0 top-full mt-1.5 bg-white border border-emerald-300 rounded-2xl shadow-2xl z-50 overflow-hidden divide-y divide-slate-100 max-h-60 overflow-y-auto animate-in fade-in duration-100"
+                        onMouseLeave={() => setShowModalSuggestions(false)}
+                      >
+                        <div className="p-2 bg-emerald-50/90 text-[10px] font-extrabold uppercase text-emerald-800 flex justify-between items-center sticky top-0 z-10 border-b border-emerald-200">
+                          <span>
+                            🔍 {modalMemberSearch ? `Found ${modalSuggestions.length} Matching Members` : `Select from ${members.length} Registered Members`}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setShowModalSuggestions(false)}
+                            className="text-slate-400 hover:text-slate-700 px-1 font-bold"
+                          >
+                            ✕ Close
+                          </button>
+                        </div>
+
+                        {modalSuggestions.length === 0 ? (
+                          <div className="p-4 text-center text-xs text-slate-500 font-medium">
+                            <p>No registered members found matching &quot;{modalMemberSearch}&quot;.</p>
+                            <p className="text-[11px] text-slate-400 mt-1">You can fill in custom Name and Phone manually below.</p>
+                          </div>
+                        ) : (
+                          modalSuggestions.map((m) => (
+                            <button
+                              key={m.id}
+                              type="button"
+                              onClick={() => handleSelectModalMember(m)}
+                              className="w-full px-3.5 py-2.5 text-left hover:bg-emerald-50 transition flex items-center justify-between text-xs group"
+                            >
+                              <div className="flex items-center gap-2.5">
+                                <div className="w-7 h-7 rounded-lg bg-[#0F3D26] text-white flex items-center justify-center font-black text-xs shrink-0">
+                                  {m.name?.charAt(0) || 'M'}
+                                </div>
+                                <div>
+                                  <span className="font-extrabold text-slate-900 group-hover:text-emerald-800 block text-xs">
+                                    {m.name}
+                                  </span>
+                                  <span className="text-[10px] text-slate-400 font-mono">
+                                    {m.memberNo || 'MBR'} • 📞 {m.phone}
+                                    {m.address ? ` • ${m.address}` : ''}
+                                  </span>
+                                </div>
+                              </div>
+                              <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md shrink-0">
+                                IN ₹{m.monthlyAmount || 100}/mo
+                              </span>
+                            </button>
+                          ))
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
