@@ -805,10 +805,10 @@ export default function HomePage() {
                 For formal trust inquiries, Waqf documentation, or custom enterprise requirements.
               </p>
               <a
-                href="mailto:support@masjidpay.org"
+                href="mailto:masjidpay3@gmail.com"
                 className="inline-flex items-center gap-2 px-4 py-2 bg-[#064E3B] text-white rounded-xl font-extrabold text-xs shadow-xs hover:bg-[#102A25] transition"
               >
-                <i className="fas fa-envelope"></i> support@masjidpay.org
+                <i className="fas fa-envelope"></i> masjidpay3@gmail.com
               </a>
             </div>
           </div>
@@ -903,14 +903,22 @@ export default function HomePage() {
             <p className="text-slate-400 text-[11px]">
               Need assistance with onboarding or mosque verification? Contact our support team directly.
             </p>
-            <a
-              href="https://wa.me/919894977003"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-3 py-2 bg-[#25D366]/20 border border-[#25D366]/40 text-[#25D366] rounded-xl font-bold hover:bg-[#25D366]/30 transition text-[11px]"
-            >
-              <i className="fab fa-whatsapp text-sm"></i> WhatsApp: +91 98949 77003
-            </a>
+            <div className="flex flex-col gap-2">
+              <a
+                href="https://wa.me/919894977003"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#25D366]/20 border border-[#25D366]/40 text-[#25D366] rounded-xl font-bold hover:bg-[#25D366]/30 transition text-[11px]"
+              >
+                <i className="fab fa-whatsapp text-sm"></i> WhatsApp: +91 98949 77003
+              </a>
+              <a
+                href="mailto:masjidpay3@gmail.com"
+                className="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-800 border border-slate-700 text-[#F4D06F] rounded-xl font-bold hover:bg-slate-700 transition text-[11px]"
+              >
+                <i className="fas fa-envelope text-xs"></i> masjidpay3@gmail.com
+              </a>
+            </div>
           </div>
         </div>
 
