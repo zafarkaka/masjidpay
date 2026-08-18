@@ -92,7 +92,9 @@ export async function PUT(req: NextRequest) {
         bankIfsc: body.bankIfsc !== undefined ? body.bankIfsc : masjid.bankIfsc,
         upiId: body.upiId !== undefined ? body.upiId : masjid.upiId,
         financialYear: body.financialYear || masjid.financialYear,
-        communityAccessCode: body.communityAccessCode !== undefined ? body.communityAccessCode : masjid.communityAccessCode,
+        communityAccessCode: (body.communityAccessCode && body.communityAccessCode.trim() && body.communityAccessCode.trim() !== '0')
+          ? body.communityAccessCode.trim()
+          : (masjid.communityAccessCode || '7860'),
       },
     });
 

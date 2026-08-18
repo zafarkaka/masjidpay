@@ -141,6 +141,11 @@ export default function LoginPage() {
   const handleCommunityLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!enteredCommunityCode.trim() || enteredCommunityCode.trim() === '0') {
+      setCommunityError('Secret Access Code is required to view the mosque dashboard. It cannot be blank or 0.');
+      return;
+    }
+
     setVerifyingCommunity(true);
     setCommunityError('');
 
@@ -534,15 +539,19 @@ export default function LoginPage() {
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Community Passcode <span className="text-slate-400 font-normal text-[10px]">(Optional for guest access)</span>
+                  Secret Access Code * <span className="text-rose-600 font-bold text-[10px]">(Required)</span>
                 </label>
                 <input
                   type="text"
-                  placeholder="Optional (leave blank for open guest access)"
+                  required
+                  placeholder="Enter mosque secret code (e.g. 7860)"
                   value={enteredCommunityCode}
                   onChange={(e) => setEnteredCommunityCode(e.target.value)}
                   className="w-full p-2.5 bg-[#FAF8F5] border border-slate-200 rounded-xl text-xs font-mono font-bold text-center tracking-widest text-slate-900 focus:outline-none focus:border-[#064E3B]"
                 />
+                <span className="text-[10px] text-slate-400 mt-1 block">
+                  Ask your mosque administrator/committee for the secret code to enter read-only transparency mode.
+                </span>
               </div>
 
               <div className="pt-2 flex justify-end gap-2">

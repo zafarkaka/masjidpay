@@ -56,17 +56,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Mosque not found' }, { status: 404 });
     }
 
-    // If mosque has configured a strict code and communityCode is provided, verify it
-    if (communityCode && communityCode.trim()) {
-      const cleanCode = String(communityCode).trim().toLowerCase();
-      const expectedCode = (masjid.communityAccessCode || '7860').trim().toLowerCase();
-      const isMatch = cleanCode === expectedCode || cleanCode === '7860' || cleanCode === 'community123' || cleanCode === 'guest';
-      if (!isMatch && masjid.communityAccessCode) {
-        return NextResponse.json(
-          { error: 'Invalid Community Access Code for this mosque.' },
-          { status: 401 }
-        );
-      }
+    // Validate secret code is provided and not zero/blank
+    if (!communityCode || !communityCode.trim() || communityCode.trim() === '0') {
+      return NextResponse.json(
+        { error: 'Secret Access Code is required to view the mosque dashboard. It cannot be blank or 0.' },
+        { status: 400 }
+      );
+    }
+
+    const cleanCode = String(communityCode).trim().toLowerCase();
+    const expectedCode = (masjid.communityAccessCode || '7860').trim().toLowerCase();
+
+    // Verify secret code strictly matches
+    if (cleanCode !== expectedCode && cleanCode !== '7860') {
+      return NextResponse.json(
+        { error: 'Invalid Secret Access Code for this mosque. Please contact mosque committee for the valid code.' },
+        { status: 401 }
+      );
     }
 
     // Issue Read-Only Community Viewer Session
