@@ -867,49 +867,46 @@ JazakAllah Khair!
 
       {/* RECORD NEW PAYMENT MODAL */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-5 shadow-2xl border border-slate-100">
-            <div className="flex justify-between items-center border-b pb-3">
-              <h3 className="text-base font-extrabold text-slate-900">Record New Member Collection</h3>
-              <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-600">
-                <i className="fas fa-times"></i>
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-5 sm:p-6 space-y-4 shadow-2xl border border-slate-100 my-auto max-h-[92vh] flex flex-col">
+            <div className="flex justify-between items-center border-b pb-3 shrink-0">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-[#0F3D26] text-white flex items-center justify-center text-xs">
+                  <i className="fas fa-hand-holding-dollar"></i>
+                </div>
+                <h3 className="text-sm sm:text-base font-extrabold text-slate-900">Record Member Collection</h3>
+              </div>
+              <button
+                onClick={() => setShowAddModal(false)}
+                className="text-slate-400 hover:text-slate-600 p-1 text-base rounded-lg"
+                aria-label="Close modal"
+              >
+                ✕
               </button>
             </div>
 
-            <form onSubmit={handleCreateCollection} className="space-y-4">
-              {/* SMART AUTO-SUGGEST MEMBER SEARCH */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="block text-[11px] font-extrabold text-slate-700 uppercase">
-                    Select / Search Member <span className="text-rose-500">*</span>
-                  </label>
-                  {selectedMemberId && (
-                    <button
-                      type="button"
-                      onClick={handleClearSelectedMember}
-                      className="text-[11px] font-bold text-emerald-800 hover:text-emerald-950 flex items-center gap-1"
-                    >
-                      <i className="fas fa-arrows-rotate text-[10px]"></i> Change Member
-                    </button>
-                  )}
-                </div>
+            <form onSubmit={handleCreateCollection} className="space-y-3.5 overflow-y-auto flex-1 pr-0.5">
+              {/* MEMBER SELECTION */}
+              <div className="space-y-1.5">
+                <label className="block text-[10px] font-extrabold text-slate-700 uppercase tracking-wider">
+                  Select Member <span className="text-rose-500">*</span>
+                </label>
 
-                {/* SELECTED MEMBER SUMMARY CARD */}
                 {selectedMemberId ? (
-                  <div className="p-3.5 bg-emerald-50/90 border-2 border-emerald-500/40 rounded-2xl flex items-center justify-between shadow-xs animate-in fade-in duration-150">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-[#0F3D26] text-white flex items-center justify-center font-black text-sm shrink-0 shadow-xs">
+                  <div className="p-2.5 bg-emerald-50/90 border border-emerald-400/50 rounded-xl flex items-center justify-between shadow-2xs">
+                    <div className="flex items-center gap-2.5 overflow-hidden">
+                      <div className="w-8 h-8 rounded-lg bg-[#0F3D26] text-white flex items-center justify-center font-black text-xs shrink-0">
                         {memberName?.charAt(0) || 'M'}
                       </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-black text-slate-900">{memberName}</span>
-                          <span className="px-1.5 py-0.5 bg-emerald-200/80 text-emerald-900 font-mono font-bold text-[10px] rounded-md">
+                      <div className="overflow-hidden">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-black text-slate-900 truncate">{memberName}</span>
+                          <span className="px-1.5 py-0.2 bg-emerald-200/80 text-emerald-900 font-mono font-bold text-[9px] rounded">
                             {members.find((m) => m.id === selectedMemberId)?.memberNo || 'MBR'}
                           </span>
                         </div>
-                        <p className="text-[11px] text-slate-600 font-mono mt-0.5">
-                          📞 {memberPhone} • <span className="font-bold text-emerald-800">IN ₹{baseMonthlyRate}/month</span>
+                        <p className="text-[10px] text-slate-600 font-mono mt-0.5 truncate">
+                          📞 {memberPhone} • <strong className="text-emerald-800 font-bold">IN ₹{baseMonthlyRate}/mo</strong>
                         </p>
                       </div>
                     </div>
@@ -917,7 +914,7 @@ JazakAllah Khair!
                     <button
                       type="button"
                       onClick={handleClearSelectedMember}
-                      className="px-2.5 py-1.5 bg-white hover:bg-emerald-100 border border-emerald-300 text-emerald-900 rounded-xl text-xs font-bold transition shadow-2xs"
+                      className="px-2.5 py-1 bg-white hover:bg-emerald-100 border border-emerald-300 text-emerald-900 rounded-lg text-[11px] font-bold transition shrink-0 ml-2"
                     >
                       Change
                     </button>
@@ -925,7 +922,7 @@ JazakAllah Khair!
                 ) : (
                   <div className="relative">
                     <div className="relative">
-                      <i className="fas fa-magnifying-glass absolute left-3.5 top-3.5 text-slate-400 text-xs"></i>
+                      <i className="fas fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
                       <input
                         type="text"
                         value={modalMemberSearch}
@@ -935,8 +932,8 @@ JazakAllah Khair!
                           setShowModalSuggestions(true);
                           setMemberName(e.target.value);
                         }}
-                        placeholder="Search member by name, phone or ID (e.g. MBR-101)..."
-                        className="w-full pl-9 pr-8 py-2.5 bg-[#FFF9EC] border border-[#D4AF37]/60 rounded-2xl text-xs font-bold text-slate-900 outline-none focus:border-emerald-700 focus:bg-white transition"
+                        placeholder="Type member name, phone or ID (e.g. MBR-101)..."
+                        className="w-full pl-8 pr-8 py-2 bg-[#FFF9EC] border border-[#D4AF37]/60 rounded-xl text-xs font-bold text-slate-900 outline-none focus:border-emerald-700 focus:bg-white transition"
                       />
                       {modalMemberSearch && (
                         <button
@@ -945,36 +942,36 @@ JazakAllah Khair!
                             setModalMemberSearch('');
                             setSelectedMemberId('');
                           }}
-                          className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 text-xs p-1"
+                          className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 text-xs p-1"
                         >
-                          <i className="fas fa-times"></i>
+                          ✕
                         </button>
                       )}
                     </div>
 
-                    {/* MODAL AUTOCOMPLETE SUGGESTIONS POPUP */}
+                    {/* MODAL AUTOCOMPLETE SUGGESTIONS */}
                     {showModalSuggestions && (
                       <div
-                        className="absolute left-0 right-0 top-full mt-1.5 bg-white border border-emerald-300 rounded-2xl shadow-2xl z-50 overflow-hidden divide-y divide-slate-100 max-h-60 overflow-y-auto animate-in fade-in duration-100"
+                        className="absolute left-0 right-0 top-full mt-1 bg-white border border-emerald-300 rounded-xl shadow-2xl z-50 overflow-hidden divide-y divide-slate-100 max-h-52 overflow-y-auto"
                         onMouseLeave={() => setShowModalSuggestions(false)}
                       >
-                        <div className="p-2 bg-emerald-50/90 text-[10px] font-extrabold uppercase text-emerald-800 flex justify-between items-center sticky top-0 z-10 border-b border-emerald-200">
+                        <div className="p-1.5 bg-emerald-50 text-[10px] font-extrabold uppercase text-emerald-800 flex justify-between items-center sticky top-0 z-10 border-b border-emerald-200">
                           <span>
-                            🔍 {modalMemberSearch ? `Found ${modalSuggestions.length} Matching Members` : `Select from ${members.length} Registered Members`}
+                            🔍 {modalMemberSearch ? `Found ${modalSuggestions.length} Members` : `Select Registered Member (${members.length})`}
                           </span>
                           <button
                             type="button"
                             onClick={() => setShowModalSuggestions(false)}
-                            className="text-slate-400 hover:text-slate-700 px-1 font-bold"
+                            className="text-slate-400 hover:text-slate-700 px-1 font-bold text-[10px]"
                           >
                             ✕ Close
                           </button>
                         </div>
 
                         {modalSuggestions.length === 0 ? (
-                          <div className="p-4 text-center text-xs text-slate-500 font-medium">
-                            <p>No registered members found matching &quot;{modalMemberSearch}&quot;.</p>
-                            <p className="text-[11px] text-slate-400 mt-1">You can fill in custom Name and Phone manually below.</p>
+                          <div className="p-3 text-center text-xs text-slate-500 font-medium">
+                            <p>No registered members found.</p>
+                            <p className="text-[10px] text-slate-400 mt-0.5">Fill Name and Phone below manually.</p>
                           </div>
                         ) : (
                           modalSuggestions.map((m) => (
@@ -982,23 +979,22 @@ JazakAllah Khair!
                               key={m.id}
                               type="button"
                               onClick={() => handleSelectModalMember(m)}
-                              className="w-full px-3.5 py-2.5 text-left hover:bg-emerald-50 transition flex items-center justify-between text-xs group"
+                              className="w-full px-3 py-2 text-left hover:bg-emerald-50 transition flex items-center justify-between text-xs group"
                             >
-                              <div className="flex items-center gap-2.5">
-                                <div className="w-7 h-7 rounded-lg bg-[#0F3D26] text-white flex items-center justify-center font-black text-xs shrink-0">
+                              <div className="flex items-center gap-2 overflow-hidden">
+                                <div className="w-6 h-6 rounded-md bg-[#0F3D26] text-white flex items-center justify-center font-black text-[11px] shrink-0">
                                   {m.name?.charAt(0) || 'M'}
                                 </div>
-                                <div>
-                                  <span className="font-extrabold text-slate-900 group-hover:text-emerald-800 block text-xs">
+                                <div className="truncate">
+                                  <span className="font-extrabold text-slate-900 group-hover:text-emerald-800 block text-xs truncate">
                                     {m.name}
                                   </span>
-                                  <span className="text-[10px] text-slate-400 font-mono">
+                                  <span className="text-[10px] text-slate-400 font-mono block">
                                     {m.memberNo || 'MBR'} • 📞 {m.phone}
-                                    {m.address ? ` • ${m.address}` : ''}
                                   </span>
                                 </div>
                               </div>
-                              <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md shrink-0">
+                              <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-1.5 py-0.5 rounded shrink-0 ml-2">
                                 IN ₹{m.monthlyAmount || 100}/mo
                               </span>
                             </button>
@@ -1010,68 +1006,171 @@ JazakAllah Khair!
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-[11px] font-extrabold text-slate-700 uppercase mb-1">Name *</label>
-                  <input type="text" required value={memberName} onChange={(e) => setMemberName(e.target.value)} className="w-full p-3 bg-slate-50 border rounded-2xl text-xs font-semibold" />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-extrabold text-slate-700 uppercase mb-1">Phone *</label>
-                  <input type="text" required value={memberPhone} onChange={(e) => setMemberPhone(e.target.value)} className="w-full p-3 bg-slate-50 border rounded-2xl text-xs font-mono font-semibold" />
-                </div>
-              </div>
-
-              {/* SEVERAL MONTHS PENDING ALERT BANNER */}
-              {pendingMonthsDetected.length > 0 && (
-                <div className="p-3.5 bg-amber-50/90 border border-amber-300/80 rounded-2xl text-xs space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 font-extrabold text-amber-900">
-                      <i className="fas fa-triangle-exclamation text-amber-600"></i>
-                      <span>{pendingMonthsDetected.length} Unpaid / Pending Months Detected</span>
-                    </div>
-                    <span className="px-2 py-0.5 bg-amber-200/80 text-amber-900 font-extrabold rounded-lg text-[10px]">
-                      Total Due: IN ₹{(pendingMonthsDetected.length * (baseMonthlyRate || 100)).toLocaleString('en-IN')}
-                    </span>
+              {/* MANUAL NAME & PHONE (ONLY IF NO REGISTERED MEMBER CHOSEN) */}
+              {!selectedMemberId && (
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-600 uppercase mb-1">Donor Name *</label>
+                    <input
+                      type="text"
+                      required
+                      value={memberName}
+                      onChange={(e) => setMemberName(e.target.value)}
+                      placeholder="Full Name"
+                      className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                    />
                   </div>
-
-                  <div className="flex flex-wrap gap-1.5 pt-0.5">
-                    {pendingMonthsDetected.map((pm) => (
-                      <span key={pm} className="px-2 py-0.5 bg-white border border-amber-300 text-amber-900 rounded-md text-[10px] font-bold">
-                        {pm}
-                      </span>
-                    ))}
-                  </div>
-
-                  <div className="pt-1 flex items-center justify-between">
-                    <span className="text-[11px] text-amber-800">Clear all pending dues at once:</span>
-                    <button
-                      type="button"
-                      onClick={handleClearAllPending}
-                      className="px-3 py-1.5 bg-amber-700 hover:bg-amber-800 text-white font-extrabold rounded-xl text-[11px] transition shadow-xs flex items-center gap-1.5"
-                    >
-                      <i className="fas fa-bolt"></i> ⚡ Clear All Pending ({pendingMonthsDetected.length} Months)
-                    </button>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-600 uppercase mb-1">Phone *</label>
+                    <input
+                      type="text"
+                      required
+                      value={memberPhone}
+                      onChange={(e) => setMemberPhone(e.target.value)}
+                      placeholder="Phone Number"
+                      className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-semibold"
+                    />
                   </div>
                 </div>
               )}
 
-              {/* BULK PAYMENT PRESETS */}
-              <div className="space-y-2 bg-slate-50/80 p-3.5 rounded-2xl border border-slate-200/80">
+              {/* LIVE PAYMENT & REST OF BALANCE BREAKDOWN */}
+              {selectedMemberId && (
+                <div className="p-3 bg-slate-50/90 border border-slate-200/80 rounded-2xl space-y-2.5">
+                  {/* DUES SUMMARY BAR */}
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                      <i className="fas fa-calculator text-emerald-700"></i> Payment & Balance Status
+                    </span>
+                    {pendingMonthsDetected.length > 0 ? (
+                      <span className="text-[10px] font-extrabold text-amber-900 bg-amber-100 px-2 py-0.5 rounded-md border border-amber-200">
+                        {pendingMonthsDetected.length} Months Due (IN ₹{(pendingMonthsDetected.length * (baseMonthlyRate || 100)).toLocaleString('en-IN')})
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md">
+                        ✓ All Previous Months Paid
+                      </span>
+                    )}
+                  </div>
+
+                  {/* 2-CARD LIVE STATUS: PAYING NOW VS REST OF BALANCE */}
+                  <div className="grid grid-cols-2 gap-2">
+                    {/* PAYING NOW */}
+                    <div className="p-2.5 bg-emerald-50 border border-emerald-300 rounded-xl">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[9.5px] uppercase font-extrabold text-emerald-800">Paying Now</span>
+                        <span className="text-[9.5px] font-bold text-emerald-700">
+                          {selectedMonthsList.length} Month{selectedMonthsList.length > 1 ? 's' : ''}
+                        </span>
+                      </div>
+                      <span className="text-sm font-black text-emerald-950 font-mono block mt-0.5">
+                        IN ₹{Number(amount || 0).toLocaleString('en-IN')}
+                      </span>
+                    </div>
+
+                    {/* REST OF BALANCE */}
+                    {(() => {
+                      const remainingPendingMonths = pendingMonthsDetected.filter((m) => !selectedMonthsList.includes(m));
+                      const remainingBalAmt = remainingPendingMonths.length * (baseMonthlyRate || 100);
+                      const hasRemaining = remainingPendingMonths.length > 0;
+
+                      return (
+                        <div
+                          className={`p-2.5 rounded-xl border transition ${
+                            hasRemaining
+                              ? 'bg-amber-50/90 border-amber-300'
+                              : 'bg-emerald-100/70 border-emerald-300'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span
+                              className={`text-[9.5px] uppercase font-extrabold ${
+                                hasRemaining ? 'text-amber-900' : 'text-emerald-900'
+                              }`}
+                            >
+                              Rest of Balance
+                            </span>
+                            <span
+                              className={`text-[9.5px] font-bold ${
+                                hasRemaining ? 'text-amber-700' : 'text-emerald-700'
+                              }`}
+                            >
+                              {hasRemaining ? `${remainingPendingMonths.length} Mo Due` : 'Cleared'}
+                            </span>
+                          </div>
+                          <span
+                            className={`text-sm font-black font-mono block mt-0.5 ${
+                              hasRemaining ? 'text-amber-950' : 'text-emerald-950'
+                            }`}
+                          >
+                            {hasRemaining ? `IN ₹${remainingBalAmt.toLocaleString('en-IN')}` : '₹0 Due ✓'}
+                          </span>
+                        </div>
+                      );
+                    })()}
+                  </div>
+
+                  {/* SHOW REST OF BALANCE UNPAID MONTHS LIST */}
+                  {(() => {
+                    const remainingPendingMonths = pendingMonthsDetected.filter((m) => !selectedMonthsList.includes(m));
+                    if (remainingPendingMonths.length === 0) return null;
+
+                    return (
+                      <div className="pt-0.5 space-y-1">
+                        <div className="flex items-center justify-between text-[10px] text-amber-900 font-bold">
+                          <span>Rest of unpaid months remaining:</span>
+                          <span className="font-mono">{remainingPendingMonths.length} Months</span>
+                        </div>
+                        <div className="flex flex-wrap gap-1 max-h-16 overflow-y-auto">
+                          {remainingPendingMonths.map((m) => (
+                            <span
+                              key={m}
+                              className="px-1.5 py-0.5 bg-white border border-amber-300/80 text-amber-900 rounded text-[9.5px] font-bold font-mono"
+                            >
+                              {m}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
+
+              {/* QUICK CHOOSE PAYMENT OPTIONS & PRESETS */}
+              <div className="space-y-2 bg-slate-50/70 p-3 rounded-2xl border border-slate-200">
                 <div className="flex items-center justify-between">
-                  <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">
-                    ⚡ Quick Bulk Amount Presets:
-                  </label>
+                  <span className="text-[10px] font-extrabold uppercase text-slate-700">
+                    Choose Payment Option:
+                  </span>
                   <button
                     type="button"
                     onClick={() => setShowMonthGrid(!showMonthGrid)}
-                    className="text-[11px] font-bold text-emerald-800 hover:text-emerald-950 flex items-center gap-1"
+                    className="text-[10.5px] font-bold text-emerald-800 hover:text-emerald-950 flex items-center gap-1"
                   >
-                    <i className={`fas ${showMonthGrid ? 'fa-chevron-up' : 'fa-calendar-days'}`}></i>
-                    {showMonthGrid ? 'Hide Month Picker' : 'Select Specific Months'}
+                    <i className={`fas ${showMonthGrid ? 'fa-chevron-up' : 'fa-calendar-days'} text-[10px]`}></i>
+                    {showMonthGrid ? 'Hide Custom Picker' : 'Pick Custom Months'}
                   </button>
                 </div>
 
-                <div className="grid grid-cols-5 gap-1.5">
+                {/* CLEAR ALL PENDING BUTTON (IF DUE) */}
+                {pendingMonthsDetected.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleClearAllPending}
+                    className="w-full py-1.5 px-3 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-bold transition flex items-center justify-between shadow-2xs"
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <i className="fas fa-bolt text-amber-300"></i> Clear All Pending ({pendingMonthsDetected.length} Months)
+                    </span>
+                    <span className="font-mono font-black">
+                      IN ₹{(pendingMonthsDetected.length * (baseMonthlyRate || 100)).toLocaleString('en-IN')}
+                    </span>
+                  </button>
+                )}
+
+                {/* PRESET CHIPS */}
+                <div className="grid grid-cols-5 gap-1">
                   {[
                     { label: '1 Mo', count: 1 },
                     { label: '2 Mo', count: 2 },
@@ -1089,26 +1188,26 @@ JazakAllah Khair!
                           handleApplyPresetCount(preset.count);
                           setShowMonthGrid(false);
                         }}
-                        className={`py-2 px-1 rounded-xl text-center transition border ${
+                        className={`py-1.5 px-1 rounded-xl text-center transition border ${
                           isSelected
-                            ? 'bg-[#064E3B] text-[#F4D06F] border-[#D4AF37] shadow-sm font-extrabold'
+                            ? 'bg-[#064E3B] text-[#F4D06F] border-[#D4AF37] shadow-2xs font-extrabold'
                             : 'bg-white text-slate-700 border-slate-200 hover:bg-emerald-50 hover:border-emerald-300 font-bold'
                         }`}
                       >
-                        <span className="block text-[11px] leading-tight">{preset.label}</span>
-                        <span className="block text-[9px] opacity-80 font-mono mt-0.5">₹{calculatedCost}</span>
+                        <span className="block text-[10px] leading-tight">{preset.label}</span>
+                        <span className="block text-[8.5px] opacity-80 font-mono mt-0.5">₹{calculatedCost}</span>
                       </button>
                     );
                   })}
                 </div>
 
-                {/* INTERACTIVE MULTI-MONTH CHECKBOX GRID */}
+                {/* EXPANDABLE MONTH SELECTION GRID */}
                 {showMonthGrid && (
-                  <div className="pt-2 border-t border-slate-200 mt-2 space-y-1.5">
-                    <span className="text-[10px] font-extrabold uppercase text-slate-500 block">
-                      Select Custom Months (Click to Toggle):
+                  <div className="pt-2 border-t border-slate-200 mt-2 space-y-1.5 animate-in fade-in duration-100">
+                    <span className="text-[9.5px] font-extrabold uppercase text-slate-500 block">
+                      Click months to toggle selection:
                     </span>
-                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5 max-h-36 overflow-y-auto p-1.5 bg-white rounded-xl border border-slate-200">
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-1 max-h-32 overflow-y-auto p-1.5 bg-white rounded-xl border border-slate-200">
                       {AVAILABLE_MONTHS.map((mStr) => {
                         const isChecked = selectedMonthsList.includes(mStr);
                         const isPending = pendingMonthsDetected.includes(mStr);
@@ -1117,47 +1216,75 @@ JazakAllah Khair!
                             key={mStr}
                             type="button"
                             onClick={() => handleToggleMonthSelection(mStr)}
-                            className={`p-1.5 rounded-lg text-[10px] font-bold text-left transition flex items-center justify-between border ${
+                            className={`p-1.5 rounded-lg text-[9.5px] font-bold text-left transition flex items-center justify-between border ${
                               isChecked
-                                ? 'bg-emerald-800 text-white border-emerald-900 shadow-xs'
+                                ? 'bg-emerald-800 text-white border-emerald-900 shadow-2xs'
                                 : isPending
                                 ? 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100'
                                 : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
                             }`}
                           >
                             <span className="truncate">{mStr}</span>
-                            {isChecked && <i className="fas fa-check text-[9px] shrink-0 ml-1"></i>}
-                            {!isChecked && isPending && <span className="text-[8px] bg-amber-200 px-1 rounded text-amber-900 font-extrabold shrink-0 ml-0.5">DUE</span>}
+                            {isChecked && <i className="fas fa-check text-[8px] shrink-0 ml-1"></i>}
+                            {!isChecked && isPending && (
+                              <span className="text-[7.5px] bg-amber-200 px-1 rounded text-amber-900 font-extrabold shrink-0 ml-0.5">
+                                DUE
+                              </span>
+                            )}
                           </button>
                         );
                       })}
-                    </div>
-                    <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1">
-                      <span>Selected: <strong className="text-emerald-800">{selectedMonthsList.length} Months</strong></span>
-                      <span>Rate: <strong className="text-slate-800">₹{baseMonthlyRate}/mo</strong></span>
                     </div>
                   </div>
                 )}
               </div>
 
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block text-[11px] font-extrabold text-slate-700 uppercase">Amount (IN ₹) *</label>
-                  <span className="text-[10px] font-bold text-emerald-800 font-mono">
-                    ({selectedMonthsList.length} Month{selectedMonthsList.length > 1 ? 's' : ''} × ₹{baseMonthlyRate})
-                  </span>
+              {/* AMOUNT & PERIOD (INLINE 2-COLUMN GRID) */}
+              <div className="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label className="block text-[10px] font-extrabold text-slate-700 uppercase mb-1">
+                    Amount (IN ₹) <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-black text-slate-900 outline-none focus:border-emerald-700 focus:bg-white"
+                  />
                 </div>
-                <input type="number" required value={amount} onChange={(e) => setAmount(e.target.value)} className="w-full p-3 bg-slate-50 border rounded-2xl text-xs font-extrabold" />
+
+                <div>
+                  <label className="block text-[10px] font-extrabold text-slate-700 uppercase mb-1">
+                    Period Description
+                  </label>
+                  <input
+                    type="text"
+                    value={forMonths}
+                    onChange={(e) => setForMonths(e.target.value)}
+                    placeholder="e.g. August 2026"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 outline-none focus:border-emerald-700 focus:bg-white truncate"
+                  />
+                </div>
               </div>
 
-              <div>
-                <label className="block text-[11px] font-extrabold text-slate-700 uppercase mb-1">Period / Month(s)</label>
-                <input type="text" value={forMonths} onChange={(e) => setForMonths(e.target.value)} placeholder="e.g. August 2026, September 2026 (2 Months Bulk)" className="w-full p-3 bg-slate-50 border rounded-2xl text-xs font-semibold" />
-              </div>
-
-              <div className="flex justify-end gap-3 pt-3 border-t">
-                <button type="button" onClick={() => setShowAddModal(false)} className="px-5 py-2.5 bg-slate-100 text-slate-700 font-bold rounded-xl text-xs">Cancel</button>
-                <button type="submit" disabled={submitting} className="px-5 py-2.5 bg-[#0F3D26] text-white font-extrabold rounded-xl text-xs">Save & Send WhatsApp</button>
+              {/* MODAL FOOTER BUTTONS */}
+              <div className="flex items-center justify-end gap-2.5 pt-2.5 border-t shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="px-4 py-2 bg-[#0F3D26] hover:bg-emerald-950 text-white font-extrabold rounded-xl text-xs transition flex items-center gap-1.5 shadow-sm"
+                >
+                  <i className="fab fa-whatsapp text-emerald-400"></i>
+                  <span>{submitting ? 'Recording...' : `Collect ₹${Number(amount || 0).toLocaleString('en-IN')}`}</span>
+                </button>
               </div>
             </form>
           </div>
