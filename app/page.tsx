@@ -577,80 +577,146 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 7.6 PRICING SECTION (#pricing) */}
+      {/* 7.6 PRICING SECTION (#pricing) - 100% FREE & SADAQAH JARIYAH COMMUNITY MODEL */}
       <section id="pricing" className="py-16 lg:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-        <div className="text-center max-w-2xl mx-auto space-y-2">
-          <span className="text-xs font-black uppercase tracking-widest text-[#0F766E] block">
-            Transparent Pricing
-          </span>
-          <h2 className="text-3xl sm:text-4xl font-black text-[#102A25] tracking-tight">
-            Simple, Accessible Pricing for Every Mosque
+        {/* HEADER */}
+        <div className="space-y-4 max-w-4xl">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#EBF7F2] border border-[#2D8A68]/30 text-[#0F5A3E] text-xs font-black tracking-wider uppercase">
+            <span>💚</span>
+            <span>100% Free of Cost • Community Funded</span>
+          </div>
+
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#102A25] tracking-tight leading-[1.2]">
+            Completely Free for Every Mosque.<br className="hidden sm:inline" />{' '}
+            <span className="text-[#0B6B4C]">Powered by Voluntary Contributions.</span>
           </h2>
-          <p className="text-xs sm:text-sm text-slate-600 font-medium">
-            Choose a plan tailored to your community size. No hidden setup fees or surprise transaction cuts.
+
+          <p className="text-sm sm:text-base text-slate-600 font-medium max-w-3xl leading-relaxed">
+            MasjidPay is built for the global Muslim Ummah. We believe houses of Allah should never be burdened with expensive software subscriptions. Our software is 100% free forever, sustained solely by voluntary donations and people&apos;s contributions (Sadaqah Jariyah).
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* STARTER */}
-          <div className="p-7 bg-white border border-[#D4AF37]/30 rounded-3xl space-y-5 shadow-xs flex flex-col justify-between">
-            <div className="space-y-3">
-              <span className="px-3 py-1 bg-slate-100 text-slate-700 text-[10px] font-extrabold uppercase rounded-full">Community Free</span>
-              <h3 className="text-xl font-black text-slate-900">Small Mosque</h3>
-              <div className="text-3xl font-black text-[#064E3B]">₹0 <span className="text-xs text-slate-500 font-normal">/ month</span></div>
-              <p className="text-xs text-slate-600">Ideal for mohalla and village masjids starting digital recordkeeping.</p>
-              <ul className="space-y-2 text-xs text-slate-700 pt-3 border-t border-slate-100">
-                <li className="flex items-center gap-2"><i className="fas fa-check text-emerald-600 text-xs"></i> Up to 100 Members</li>
-                <li className="flex items-center gap-2"><i className="fas fa-check text-emerald-600 text-xs"></i> Mosque Income & Expense Ledger</li>
-                <li className="flex items-center gap-2"><i className="fas fa-check text-emerald-600 text-xs"></i> Basic PDF Receipts</li>
-                <li className="flex items-center gap-2"><i className="fas fa-check text-emerald-600 text-xs"></i> 1 Admin Account</li>
-              </ul>
+        {/* 2-CARD PRICING & SADAQAH JARIYAH GRID */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+          {/* LEFT CARD: FULL ACCESS • FREE FOREVER (7 Cols) */}
+          <div className="lg:col-span-7 p-7 sm:p-9 bg-white border border-[#D4AF37]/40 rounded-3xl space-y-6 shadow-sm flex flex-col justify-between">
+            <div className="space-y-5">
+              <div className="flex items-center justify-between">
+                <span className="px-3 py-1 bg-[#EBF7F2] border border-[#2D8A68]/40 text-[#0F5A3E] text-[10px] font-black uppercase tracking-wider rounded-lg">
+                  FULL ACCESS • FREE FOREVER
+                </span>
+                <span className="text-xs font-bold text-slate-400">
+                  No Credit Card Required
+                </span>
+              </div>
+
+              <div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl sm:text-5xl font-black text-[#0B6B4C] tracking-tight">$0 / ₹0</span>
+                  <span className="text-slate-500 font-bold text-sm">/ lifetime free</span>
+                </div>
+                <p className="text-xs sm:text-sm text-slate-600 font-medium mt-2 leading-relaxed">
+                  Every mosque, regardless of size, location, or budget, gets full, unrestricted access to all tools and features with zero fees.
+                </p>
+              </div>
+
+              {/* 8 BULLET CHECKLIST */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                {[
+                  'Unlimited Donations & Expense tracking',
+                  'Automated WhatsApp PDF receipts',
+                  'Imam & staff salary management',
+                  'Member directory & monthly dues',
+                  'Community Access Code transparency',
+                  '1-Click Cloud Backup & Excel export',
+                  'Multi-language support worldwide',
+                  'Zero ads & 100% data encryption',
+                ].map((feat, idx) => (
+                  <div key={idx} className="flex items-start gap-2.5 text-xs font-bold text-slate-800">
+                    <div className="w-4 h-4 rounded-md bg-[#EBF7F2] text-[#0F5A3E] flex items-center justify-center shrink-0 mt-0.5">
+                      <i className="fas fa-check text-[9px]"></i>
+                    </div>
+                    <span>{feat}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-            <Link href="/register" className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-xl text-center block transition">
-              Get Started Free
-            </Link>
+
+            {/* ACTION BUTTON */}
+            <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center gap-3">
+              <Link
+                href="/register"
+                className="w-full sm:w-auto px-7 py-3 bg-[#0B5A3E] hover:bg-[#064E3B] text-white font-black rounded-xl text-xs transition flex items-center justify-center gap-2 shadow-md"
+              >
+                <span>Get Started For Free</span>
+                <i className="fas fa-arrow-right text-[10px]"></i>
+              </Link>
+              <span className="text-xs text-slate-400 font-medium">
+                Setup in under 2 minutes • No expiry
+              </span>
+            </div>
           </div>
 
-          {/* PROFESSIONAL */}
-          <div className="p-7 bg-[#FFF9EC] border-2 border-[#D4AF37] rounded-3xl space-y-5 shadow-xl flex flex-col justify-between relative transform md:-translate-y-2">
-            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-[#064E3B] text-[#F4D06F] text-[10px] font-black uppercase tracking-wider px-3.5 py-1 rounded-full border border-[#D4AF37] shadow-sm">
-              Most Popular
+          {/* RIGHT CARD: SADAQAH JARIYAH MODEL (5 Cols - Dark Emerald Card) */}
+          <div className="lg:col-span-5 p-7 sm:p-9 bg-gradient-to-b from-[#104835] via-[#0E3E2E] to-[#0A3023] border-2 border-[#D4AF37]/50 rounded-3xl text-white space-y-6 shadow-xl relative overflow-hidden flex flex-col justify-between">
+            {/* WATERMARK BACKGROUND ICON */}
+            <div className="absolute -right-8 -top-8 text-[#D4AF37]/10 text-9xl font-serif pointer-events-none select-none">
+              <i className="fas fa-mosque"></i>
             </div>
-            <div className="space-y-3">
-              <span className="px-3 py-1 bg-emerald-100 text-emerald-900 text-[10px] font-extrabold uppercase rounded-full">Pro Mosque</span>
-              <h3 className="text-xl font-black text-slate-900">Standard Masjid</h3>
-              <div className="text-3xl font-black text-[#064E3B]">₹499 <span className="text-xs text-slate-500 font-normal">/ month</span></div>
-              <p className="text-xs text-slate-600">Complete operating suite for active urban and town mosques.</p>
-              <ul className="space-y-2 text-xs text-slate-700 pt-3 border-t border-[#D4AF37]/30">
-                <li className="flex items-center gap-2"><i className="fas fa-check text-emerald-600 text-xs"></i> Unlimited Monthly Members</li>
-                <li className="flex items-center gap-2"><i className="fas fa-check text-emerald-600 text-xs"></i> Automated WhatsApp Receipts</li>
-                <li className="flex items-center gap-2"><i className="fas fa-check text-emerald-600 text-xs"></i> Razorpay & UPI QR Payment Gateway</li>
-                <li className="flex items-center gap-2"><i className="fas fa-check text-emerald-600 text-xs"></i> Staff Payroll & Rental Management</li>
-                <li className="flex items-center gap-2"><i className="fas fa-check text-emerald-600 text-xs"></i> Public Transparency Portal</li>
-              </ul>
-            </div>
-            <Link href="/register" className="w-full py-2.5 bg-[#064E3B] hover:bg-[#102A25] text-white text-xs font-black rounded-xl text-center block transition shadow-md">
-              Register Pro Mosque
-            </Link>
-          </div>
 
-          {/* FEDERATION / TRUST */}
-          <div className="p-7 bg-white border border-[#D4AF37]/30 rounded-3xl space-y-5 shadow-xs flex flex-col justify-between">
-            <div className="space-y-3">
-              <span className="px-3 py-1 bg-slate-100 text-slate-700 text-[10px] font-extrabold uppercase rounded-full">Grand Waqf / Trust</span>
-              <h3 className="text-xl font-black text-slate-900">Islamic Trust</h3>
-              <div className="text-3xl font-black text-[#064E3B]">₹1,499 <span className="text-xs text-slate-500 font-normal">/ month</span></div>
-              <p className="text-xs text-slate-600">Multi-branch management for Waqf boards, madrasa chains, and large endowments.</p>
-              <ul className="space-y-2 text-xs text-slate-700 pt-3 border-t border-slate-100">
-                <li className="flex items-center gap-2"><i className="fas fa-check text-emerald-600 text-xs"></i> Multi-Masjid Consolidated Audit</li>
-                <li className="flex items-center gap-2"><i className="fas fa-check text-emerald-600 text-xs"></i> Custom Subdomain & Branding</li>
-                <li className="flex items-center gap-2"><i className="fas fa-check text-emerald-600 text-xs"></i> Dedicated Account Manager & Priority Phone Support</li>
-                <li className="flex items-center gap-2"><i className="fas fa-check text-emerald-600 text-xs"></i> 99.9% SLA & Automated Backups</li>
-              </ul>
+            <div className="space-y-4 relative z-10">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#1A5C45] border border-[#D4AF37]/40 text-[#F4D06F] text-[10px] font-black uppercase tracking-wider rounded-lg">
+                <i className="fas fa-gift text-[10px]"></i> SADAQAH JARIYAH MODEL
+              </span>
+
+              <h3 className="text-xl sm:text-2xl font-black text-[#FFF9EC] tracking-tight">
+                How does it stay free?
+              </h3>
+
+              <p className="text-xs sm:text-sm text-[#FFF9EC]/80 leading-relaxed font-medium">
+                Running high-availability cloud servers, automated WhatsApp APIs, secure backups, and providing ongoing support incurs real monthly costs.
+              </p>
+
+              <div className="space-y-3 pt-2">
+                <div className="p-3.5 bg-[#17523E]/70 border border-[#D4AF37]/30 rounded-2xl flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-[#2D7A5E] text-[#F4D06F] flex items-center justify-center shrink-0 text-xs shadow-xs">
+                    <i className="fas fa-heart"></i>
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-black text-[#FFF9EC]">Voluntary Community Support</h4>
+                    <p className="text-[11px] text-[#FFF9EC]/75 mt-0.5 leading-relaxed">
+                      Funded by benevolent individuals, mosque committees, and supporters.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-3.5 bg-[#17523E]/70 border border-[#D4AF37]/30 rounded-2xl flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-[#2D7A5E] text-[#F4D06F] flex items-center justify-center shrink-0 text-xs shadow-xs">
+                    <i className="fas fa-shield-halved"></i>
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-black text-[#FFF9EC]">100% Ethical & Independent</h4>
+                    <p className="text-[11px] text-[#FFF9EC]/75 mt-0.5 leading-relaxed">
+                      No commercial investors or ads. Data is held as a sacred Amanah.
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
-            <Link href="#contact" className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-xl text-center block transition">
-              Contact Trust Team
-            </Link>
+
+            {/* VOLUNTARY CONTRIBUTION BUTTON */}
+            <div className="space-y-2 relative z-10 pt-2">
+              <a
+                href="#contact"
+                className="w-full py-3 px-4 bg-[#F4D06F] hover:bg-[#E8C25B] text-[#102A25] font-black rounded-xl text-xs text-center transition flex items-center justify-center gap-2 shadow-lg"
+              >
+                <i className="fas fa-heart text-amber-900"></i>
+                <span>Contribute / Donate to Support Us</span>
+              </a>
+              <p className="text-[10px] text-center text-[#FFF9EC]/70 font-medium">
+                Any contribution helps keep MasjidPay running for mosques worldwide.
+              </p>
+            </div>
           </div>
         </div>
       </section>
