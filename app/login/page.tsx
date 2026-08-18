@@ -480,32 +480,31 @@ export default function LoginPage() {
       {/* COMMUNITY READ-ONLY ACCESS MODAL */}
       {showCommunityModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl space-y-4 border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-2xl bg-[#064E3B] text-[#F4D06F] flex items-center justify-center text-base font-bold shadow-xs">
-                  <i className="fas fa-eye"></i>
-                </div>
-                <div>
-                  <h3 className="text-base font-black text-slate-900">Community & Guest Access</h3>
-                  <p className="text-xs text-slate-500 font-medium">Read-Only Financial Transparency</p>
-                </div>
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl space-y-5 border border-[#EADBCE] animate-in fade-in zoom-in-95 duration-150 relative">
+            <button
+              onClick={() => setShowCommunityModal(false)}
+              className="absolute top-5 right-5 text-slate-400 hover:text-slate-600 p-1 text-base"
+            >
+              ✕
+            </button>
+
+            {/* KEY ICON */}
+            <div className="text-center space-y-2 pt-1">
+              <div className="w-12 h-12 rounded-2xl bg-[#FFF9EC] border border-[#D4AF37]/50 text-[#B45309] flex items-center justify-center text-lg mx-auto shadow-xs">
+                <i className="fas fa-key"></i>
               </div>
-              <button
-                onClick={() => setShowCommunityModal(false)}
-                className="text-slate-400 hover:text-slate-600 p-1 text-base"
-              >
-                ✕
-              </button>
+              <h2 className="text-2xl font-serif font-bold text-slate-900 tracking-tight">
+                Community Access
+              </h2>
+              <p className="text-xs text-slate-500 font-medium">
+                Enter the Community Access Code to view mosque data
+              </p>
             </div>
 
-            <div className="p-3 bg-emerald-50/80 border border-emerald-200 rounded-2xl text-[11px] text-emerald-900 leading-relaxed space-y-1">
-              <p className="font-bold flex items-center gap-1.5 text-emerald-950">
-                <i className="fas fa-shield-halved text-emerald-700"></i> Read-Only Transparency Mode
-              </p>
-              <p className="text-slate-600">
-                You can browse financial income, expenditures, budgets, and collections. <strong>Editing, creating, and amendments are disabled.</strong>
-              </p>
+            {/* READ-ONLY PILL NOTICE */}
+            <div className="px-4 py-2.5 bg-[#FFF9EC] border border-[#D4AF37]/40 rounded-2xl flex items-center gap-2.5 text-xs font-bold text-[#92400E]">
+              <span className="w-2 h-2 rounded-full bg-[#D97706] shrink-0"></span>
+              <span>Read-only access — no changes can be made</span>
             </div>
 
             {communityError && (
@@ -515,60 +514,52 @@ export default function LoginPage() {
             )}
 
             <form onSubmit={handleCommunityLogin} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Select Mosque *
-                </label>
-                <select
-                  required
-                  value={selectedMasjidSlug}
-                  onChange={(e) => setSelectedMasjidSlug(e.target.value)}
-                  className="w-full p-2.5 bg-[#FAF8F5] border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-[#064E3B]"
-                >
-                  {masjidList.length === 0 ? (
-                    <option value="jama-masjid">Jama Masjid Vaniyambadi</option>
-                  ) : (
-                    masjidList.map((m) => (
+              {masjidList.length > 1 && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Select Mosque
+                  </label>
+                  <select
+                    value={selectedMasjidSlug}
+                    onChange={(e) => setSelectedMasjidSlug(e.target.value)}
+                    className="w-full p-2.5 bg-[#FAF8F5] border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-[#064E3B]"
+                  >
+                    {masjidList.map((m) => (
                       <option key={m.id} value={m.slug}>
                         {m.name} ({m.city || 'Mosque'})
                       </option>
-                    ))
-                  )}
-                </select>
-              </div>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Secret Access Code * <span className="text-rose-600 font-bold text-[10px]">(Required)</span>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  Community Access Code
                 </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Enter mosque secret code (e.g. 7860)"
-                  value={enteredCommunityCode}
-                  onChange={(e) => setEnteredCommunityCode(e.target.value)}
-                  className="w-full p-2.5 bg-[#FAF8F5] border border-slate-200 rounded-xl text-xs font-mono font-bold text-center tracking-widest text-slate-900 focus:outline-none focus:border-[#064E3B]"
-                />
-                <span className="text-[10px] text-slate-400 mt-1 block">
-                  Ask your mosque administrator/committee for the secret code to enter read-only transparency mode.
-                </span>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                    <i className="fas fa-key text-xs"></i>
+                  </div>
+                  <input
+                    type="text"
+                    required
+                    autoFocus
+                    placeholder="Enter Community Access Code"
+                    value={enteredCommunityCode}
+                    onChange={(e) => setEnteredCommunityCode(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 bg-[#FAF8F5] border border-slate-200 rounded-2xl text-xs font-semibold text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#064E3B] transition"
+                  />
+                </div>
               </div>
 
-              <div className="pt-2 flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowCommunityModal(false)}
-                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl text-xs"
-                >
-                  Cancel
-                </button>
+              <div className="pt-2">
                 <button
                   type="submit"
                   disabled={verifyingCommunity}
-                  className="px-5 py-2.5 bg-[#064E3B] hover:bg-emerald-950 text-white font-extrabold rounded-xl text-xs shadow-md transition disabled:opacity-50 flex items-center gap-2"
+                  className="w-full py-3.5 px-4 bg-[#1E5D42] hover:bg-[#164732] text-white font-extrabold rounded-2xl shadow-md transition disabled:opacity-50 text-xs tracking-wide cursor-pointer"
                 >
-                  <i className="fas fa-eye"></i>
-                  {verifyingCommunity ? 'Opening Guest View...' : 'View Mosque (Read Only)'}
+                  {verifyingCommunity ? 'Verifying Access Code...' : 'Access Dashboard'}
                 </button>
               </div>
             </form>
