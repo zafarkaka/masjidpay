@@ -22,6 +22,7 @@ export default function RentalsPage() {
   const [paymentMethod, setPaymentMethod] = useState('BANK_TRANSFER');
 
   const [submitting, setSubmitting] = useState(false);
+  const [isViewer, setIsViewer] = useState(false);
 
   const loadData = () => {
     setLoading(true);
@@ -36,6 +37,13 @@ export default function RentalsPage() {
   };
 
   useEffect(() => {
+    fetch('/api/auth/me')
+      .then((r) => r.json())
+      .then((d) => {
+        const role = d?.user?.role;
+        setIsViewer(role === 'VIEWER' || role === 'COMMUNITY_VIEWER');
+      })
+      .catch(() => {});
     loadData();
   }, []);
 
@@ -111,12 +119,14 @@ export default function RentalsPage() {
           <p className="text-slate-500 text-xs sm:text-sm mt-1">Track Mosque commercial shops, tenant agreements, and rent collection vouchers</p>
         </div>
 
-        <button
-          onClick={() => setShowShopModal(true)}
-          className="px-4 py-2 bg-emerald-800 hover:bg-emerald-900 text-white font-bold rounded-xl shadow-xs text-xs transition flex items-center gap-2 self-start sm:self-auto cursor-pointer"
-        >
-          <i className="fas fa-store text-emerald-300"></i> Register New Shop
-        </button>
+        {!isViewer && (
+          <button
+            onClick={() => setShowShopModal(true)}
+            className="px-4 py-2 bg-emerald-800 hover:bg-emerald-900 text-white font-bold rounded-xl shadow-xs text-xs transition flex items-center gap-2 self-start sm:self-auto cursor-pointer"
+          >
+            <i className="fas fa-store text-emerald-300"></i> Register New Shop
+          </button>
+        )}
       </div>
 
       {/* SHOPS ROSTER TABLE */}
@@ -145,7 +155,7 @@ export default function RentalsPage() {
                   <th className="px-4 py-3.5 whitespace-nowrap">Phone Number</th>
                   <th className="px-4 py-3.5 whitespace-nowrap">Monthly Rent</th>
                   <th className="px-4 py-3.5 whitespace-nowrap">Status</th>
-                  <th className="px-5 py-3.5 whitespace-nowrap text-right">Action</th>
+                  {!isViewer && <th className="px-5 py-3.5 whitespace-nowrap text-right">Action</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
@@ -162,18 +172,20 @@ export default function RentalsPage() {
                         {s.status || 'OCCUPIED'}
                       </span>
                     </td>
-                    <td className="px-5 py-3.5 whitespace-nowrap text-right">
-                      <button
-                        onClick={() => {
-                          setSelectedShop(s);
-                          setPayAmount(String(s.monthlyRent));
-                          setShowPayModal(true);
-                        }}
-                        className="px-3 py-1.5 bg-emerald-800 hover:bg-emerald-900 text-white font-bold rounded-lg text-[11px] transition shadow-xs cursor-pointer"
-                      >
-                        Collect Rent
-                      </button>
-                    </td>
+                    {!isViewer && (
+                      <td className="px-5 py-3.5 whitespace-nowrap text-right">
+                        <button
+                          onClick={() => {
+                            setSelectedShop(s);
+                            setPayAmount(String(s.monthlyRent));
+                            setShowPayModal(true);
+                          }}
+                          className="px-3 py-1.5 bg-emerald-800 hover:bg-emerald-900 text-white font-bold rounded-lg text-[11px] transition shadow-xs cursor-pointer"
+                        >
+                          Collect Rent
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

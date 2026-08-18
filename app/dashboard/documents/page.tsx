@@ -10,6 +10,7 @@ export default function DocumentsPage() {
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('Land Deed');
   const [submitting, setSubmitting] = useState(false);
+  const [isViewer, setIsViewer] = useState(false);
 
   const loadDocs = () => {
     setLoading(true);
@@ -23,6 +24,13 @@ export default function DocumentsPage() {
   };
 
   useEffect(() => {
+    fetch('/api/auth/me')
+      .then((r) => r.json())
+      .then((d) => {
+        const role = d?.user?.role;
+        setIsViewer(role === 'VIEWER' || role === 'COMMUNITY_VIEWER');
+      })
+      .catch(() => {});
     loadDocs();
   }, []);
 
@@ -61,12 +69,14 @@ export default function DocumentsPage() {
           <p className="text-slate-500 text-xs sm:text-sm mt-1">Secure repository for property deeds, Wakf registrations, audit reports & committee minutes</p>
         </div>
 
-        <button
-          onClick={() => setShowModal(true)}
-          className="px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-xl shadow-md text-xs transition flex items-center gap-2"
-        >
-          <i className="fas fa-file-arrow-up"></i> Upload New Document
-        </button>
+        {!isViewer && (
+          <button
+            onClick={() => setShowModal(true)}
+            className="px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-xl shadow-md text-xs transition flex items-center gap-2"
+          >
+            <i className="fas fa-file-arrow-up"></i> Upload New Document
+          </button>
+        )}
       </div>
 
       {/* DOCUMENTS GRID */}
