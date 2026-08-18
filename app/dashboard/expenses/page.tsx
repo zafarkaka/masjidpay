@@ -27,6 +27,7 @@ export default function ExpensesPage() {
 
   const [formError, setFormError] = useState('');
   const [masjidId, setMasjidId] = useState('jama-masjid');
+  const [isViewer, setIsViewer] = useState(false);
 
   const loadExpenses = (targetMasjid = masjidId) => {
     setLoading(true);
@@ -43,6 +44,8 @@ export default function ExpensesPage() {
     fetch('/api/auth/me')
       .then((r) => r.json())
       .then((d) => {
+        const role = d?.user?.role;
+        setIsViewer(role === 'VIEWER' || role === 'COMMUNITY_VIEWER');
         const mId = d?.user?.masjidId || d?.user?.masjidSlug || 'jama-masjid';
         setMasjidId(mId);
         loadExpenses(mId);
@@ -141,12 +144,14 @@ export default function ExpensesPage() {
           <p className="text-slate-500 text-xs sm:text-sm mt-1">Track outgoing operational expenses, vendor bills, and maintenance overhead</p>
         </div>
 
-        <button
-          onClick={() => setShowModal(true)}
-          className="px-4 py-2 bg-emerald-800 hover:bg-emerald-900 text-white font-bold rounded-xl shadow-xs text-xs transition flex items-center gap-2 self-start sm:self-auto cursor-pointer"
-        >
-          <i className="fas fa-plus text-emerald-300"></i> Record New Expense
-        </button>
+        {!isViewer && (
+          <button
+            onClick={() => setShowModal(true)}
+            className="px-4 py-2 bg-emerald-800 hover:bg-emerald-900 text-white font-bold rounded-xl shadow-xs text-xs transition flex items-center gap-2 self-start sm:self-auto cursor-pointer"
+          >
+            <i className="fas fa-plus text-emerald-300"></i> Record New Expense
+          </button>
+        )}
       </div>
 
       {/* EXPENSES TABLE CONTAINER CARD */}
@@ -159,7 +164,9 @@ export default function ExpensesPage() {
           <div className="p-12 text-center text-slate-500 space-y-2">
             <i className="fas fa-receipt text-3xl text-slate-300 block"></i>
             <p className="text-sm font-bold text-slate-700">No expense records found</p>
-            <p className="text-xs text-slate-400">Click &quot;Record New Expense&quot; above to log your first bill or purchase.</p>
+            <p className="text-xs text-slate-400">
+              {isViewer ? 'No expense records logged yet.' : 'Click "Record New Expense" above to log your first bill or purchase.'}
+            </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -172,7 +179,7 @@ export default function ExpensesPage() {
                   <th className="px-4 py-3.5 whitespace-nowrap">Amount</th>
                   <th className="px-4 py-3.5 whitespace-nowrap">Payment Method</th>
                   <th className="px-4 py-3.5 whitespace-nowrap">Status</th>
-                  <th className="px-5 py-3.5 whitespace-nowrap text-right">Actions</th>
+                  {!isViewer && <th className="px-5 py-3.5 whitespace-nowrap text-right">Actions</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
@@ -208,16 +215,18 @@ export default function ExpensesPage() {
                         </span>
                       )}
                     </td>
-                    <td className="px-5 py-3.5 whitespace-nowrap text-right">
-                      {!exp.isVoided && (
-                        <button
-                          onClick={() => setVoidingExpense(exp)}
-                          className="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-lg text-[11px] transition cursor-pointer border border-rose-100"
-                        >
-                          Void
-                        </button>
-                      )}
-                    </td>
+                    {!isViewer && (
+                      <td className="px-5 py-3.5 whitespace-nowrap text-right">
+                        {!exp.isVoided && (
+                          <button
+                            onClick={() => setVoidingExpense(exp)}
+                            className="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-lg text-[11px] transition cursor-pointer border border-rose-100"
+                          >
+                            Void
+                          </button>
+                        )}
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

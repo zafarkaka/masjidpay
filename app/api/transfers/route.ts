@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireTenantAccess } from '@/lib/tenant';
+import { requireTenantAccess, requireTenantWriteAccess } from '@/lib/tenant';
 import { recordAuditLog } from '@/lib/audit';
 
 export async function GET(req: NextRequest) {
@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Source and destination fund cannot be the same' }, { status: 400 });
     }
 
-    const session = requireTenantAccess(masjidId);
+    const session = requireTenantWriteAccess(masjidId);
 
     const transferAmount = Number(amount);
     if (transferAmount <= 0) {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireTenantAccess, getOrResolveMasjid } from '@/lib/tenant';
+import { requireTenantAccess, requireTenantWriteAccess, getOrResolveMasjid } from '@/lib/tenant';
 import { ensureDatabaseTables } from '@/lib/db-init';
 import { supabaseAdmin } from '@/lib/supabase';
 import crypto from 'crypto';
@@ -85,8 +85,13 @@ export async function POST(req: NextRequest) {
 
     let session: any = null;
     try {
-      session = requireTenantAccess(reqMasjidId);
-    } catch (e) {}
+      session = requireTenantWriteAccess(reqMasjidId);
+    } catch (e: any) {
+      return NextResponse.json(
+        { error: e.message || 'Read-Only Mode: Guests and Viewers cannot manage payroll or staff.' },
+        { status: 403 }
+      );
+    }
 
     const masjid = await getOrResolveMasjid(session?.masjidId, reqMasjidId);
 

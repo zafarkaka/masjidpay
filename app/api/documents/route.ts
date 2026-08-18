@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireTenantAccess } from '@/lib/tenant';
+import { requireTenantAccess, requireTenantWriteAccess } from '@/lib/tenant';
 
 export async function GET(req: NextRequest) {
   try {
@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'title and category are required' }, { status: 400 });
     }
 
-    const session = requireTenantAccess(reqMasjidId);
+    const session = requireTenantWriteAccess(reqMasjidId);
     const masjid = await prisma.masjid.findFirst({
       where: {
         OR: [

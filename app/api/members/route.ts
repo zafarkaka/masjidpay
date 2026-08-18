@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireTenantAccess, getOrResolveMasjid } from '@/lib/tenant';
+import { requireTenantAccess, requireTenantWriteAccess, getOrResolveMasjid } from '@/lib/tenant';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -52,9 +52,12 @@ export async function POST(req: NextRequest) {
 
     let session: any = null;
     try {
-      session = requireTenantAccess(reqMasjidId);
-    } catch (e) {
-      // Allow fallback
+      session = requireTenantWriteAccess(reqMasjidId);
+    } catch (e: any) {
+      return NextResponse.json(
+        { error: e.message || 'Read-Only Mode: Guests and Viewers cannot register members.' },
+        { status: 403 }
+      );
     }
 
     const masjid = await getOrResolveMasjid(session?.masjidId, reqMasjidId);
@@ -135,6 +138,12 @@ export async function POST(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   try {
+    try {
+      requireTenantWriteAccess();
+    } catch (e: any) {
+      return NextResponse.json({ error: e.message || 'Read-Only Mode: Guests cannot modify members.' }, { status: 403 });
+    }
+
     const body = await req.json();
     const { memberId, name, phone, email, address, monthlyAmount, canViewReports } = body;
 
@@ -164,6 +173,12 @@ export async function PATCH(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   try {
+    try {
+      requireTenantWriteAccess();
+    } catch (e: any) {
+      return NextResponse.json({ error: e.message || 'Read-Only Mode: Guests cannot delete members.' }, { status: 403 });
+    }
+
     const { searchParams } = new URL(req.url);
     let memberId = searchParams.get('memberId');
 

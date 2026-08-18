@@ -33,6 +33,7 @@ export default function PayrollPage() {
   const [paymentMethod, setPaymentMethod] = useState('CASH');
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [isViewer, setIsViewer] = useState(false);
 
   // Calculated Real-Time Values
   const absentDays = Math.max(0, Number(workingDays) - Number(presentDays));
@@ -58,6 +59,13 @@ export default function PayrollPage() {
   };
 
   useEffect(() => {
+    fetch('/api/auth/me')
+      .then((r) => r.json())
+      .then((d) => {
+        const role = d?.user?.role;
+        setIsViewer(role === 'VIEWER' || role === 'COMMUNITY_VIEWER');
+      })
+      .catch(() => {});
     loadData();
   }, []);
 
@@ -209,20 +217,22 @@ export default function PayrollPage() {
           ))}
         </select>
 
-        <div className="ml-auto flex items-center gap-2">
-          <button
-            onClick={() => handleOpenPayModal()}
-            className="px-4 py-2.5 bg-[#064E3B] hover:bg-[#102A25] text-white font-extrabold text-xs rounded-xl shadow-md transition flex items-center gap-1.5"
-          >
-            <i className="fas fa-money-bill-wave text-[#F4D06F]"></i> Record Payout
-          </button>
-          <button
-            onClick={() => setShowStaffModal(true)}
-            className="px-4 py-2.5 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs rounded-xl transition flex items-center gap-1.5 border border-slate-300 shadow-xs"
-          >
-            <i className="fas fa-user-plus text-[#064E3B]"></i> Add Staff
-          </button>
-        </div>
+        {!isViewer && (
+          <div className="ml-auto flex items-center gap-2">
+            <button
+              onClick={() => handleOpenPayModal()}
+              className="px-4 py-2.5 bg-[#064E3B] hover:bg-[#102A25] text-white font-extrabold text-xs rounded-xl shadow-md transition flex items-center gap-1.5"
+            >
+              <i className="fas fa-money-bill-wave text-[#F4D06F]"></i> Record Payout
+            </button>
+            <button
+              onClick={() => setShowStaffModal(true)}
+              className="px-4 py-2.5 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs rounded-xl transition flex items-center gap-1.5 border border-slate-300 shadow-xs"
+            >
+              <i className="fas fa-user-plus text-[#064E3B]"></i> Add Staff
+            </button>
+          </div>
+        )}
       </div>
 
       {activeStaff && viewMode === 'LEDGER' && (
@@ -243,12 +253,14 @@ export default function PayrollPage() {
                 </p>
               </div>
 
-              <button
-                onClick={() => handleOpenPayModal(activeStaff)}
-                className="px-5 py-3 bg-[#064E3B] hover:bg-[#102A25] text-white font-extrabold text-xs rounded-xl shadow-lg transition flex items-center gap-2"
-              >
-                <i className="fas fa-plus text-[#F4D06F]"></i> Process Monthly Payout
-              </button>
+              {!isViewer && (
+                <button
+                  onClick={() => handleOpenPayModal(activeStaff)}
+                  className="px-5 py-3 bg-[#064E3B] hover:bg-[#102A25] text-white font-extrabold text-xs rounded-xl shadow-lg transition flex items-center gap-2"
+                >
+                  <i className="fas fa-plus text-[#F4D06F]"></i> Process Monthly Payout
+                </button>
+              )}
             </div>
 
             {/* 4 STAT METRICS ROW */}
@@ -416,15 +428,17 @@ export default function PayrollPage() {
                 </div>
               </div>
 
-              <button
-                onClick={() => {
-                  setSelectedStaffId(s.id);
-                  handleOpenPayModal(s);
-                }}
-                className="w-full py-2.5 bg-[#064E3B] hover:bg-[#102A25] text-white font-extrabold text-xs rounded-xl shadow-xs transition flex items-center justify-center gap-1.5"
-              >
-                <i className="fas fa-money-bill-wave text-[#F4D06F]"></i> Record Payout
-              </button>
+              {!isViewer && (
+                <button
+                  onClick={() => {
+                    setSelectedStaffId(s.id);
+                    handleOpenPayModal(s);
+                  }}
+                  className="w-full py-2.5 bg-[#064E3B] hover:bg-[#102A25] text-white font-extrabold text-xs rounded-xl shadow-xs transition flex items-center justify-center gap-1.5"
+                >
+                  <i className="fas fa-money-bill-wave text-[#F4D06F]"></i> Record Payout
+                </button>
+              )}
             </div>
           ))}
         </div>

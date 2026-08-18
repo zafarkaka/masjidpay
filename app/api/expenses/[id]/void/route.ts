@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireTenantAccess } from '@/lib/tenant';
+import { requireTenantWriteAccess } from '@/lib/tenant';
 import { recordAuditLog } from '@/lib/audit';
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
@@ -17,7 +17,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       return NextResponse.json({ error: 'Expense not found' }, { status: 404 });
     }
 
-    const session = requireTenantAccess(existing.masjidId);
+    const session = requireTenantWriteAccess(existing.masjidId);
 
     if (existing.isVoided) {
       return NextResponse.json({ error: 'Expense is already voided' }, { status: 400 });

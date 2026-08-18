@@ -49,6 +49,7 @@ export default function AllCollectionsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [statusMsg, setStatusMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const [isViewer, setIsViewer] = useState(false);
 
   const CURRENT_YEAR = new Date().getFullYear();
   const MONTH_NAMES = [
@@ -77,6 +78,13 @@ export default function AllCollectionsPage() {
   };
 
   useEffect(() => {
+    fetch('/api/auth/me')
+      .then((r) => r.json())
+      .then((d) => {
+        const role = d?.user?.role;
+        setIsViewer(role === 'VIEWER' || role === 'COMMUNITY_VIEWER');
+      })
+      .catch(() => {});
     loadData();
   }, []);
 
@@ -406,16 +414,25 @@ JazakAllah Khair!
           </p>
         </div>
 
-        <button
-          onClick={() => {
-            setModalMemberSearch('');
-            setShowAddModal(true);
-          }}
-          className="px-5 py-3 bg-[#0F3D26] hover:bg-emerald-950 text-white font-extrabold text-xs rounded-2xl shadow-md transition flex items-center gap-2"
-        >
-          <i className="fas fa-plus"></i> Record New Payment
-        </button>
+        {!isViewer && (
+          <button
+            onClick={() => {
+              setModalMemberSearch('');
+              setShowAddModal(true);
+            }}
+            className="px-5 py-3 bg-[#0F3D26] hover:bg-emerald-950 text-white font-extrabold text-xs rounded-2xl shadow-md transition flex items-center gap-2"
+          >
+            <i className="fas fa-plus"></i> Record New Payment
+          </button>
+        )}
       </div>
+
+      {/* VIEWER CALLOUT */}
+      {isViewer && (
+        <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl text-xs font-bold text-amber-900 flex items-center gap-2">
+          <i className="fas fa-eye text-amber-600"></i> Guest View-Only Mode: You are viewing transparency collection records. Payment creation, editing, and deletion are disabled.
+        </div>
+      )}
 
       {/* ALERTS */}
       {statusMsg && (
@@ -668,17 +685,19 @@ JazakAllah Khair!
                 </span>
               </div>
 
-              {/* 4 ACTION BUTTONS ROW MATCHING SCREENSHOT */}
-              <div className="grid grid-cols-4 gap-2 pt-1">
+              {/* ACTION BUTTONS ROW */}
+              <div className={`grid ${isViewer ? 'grid-cols-2' : 'grid-cols-4'} gap-2 pt-1`}>
                 {/* 1. EDIT BUTTON */}
-                <button
-                  type="button"
-                  onClick={() => handleStartEdit(col)}
-                  className="py-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-700 text-xs font-bold transition flex items-center justify-center gap-1.5"
-                  title="Edit Record"
-                >
-                  <i className="fas fa-pen-to-square text-[#0F3D26]"></i>
-                </button>
+                {!isViewer && (
+                  <button
+                    type="button"
+                    onClick={() => handleStartEdit(col)}
+                    className="py-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-700 text-xs font-bold transition flex items-center justify-center gap-1.5"
+                    title="Edit Record"
+                  >
+                    <i className="fas fa-pen-to-square text-[#0F3D26]"></i>
+                  </button>
+                )}
 
                 {/* 2. DOWNLOAD PDF BUTTON */}
                 <button
@@ -688,6 +707,7 @@ JazakAllah Khair!
                   title="Download PDF Receipt"
                 >
                   <i className="fas fa-file-pdf text-emerald-800"></i>
+                  {isViewer && <span className="text-xs font-bold">PDF Slip</span>}
                 </button>
 
                 {/* 3. WHATSAPP BUTTON */}
@@ -698,17 +718,20 @@ JazakAllah Khair!
                   title="Share WhatsApp Receipt"
                 >
                   <i className="fab fa-whatsapp text-emerald-600 text-sm"></i>
+                  {isViewer && <span className="text-xs font-bold">WhatsApp</span>}
                 </button>
 
                 {/* 4. DELETE BUTTON */}
-                <button
-                  type="button"
-                  onClick={() => setDeletingId(col.id)}
-                  className="py-2.5 bg-slate-50 hover:bg-rose-50 border border-slate-200 rounded-xl text-rose-700 text-xs font-bold transition flex items-center justify-center gap-1.5"
-                  title="Delete Record"
-                >
-                  <i className="fas fa-trash-can text-rose-600"></i>
-                </button>
+                {!isViewer && (
+                  <button
+                    type="button"
+                    onClick={() => setDeletingId(col.id)}
+                    className="py-2.5 bg-slate-50 hover:bg-rose-50 border border-slate-200 rounded-xl text-rose-700 text-xs font-bold transition flex items-center justify-center gap-1.5"
+                    title="Delete Record"
+                  >
+                    <i className="fas fa-trash-can text-rose-600"></i>
+                  </button>
+                )}
               </div>
             </div>
           ))}

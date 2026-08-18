@@ -57,6 +57,7 @@ export default function FinanceDashboardPage() {
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+  const [isViewer, setIsViewer] = useState(false);
 
   const fetchFinanceData = async () => {
     try {
@@ -77,6 +78,16 @@ export default function FinanceDashboardPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then((r) => r.json())
+      .then((d) => {
+        const role = d?.user?.role;
+        setIsViewer(role === 'VIEWER' || role === 'COMMUNITY_VIEWER');
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     fetchFinanceData();
@@ -263,36 +274,42 @@ export default function FinanceDashboardPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
-          <Link
-            href="/dashboard/finance/opening-balance"
-            className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs rounded-xl transition flex items-center gap-1.5"
-          >
-            <i className="fas fa-scale-balanced text-emerald-700"></i> Set Opening Balance
-          </Link>
+          {!isViewer && (
+            <Link
+              href="/dashboard/finance/opening-balance"
+              className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs rounded-xl transition flex items-center gap-1.5"
+            >
+              <i className="fas fa-scale-balanced text-emerald-700"></i> Set Opening Balance
+            </Link>
+          )}
           <Link
             href="/dashboard/finance/reports"
             className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs rounded-xl transition flex items-center gap-1.5"
           >
             <i className="fas fa-file-invoice-dollar text-emerald-700"></i> Monthly Statement
           </Link>
-          <button
-            onClick={() => handleOpenBankModal()}
-            className="px-3.5 py-2 bg-slate-800 hover:bg-slate-900 text-white font-extrabold text-xs rounded-xl transition flex items-center gap-1.5 shadow-xs"
-          >
-            <i className="fas fa-plus"></i> Add Bank
-          </button>
-          <button
-            onClick={() => handleOpenTxModal(null, 'WITHDRAWAL')}
-            className="px-3.5 py-2 bg-rose-700 hover:bg-rose-800 text-white font-extrabold text-xs rounded-xl transition flex items-center gap-1.5 shadow-xs"
-          >
-            <i className="fas fa-money-bill-transfer"></i> Withdraw Cash
-          </button>
-          <button
-            onClick={() => handleOpenTxModal(null, 'CASH_DEPOSIT')}
-            className="px-4 py-2 bg-[#0F3D26] hover:bg-emerald-950 text-white font-extrabold text-xs rounded-xl transition flex items-center gap-1.5 shadow-md shadow-emerald-950/20"
-          >
-            <i className="fas fa-arrow-down-to-bracket"></i> Record Deposit
-          </button>
+          {!isViewer && (
+            <>
+              <button
+                onClick={() => handleOpenBankModal()}
+                className="px-3.5 py-2 bg-slate-800 hover:bg-slate-900 text-white font-extrabold text-xs rounded-xl transition flex items-center gap-1.5 shadow-xs"
+              >
+                <i className="fas fa-plus"></i> Add Bank
+              </button>
+              <button
+                onClick={() => handleOpenTxModal(null, 'WITHDRAWAL')}
+                className="px-3.5 py-2 bg-rose-700 hover:bg-rose-800 text-white font-extrabold text-xs rounded-xl transition flex items-center gap-1.5 shadow-xs"
+              >
+                <i className="fas fa-money-bill-transfer"></i> Withdraw Cash
+              </button>
+              <button
+                onClick={() => handleOpenTxModal(null, 'CASH_DEPOSIT')}
+                className="px-4 py-2 bg-[#0F3D26] hover:bg-emerald-950 text-white font-extrabold text-xs rounded-xl transition flex items-center gap-1.5 shadow-md shadow-emerald-950/20"
+              >
+                <i className="fas fa-arrow-down-to-bracket"></i> Record Deposit
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -429,12 +446,14 @@ export default function FinanceDashboardPage() {
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-xs font-extrabold uppercase tracking-widest text-slate-500">Bank Accounts & Ledger Balances</h2>
-          <button
-            onClick={() => handleOpenBankModal()}
-            className="text-xs font-bold text-emerald-800 hover:text-emerald-950 flex items-center gap-1"
-          >
-            <i className="fas fa-plus text-[10px]"></i> Add Another Account
-          </button>
+          {!isViewer && (
+            <button
+              onClick={() => handleOpenBankModal()}
+              className="text-xs font-bold text-emerald-800 hover:text-emerald-950 flex items-center gap-1"
+            >
+              <i className="fas fa-plus text-[10px]"></i> Add Another Account
+            </button>
+          )}
         </div>
 
         {bankAccounts.length === 0 ? (
@@ -446,12 +465,14 @@ export default function FinanceDashboardPage() {
               <p className="text-sm font-bold text-slate-800">No bank accounts added yet</p>
               <p className="text-xs text-slate-500 mt-0.5">Add your mosque&apos;s bank accounts to begin recording deposits.</p>
             </div>
-            <button
-              onClick={() => handleOpenBankModal()}
-              className="px-4 py-2 bg-[#0F3D26] text-white font-extrabold text-xs rounded-xl shadow-xs"
-            >
-              Add First Bank Account
-            </button>
+            {!isViewer && (
+              <button
+                onClick={() => handleOpenBankModal()}
+                className="px-4 py-2 bg-[#0F3D26] text-white font-extrabold text-xs rounded-xl shadow-xs"
+              >
+                Add First Bank Account
+              </button>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -467,13 +488,15 @@ export default function FinanceDashboardPage() {
                       <span className="text-[11px] font-semibold text-slate-500 block">{b.accountName || 'Mosque Account'}</span>
                     </div>
                   </div>
-                  <button
-                    onClick={() => handleOpenBankModal(b)}
-                    className="text-slate-400 hover:text-slate-700 p-1 rounded-lg text-xs"
-                    title="Edit Bank Account"
-                  >
-                    <i className="fas fa-pen-to-square"></i>
-                  </button>
+                  {!isViewer && (
+                    <button
+                      onClick={() => handleOpenBankModal(b)}
+                      className="text-slate-400 hover:text-slate-700 p-1 rounded-lg text-xs"
+                      title="Edit Bank Account"
+                    >
+                      <i className="fas fa-pen-to-square"></i>
+                    </button>
+                  )}
                 </div>
 
                 <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
@@ -559,7 +582,7 @@ export default function FinanceDashboardPage() {
                   <th className="pb-3 px-3">Account Number</th>
                   <th className="pb-3 px-3">Cheque / Reference</th>
                   <th className="pb-3 px-3 text-right">Amount</th>
-                  <th className="pb-3 px-3 text-center">Actions</th>
+                  {!isViewer && <th className="pb-3 px-3 text-center">Actions</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
@@ -609,24 +632,26 @@ export default function FinanceDashboardPage() {
                         {t.type === 'WITHDRAWAL' ? '-' : '+'}₹{Number(t.amount || 0).toLocaleString('en-IN')}
                       </span>
                     </td>
-                    <td className="py-3.5 px-3 text-center whitespace-nowrap">
-                      <div className="flex items-center justify-center gap-1.5">
-                        <button
-                          onClick={() => handleOpenTxModal(t)}
-                          className="p-1.5 text-slate-400 hover:text-emerald-700 rounded-lg transition"
-                          title="Edit"
-                        >
-                          <i className="fas fa-pen-to-square"></i>
-                        </button>
-                        <button
-                          onClick={() => handleDeleteTransaction(t.id)}
-                          className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg transition"
-                          title="Delete"
-                        >
-                          <i className="fas fa-trash-can"></i>
-                        </button>
-                      </div>
-                    </td>
+                    {!isViewer && (
+                      <td className="py-3.5 px-3 text-center whitespace-nowrap">
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            onClick={() => handleOpenTxModal(t)}
+                            className="p-1.5 text-slate-400 hover:text-emerald-700 rounded-lg transition"
+                            title="Edit"
+                          >
+                            <i className="fas fa-pen-to-square"></i>
+                          </button>
+                          <button
+                            onClick={() => handleDeleteTransaction(t.id)}
+                            className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg transition"
+                            title="Delete"
+                          >
+                            <i className="fas fa-trash-can"></i>
+                          </button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

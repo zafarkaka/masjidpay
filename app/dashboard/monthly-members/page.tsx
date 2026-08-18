@@ -46,6 +46,7 @@ export default function MonthlyMembersPage() {
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [isViewer, setIsViewer] = useState(false);
 
   const loadMembers = () => {
     setLoading(true);
@@ -60,6 +61,17 @@ export default function MonthlyMembersPage() {
   };
 
   useEffect(() => {
+    fetch('/api/auth/me')
+      .then((r) => r.json())
+      .then((d) => {
+        const role = d?.user?.role;
+        const viewer = role === 'VIEWER' || role === 'COMMUNITY_VIEWER';
+        setIsViewer(viewer);
+        if (viewer) {
+          setActiveTab('directory');
+        }
+      })
+      .catch(() => {});
     loadMembers();
   }, []);
 
@@ -336,26 +348,30 @@ export default function MonthlyMembersPage() {
 
         {/* TAB SWITCHER */}
         <div className="flex items-center p-1 bg-slate-100 border border-slate-200/80 rounded-xl gap-1 shrink-0">
-          <button
-            onClick={() => setActiveTab('add')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 ${
-              activeTab === 'add'
-                ? 'bg-white text-slate-900 shadow-sm border border-slate-200/50'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <i className="fas fa-user-plus text-emerald-700 text-[11px]"></i> Add Member
-          </button>
-          <button
-            onClick={() => setActiveTab('import')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 ${
-              activeTab === 'import'
-                ? 'bg-white text-slate-900 shadow-sm border border-slate-200/50'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <i className="fas fa-file-excel text-emerald-600 text-[11px]"></i> Import Excel / CSV
-          </button>
+          {!isViewer && (
+            <>
+              <button
+                onClick={() => setActiveTab('add')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 ${
+                  activeTab === 'add'
+                    ? 'bg-white text-slate-900 shadow-sm border border-slate-200/50'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <i className="fas fa-user-plus text-emerald-700 text-[11px]"></i> Add Member
+              </button>
+              <button
+                onClick={() => setActiveTab('import')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 ${
+                  activeTab === 'import'
+                    ? 'bg-white text-slate-900 shadow-sm border border-slate-200/50'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <i className="fas fa-file-excel text-emerald-600 text-[11px]"></i> Import Excel / CSV
+              </button>
+            </>
+          )}
           <button
             onClick={() => setActiveTab('directory')}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 ${
@@ -732,12 +748,13 @@ export default function MonthlyMembersPage() {
 
                       {/* ADMIN TICK CHECKBOX OPTION */}
                       <td className="py-3 px-4 whitespace-nowrap">
-                        <label className="inline-flex items-center gap-1.5 cursor-pointer px-2 py-1 rounded-lg bg-slate-50 border border-slate-200 hover:border-emerald-300 transition">
+                        <label className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-50 border border-slate-200 transition ${isViewer ? 'cursor-not-allowed opacity-75' : 'cursor-pointer hover:border-emerald-300'}`}>
                           <input
                             type="checkbox"
+                            disabled={isViewer}
                             checked={mbr.canViewReports !== false}
-                            onChange={() => handleToggleAccess(mbr.id, mbr.canViewReports !== false)}
-                            className="w-3.5 h-3.5 rounded text-emerald-700 accent-emerald-800 cursor-pointer"
+                            onChange={() => !isViewer && handleToggleAccess(mbr.id, mbr.canViewReports !== false)}
+                            className="w-3.5 h-3.5 rounded text-emerald-700 accent-emerald-800"
                           />
                           <span
                             className={`text-[11px] font-semibold ${
@@ -751,22 +768,26 @@ export default function MonthlyMembersPage() {
 
                       <td className="py-3 px-4 text-right whitespace-nowrap space-x-1.5">
                         {/* EDIT BUTTON */}
-                        <button
-                          onClick={() => handleOpenEdit(mbr)}
-                          className="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200/80 font-semibold rounded-lg text-[11px] transition inline-flex items-center gap-1"
-                          title="Edit member details"
-                        >
-                          <i className="fas fa-pen-to-square text-[10px]"></i> Edit
-                        </button>
+                        {!isViewer && (
+                          <button
+                            onClick={() => handleOpenEdit(mbr)}
+                            className="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200/80 font-semibold rounded-lg text-[11px] transition inline-flex items-center gap-1"
+                            title="Edit member details"
+                          >
+                            <i className="fas fa-pen-to-square text-[10px]"></i> Edit
+                          </button>
+                        )}
 
                         {/* DELETE BUTTON */}
-                        <button
-                          onClick={() => setDeletingMember(mbr)}
-                          className="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/80 font-semibold rounded-lg text-[11px] transition inline-flex items-center gap-1"
-                          title="Delete member"
-                        >
-                          <i className="fas fa-trash-can text-[10px]"></i> Delete
-                        </button>
+                        {!isViewer && (
+                          <button
+                            onClick={() => setDeletingMember(mbr)}
+                            className="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/80 font-semibold rounded-lg text-[11px] transition inline-flex items-center gap-1"
+                            title="Delete member"
+                          >
+                            <i className="fas fa-trash-can text-[10px]"></i> Delete
+                          </button>
+                        )}
 
                         {/* COPY LINK */}
                         <button
@@ -777,12 +798,14 @@ export default function MonthlyMembersPage() {
                         </button>
 
                         {/* COLLECT FEE */}
-                        <Link
-                          href={`/dashboard/member-collections`}
-                          className="px-2.5 py-1 bg-[#0F3D26] hover:bg-emerald-950 text-white font-semibold rounded-lg text-[11px] transition inline-flex items-center gap-1 shadow-xs"
-                        >
-                          <i className="fas fa-hand-holding-dollar text-[10px]"></i> Collect Fee
-                        </Link>
+                        {!isViewer && (
+                          <Link
+                            href={`/dashboard/member-collections`}
+                            className="px-2.5 py-1 bg-[#0F3D26] hover:bg-emerald-950 text-white font-semibold rounded-lg text-[11px] transition inline-flex items-center gap-1 shadow-xs"
+                          >
+                            <i className="fas fa-hand-holding-dollar text-[10px]"></i> Collect Fee
+                          </Link>
+                        )}
                       </td>
                     </tr>
                   ))}

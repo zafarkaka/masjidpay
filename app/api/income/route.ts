@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireTenantAccess, getOrResolveMasjid } from '@/lib/tenant';
+import { requireTenantAccess, requireTenantWriteAccess, getOrResolveMasjid } from '@/lib/tenant';
 import { recordAuditLog } from '@/lib/audit';
 
 export const dynamic = 'force-dynamic';
@@ -10,30 +10,45 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const masjidIdParam = searchParams.get('masjidId');
+    const categoryId = searchParams.get('categoryId');
+    const query = searchParams.get('q');
 
     let session: any = null;
     try {
       session = requireTenantAccess(masjidIdParam);
-    } catch (e) {
-      // fallback
-    }
+    } catch (e) {}
 
-    const masjid = await getOrResolveMasjid(session?.masjidId, masjidIdParam || undefined);
+    const masjid = await getOrResolveMasjid(session?.masjidId, masjidIdParam);
 
     if (!masjid) {
-      return NextResponse.json({ incomes: [] });
+      return NextResponse.json({ income: [] });
     }
 
-    const incomes = await prisma.income.findMany({
-      where: { masjidId: masjid.id, isVoided: false },
-      include: { category: true, fund: true },
+    const masjidId = masjid.id;
+
+    const where: any = { masjidId };
+    if (categoryId && categoryId !== 'ALL') where.categoryId = categoryId;
+    if (query) {
+      where.OR = [
+        { title: { contains: query } },
+        { payer: { contains: query } },
+        { referenceNo: { contains: query } },
+      ];
+    }
+
+    const income = await prisma.income.findMany({
+      where,
+      include: {
+        category: true,
+        fund: true,
+      },
       orderBy: { date: 'desc' },
     });
 
-    return NextResponse.json({ incomes: incomes || [] });
+    return NextResponse.json({ income: income || [] });
   } catch (error: any) {
-    console.error('Fetch income error:', error);
-    return NextResponse.json({ incomes: [] });
+    console.error('Failed to fetch income:', error);
+    return NextResponse.json({ income: [] });
   }
 }
 
@@ -45,8 +60,8 @@ export async function POST(req: NextRequest) {
       title,
       amount,
       categoryId: reqCatId,
-      fundId: reqFundId,
       categoryName,
+      fundId: reqFundId,
       payer,
       paymentMethod,
       referenceNo,
@@ -56,9 +71,12 @@ export async function POST(req: NextRequest) {
 
     let session: any = null;
     try {
-      session = requireTenantAccess(reqMasjidId);
-    } catch (e) {
-      // fallback
+      session = requireTenantWriteAccess(reqMasjidId);
+    } catch (e: any) {
+      return NextResponse.json(
+        { error: e.message || 'Read-Only Mode: Guests and Viewers cannot record income.' },
+        { status: 403 }
+      );
     }
 
     const masjid = await getOrResolveMasjid(session?.masjidId, reqMasjidId);

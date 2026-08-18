@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireTenantAccess, getOrResolveMasjid } from '@/lib/tenant';
+import { requireTenantAccess, requireTenantWriteAccess, getOrResolveMasjid } from '@/lib/tenant';
 import { recordAuditLog } from '@/lib/audit';
 
 export const dynamic = 'force-dynamic';
@@ -33,9 +33,9 @@ export async function GET(req: NextRequest) {
 
     if (query) {
       where.OR = [
-        { referenceNo: { contains: query } },
-        { notes: { contains: query } },
         { donor: { name: { contains: query } } },
+        { receiptNo: { contains: query } },
+        { referenceNo: { contains: query } },
       ];
     }
 
@@ -52,7 +52,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ donations: donations || [] });
   } catch (error: any) {
-    console.error('Donations GET API error:', error);
+    console.error('Failed to fetch donations:', error);
     return NextResponse.json({ donations: [] });
   }
 }
@@ -62,10 +62,10 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const {
       masjidId: reqMasjidId,
+      amount,
       donorName,
       donorPhone,
       donorEmail,
-      amount,
       categoryId: reqCatId,
       fundId: reqFundId,
       campaignId,
@@ -78,8 +78,13 @@ export async function POST(req: NextRequest) {
 
     let session: any = null;
     try {
-      session = requireTenantAccess(reqMasjidId);
-    } catch (e) {}
+      session = requireTenantWriteAccess(reqMasjidId);
+    } catch (e: any) {
+      return NextResponse.json(
+        { error: e.message || 'Read-Only Mode: Guests and Viewers cannot record donations.' },
+        { status: 403 }
+      );
+    }
 
     const masjid = await getOrResolveMasjid(session?.masjidId, reqMasjidId);
 

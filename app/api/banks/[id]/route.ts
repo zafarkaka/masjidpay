@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireTenantAccess, getOrResolveMasjid } from '@/lib/tenant';
+import { requireTenantAccess, requireTenantWriteAccess, getOrResolveMasjid } from '@/lib/tenant';
 import { recordAuditLog } from '@/lib/audit';
 
 export const dynamic = 'force-dynamic';
@@ -12,8 +12,10 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
     let session: any = null;
     try {
-      session = requireTenantAccess(masjidIdParam);
-    } catch (e) {}
+      session = requireTenantWriteAccess(masjidIdParam);
+    } catch (e: any) {
+      return NextResponse.json({ error: e.message || 'Read-Only Mode: Guests cannot modify bank accounts.' }, { status: 403 });
+    }
 
     const masjid = await getOrResolveMasjid(session?.masjidId, masjidIdParam);
     if (!masjid) {
@@ -75,8 +77,10 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
 
     let session: any = null;
     try {
-      session = requireTenantAccess(masjidIdParam);
-    } catch (e) {}
+      session = requireTenantWriteAccess(masjidIdParam);
+    } catch (e: any) {
+      return NextResponse.json({ error: e.message || 'Read-Only Mode: Guests cannot delete bank accounts.' }, { status: 403 });
+    }
 
     const masjid = await getOrResolveMasjid(session?.masjidId, masjidIdParam);
     if (!masjid) {

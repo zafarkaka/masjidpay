@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireTenantAccess } from '@/lib/tenant';
+import { requireTenantAccess, requireTenantWriteAccess } from '@/lib/tenant';
 
 export async function GET(req: NextRequest) {
   try {
@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'masjidId, categoryId, year, and budgetedAmount are required' }, { status: 400 });
     }
 
-    requireTenantAccess(masjidId);
+    requireTenantWriteAccess(masjidId);
 
     // Compute actual spending for this category in the specified year
     const startOfYear = new Date(Number(year), 0, 1);

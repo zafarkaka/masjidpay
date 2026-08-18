@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireTenantAccess } from '@/lib/tenant';
+import { requireTenantAccess, requireTenantWriteAccess } from '@/lib/tenant';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {
     const session = requireTenantAccess();
+    const isViewer = session.role === 'VIEWER' || session.role === 'COMMUNITY_VIEWER';
+
     const masjid = await prisma.masjid.findFirst({
       where: {
         OR: [
@@ -29,13 +31,18 @@ export async function GET(req: NextRequest) {
       settingsMap[s.key] = s.value;
     });
 
+    // Redact sensitive secrets for guest/viewer accounts
+    const sanitizedMasjid = isViewer
+      ? { ...masjid, communityAccessCode: undefined }
+      : masjid;
+
     return NextResponse.json({
       success: true,
-      masjid,
+      masjid: sanitizedMasjid,
       gateway: {
-        razorpayKeyId: settingsMap['razorpayKeyId'] || process.env.RAZORPAY_KEY_ID || '',
-        razorpayKeySecret: settingsMap['razorpayKeySecret'] || '',
-        razorpayWebhookSecret: settingsMap['razorpayWebhookSecret'] || '',
+        razorpayKeyId: isViewer ? '' : (settingsMap['razorpayKeyId'] || process.env.RAZORPAY_KEY_ID || ''),
+        razorpayKeySecret: isViewer ? '' : (settingsMap['razorpayKeySecret'] || ''),
+        razorpayWebhookSecret: isViewer ? '' : (settingsMap['razorpayWebhookSecret'] || ''),
         enableRazorpay: settingsMap['enableRazorpay'] === 'true',
         enableUpi: settingsMap['enableUpi'] !== 'false',
         upiId: masjid.upiId || settingsMap['upiId'] || 'jama.masjid@upi',
@@ -51,7 +58,7 @@ export async function GET(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
   try {
-    const session = requireTenantAccess();
+    const session = requireTenantWriteAccess();
     const body = await req.json();
 
     const masjid = await prisma.masjid.findFirst({

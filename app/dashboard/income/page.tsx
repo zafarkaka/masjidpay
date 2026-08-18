@@ -21,19 +21,27 @@ export default function MosqueIncomePage() {
   const [submitting, setSubmitting] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const [isViewer, setIsViewer] = useState(false);
 
   const loadIncomes = () => {
     setLoading(true);
     fetch('/api/income')
       .then((res) => res.json())
       .then((data) => {
-        setIncomes(data.incomes || []);
+        setIncomes(data.income || data.incomes || []);
         setLoading(false);
       })
       .catch(() => setLoading(false));
   };
 
   useEffect(() => {
+    fetch('/api/auth/me')
+      .then((r) => r.json())
+      .then((d) => {
+        const role = d?.user?.role;
+        setIsViewer(role === 'VIEWER' || role === 'COMMUNITY_VIEWER');
+      })
+      .catch(() => {});
     loadIncomes();
   }, []);
 
@@ -105,6 +113,13 @@ export default function MosqueIncomePage() {
         </p>
       </div>
 
+      {/* VIEWER NOTICE */}
+      {isViewer && (
+        <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl text-xs font-bold text-amber-900 flex items-center gap-2">
+          <i className="fas fa-eye text-amber-600"></i> Guest View-Only Mode: You are viewing transparency income records. Income entry creation is disabled.
+        </div>
+      )}
+
       {/* ALERTS */}
       {successMsg && (
         <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-xs font-bold text-emerald-800 flex items-center gap-2">
@@ -119,16 +134,17 @@ export default function MosqueIncomePage() {
       )}
 
       {/* FORM CARD MATCHING SCREENSHOT */}
-      <div className="masjid-card p-6 sm:p-8 bg-white border border-slate-200 shadow-sm rounded-3xl space-y-6">
-        <div className="flex items-center gap-3 border-b pb-4">
-          <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-sm">
-            $
+      {!isViewer && (
+        <div className="masjid-card p-6 sm:p-8 bg-white border border-slate-200 shadow-sm rounded-3xl space-y-6">
+          <div className="flex items-center gap-3 border-b pb-4">
+            <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-sm">
+              $
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-slate-900">New Income Record</h3>
+              <p className="text-[11px] text-slate-500 font-medium">All fields marked * are required</p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-sm font-bold text-slate-900">New Income Record</h3>
-            <p className="text-[11px] text-slate-500 font-medium">All fields marked * are required</p>
-          </div>
-        </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* NAME */}
@@ -305,6 +321,7 @@ export default function MosqueIncomePage() {
           </div>
         </form>
       </div>
+      )}
 
       {/* INCOME LEDGER TABLE */}
       <div className="masjid-card bg-white border border-slate-200 shadow-sm rounded-3xl overflow-hidden">

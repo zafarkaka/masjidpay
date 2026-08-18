@@ -7,6 +7,7 @@ export default function BudgetsPage() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [isViewer, setIsViewer] = useState(false);
 
   const [form, setForm] = useState({
     categoryId: '',
@@ -29,6 +30,13 @@ export default function BudgetsPage() {
   };
 
   useEffect(() => {
+    fetch('/api/auth/me')
+      .then((r) => r.json())
+      .then((d) => {
+        const role = d?.user?.role;
+        setIsViewer(role === 'VIEWER' || role === 'COMMUNITY_VIEWER');
+      })
+      .catch(() => {});
     loadBudgets();
   }, []);
 
@@ -63,12 +71,14 @@ export default function BudgetsPage() {
           <p className="text-slate-500 text-xs sm:text-sm mt-1">Define annual spending limits and monitor budget utilization against actual expenses</p>
         </div>
 
-        <button
-          onClick={() => setShowModal(true)}
-          className="px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-xl shadow-md shadow-emerald-700/20 text-xs transition flex items-center gap-2"
-        >
-          <i className="fas fa-calculator"></i> Set Category Budget
-        </button>
+        {!isViewer && (
+          <button
+            onClick={() => setShowModal(true)}
+            className="px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-xl shadow-md shadow-emerald-700/20 text-xs transition flex items-center gap-2"
+          >
+            <i className="fas fa-calculator"></i> Set Category Budget
+          </button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

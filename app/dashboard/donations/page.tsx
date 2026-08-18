@@ -34,6 +34,7 @@ export default function DonationsPage() {
   const [voidingDonation, setVoidingDonation] = useState<any>(null);
   const [voidReason, setVoidReason] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
+  const [isViewer, setIsViewer] = useState(false);
 
   const loadData = () => {
     setLoading(true);
@@ -47,6 +48,14 @@ export default function DonationsPage() {
   };
 
   useEffect(() => {
+    fetch('/api/auth/me')
+      .then((r) => r.json())
+      .then((d) => {
+        const role = d?.user?.role;
+        setIsViewer(role === 'VIEWER' || role === 'COMMUNITY_VIEWER');
+      })
+      .catch(() => {});
+
     loadData();
 
     fetch('/api/funds')
@@ -130,12 +139,14 @@ export default function DonationsPage() {
           <p className="text-slate-500 text-xs sm:text-sm mt-1">Record incoming donations, issue receipts, and manage contributions</p>
         </div>
 
-        <button
-          onClick={() => setShowModal(true)}
-          className="px-4 py-2 bg-emerald-800 hover:bg-emerald-900 text-white font-bold rounded-xl shadow-xs text-xs transition flex items-center gap-2 self-start sm:self-auto cursor-pointer"
-        >
-          <i className="fas fa-plus text-emerald-300"></i> Record New Donation
-        </button>
+        {!isViewer && (
+          <button
+            onClick={() => setShowModal(true)}
+            className="px-4 py-2 bg-emerald-800 hover:bg-emerald-900 text-white font-bold rounded-xl shadow-xs text-xs transition flex items-center gap-2 self-start sm:self-auto cursor-pointer"
+          >
+            <i className="fas fa-plus text-emerald-300"></i> Record New Donation
+          </button>
+        )}
       </div>
 
       {/* FILTERS TOOLBAR */}
@@ -183,7 +194,9 @@ export default function DonationsPage() {
           <div className="p-12 text-center text-slate-500 space-y-2">
             <i className="fas fa-hand-holding-dollar text-3xl text-slate-300 block"></i>
             <p className="text-sm font-bold text-slate-700">No donation records found</p>
-            <p className="text-xs text-slate-400">Click &quot;Record New Donation&quot; to log your first donation entry.</p>
+            <p className="text-xs text-slate-400">
+              {isViewer ? 'No donation records found.' : 'Click "Record New Donation" to log your first donation entry.'}
+            </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -248,7 +261,7 @@ export default function DonationsPage() {
                         <i className="fas fa-file-invoice text-emerald-700"></i> Receipt
                       </Link>
 
-                      {!don.isVoided && (
+                      {!don.isVoided && !isViewer && (
                         <button
                           onClick={() => setVoidingDonation(don)}
                           className="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-lg text-[11px] transition cursor-pointer border border-rose-100"

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireTenantAccess } from '@/lib/tenant';
+import { requireTenantAccess, requireTenantWriteAccess } from '@/lib/tenant';
 import { hashPassword } from '@/lib/auth';
 import { recordAuditLog } from '@/lib/audit';
 import { ensureDatabaseTables } from '@/lib/db-init';
@@ -235,7 +235,7 @@ export async function POST(req: NextRequest) {
 
     await ensureDatabaseTables(prisma);
 
-    const session = requireTenantAccess(reqMasjidId);
+    const session = requireTenantWriteAccess(reqMasjidId);
     const masjid = await prisma.masjid.findFirst({
       where: {
         OR: [
@@ -311,6 +311,9 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, user: { id: masjidUser.id, name: user.name, email: user.email, role } });
   } catch (error: any) {
+    if (error.name === 'TenantAccessError' || error.name === 'UnauthorizedError') {
+      return NextResponse.json({ error: error.message }, { status: 403 });
+    }
     console.error('Create user error:', error);
     return NextResponse.json({ error: error.message || 'Failed to create mosque user' }, { status: 500 });
   }
@@ -336,7 +339,7 @@ export async function PUT(req: NextRequest) {
 
     await ensureDatabaseTables(prisma);
 
-    const session = requireTenantAccess(reqMasjidId);
+    const session = requireTenantWriteAccess(reqMasjidId);
     const masjidUser = await prisma.masjidUser.findUnique({
       where: { id: masjidUserId },
       include: { user: true },
@@ -378,6 +381,9 @@ export async function PUT(req: NextRequest) {
 
     return NextResponse.json({ success: true, masjidUser: updated });
   } catch (error: any) {
+    if (error.name === 'TenantAccessError' || error.name === 'UnauthorizedError') {
+      return NextResponse.json({ error: error.message }, { status: 403 });
+    }
     console.error('Update user error:', error);
     return NextResponse.json({ error: error.message || 'Failed to update user permissions' }, { status: 500 });
   }
@@ -395,6 +401,8 @@ export async function DELETE(req: NextRequest) {
 
     await ensureDatabaseTables(prisma);
 
+    requireTenantWriteAccess();
+
     const masjidUser = await prisma.masjidUser.findUnique({ where: { id: masjidUserId } });
     if (!masjidUser) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
@@ -404,6 +412,9 @@ export async function DELETE(req: NextRequest) {
 
     return NextResponse.json({ success: true, message: 'User removed from committee' });
   } catch (error: any) {
+    if (error.name === 'TenantAccessError' || error.name === 'UnauthorizedError') {
+      return NextResponse.json({ error: error.message }, { status: 403 });
+    }
     console.error('Delete user error:', error);
     return NextResponse.json({ error: error.message || 'Failed to delete user' }, { status: 500 });
   }

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireTenantAccess, getOrResolveMasjid } from '@/lib/tenant';
+import { requireTenantAccess, requireTenantWriteAccess, getOrResolveMasjid } from '@/lib/tenant';
 import { generateWhatsAppInvoiceUrl } from '@/lib/whatsapp';
 import { recordAuditLog } from '@/lib/audit';
 import { supabaseAdmin } from '@/lib/supabase';
@@ -89,9 +89,12 @@ export async function POST(req: NextRequest) {
 
     let session: any = null;
     try {
-      session = requireTenantAccess(reqMasjidId);
-    } catch (e) {
-      // fallback
+      session = requireTenantWriteAccess(reqMasjidId);
+    } catch (e: any) {
+      return NextResponse.json(
+        { error: e.message || 'Read-Only Mode: Guests and Viewers cannot record member collections.' },
+        { status: 403 }
+      );
     }
 
     const masjid = await getOrResolveMasjid(session?.masjidId, reqMasjidId);
