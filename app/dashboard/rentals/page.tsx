@@ -1,13 +1,20 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 
 export default function RentalsPage() {
   const [activeTab, setActiveTab] = useState<'UNITS' | 'COLLECTION' | 'FINANCIALS'>('UNITS');
   const [shops, setShops] = useState<any[]>([]);
   const [payments, setPayments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [masjidName, setMasjidName] = useState('Newtown Masjid');
+
+  // Search & Filter States
   const [searchQuery, setSearchQuery] = useState('');
+  const [filterShopId, setFilterShopId] = useState('ALL');
+  const [filterTenant, setFilterTenant] = useState('ALL');
+  const [filterMonth, setFilterMonth] = useState('ALL');
 
   // Modals
   const [showAddModal, setShowAddModal] = useState(false);
@@ -50,7 +57,6 @@ export default function RentalsPage() {
 
   const [submitting, setSubmitting] = useState(false);
   const [isViewer, setIsViewer] = useState(false);
-  const [statusMsg, setStatusMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
   const loadData = () => {
@@ -60,6 +66,7 @@ export default function RentalsPage() {
       .then((data) => {
         setShops(data.shops || []);
         setPayments(data.payments || []);
+        if (data.masjidName) setMasjidName(data.masjidName);
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -92,7 +99,6 @@ export default function RentalsPage() {
     setInternalNotes(shop.internalNotes || '');
     setRevisionRent('');
     setErrorMsg('');
-    setStatusMsg('');
     setShowEditModal(true);
   };
 
@@ -176,40 +182,6 @@ export default function RentalsPage() {
     }
   };
 
-  // RECORD ADVANCE / SECURITY DEPOSIT
-  const handleRecordAdvance = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedShop) return;
-    setSubmitting(true);
-    setErrorMsg('');
-
-    try {
-      const res = await fetch('/api/rentals', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'RECORD_ADVANCE',
-          shopId: selectedShop.id,
-          amount: Number(securityDeposit || 25000),
-          paymentMethod,
-        }),
-      });
-
-      if (res.ok) {
-        setShowAdvanceModal(false);
-        setSelectedShop(null);
-        loadData();
-      } else {
-        const d = await res.json();
-        setErrorMsg(d.error || 'Failed to record advance deposit.');
-      }
-    } catch (err: any) {
-      setErrorMsg(err.message || 'An error occurred.');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
   // OPEN END TENANCY SETTLEMENT MODAL
   const handleOpenEndTenancy = () => {
     const deposit = Number(securityDeposit) || 25000;
@@ -282,9 +254,46 @@ export default function RentalsPage() {
     }
   };
 
+  // DISTINCT LISTS FOR FILTER DROPDOWNS
+  const distinctTenants = Array.from(
+    new Set(
+      shops
+        .map((s) => s.tenantName?.trim())
+        .filter((t) => t && !t.startsWith('Vacant'))
+    )
+  );
+
+  const distinctMonths = Array.from(
+    new Set(
+      payments
+        .map((p) => {
+          if (!p.forMonth) return '';
+          return p.forMonth.replace(/^Rent • /, '').replace(/^Advance Received • /, '').replace(/^Advance Returned • /, '');
+        })
+        .filter(Boolean)
+    )
+  );
+
+  // FILTERED PAYMENTS FOR RENT COLLECTION & FINANCIALS
+  const filteredPayments = payments.filter((p) => {
+    if (filterShopId !== 'ALL' && p.shopId !== filterShopId) return false;
+    if (filterTenant !== 'ALL' && p.tenantName?.toLowerCase().trim() !== filterTenant.toLowerCase().trim()) return false;
+    if (filterMonth !== 'ALL' && !p.forMonth?.toLowerCase().includes(filterMonth.toLowerCase())) return false;
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      return (
+        p.shopNo?.toLowerCase().includes(q) ||
+        p.tenantName?.toLowerCase().includes(q) ||
+        p.receiptNo?.toLowerCase().includes(q) ||
+        p.forMonth?.toLowerCase().includes(q)
+      );
+    }
+    return true;
+  });
+
   // FORMAT TRANSACTIONS FOR FINANCIAL STATEMENT WITH RUNNING BALANCE
   const parseTransactions = () => {
-    const sorted = [...payments].sort(
+    const sorted = [...filteredPayments].sort(
       (a, b) => new Date(a.paymentDate).getTime() - new Date(b.paymentDate).getTime()
     );
 
@@ -367,6 +376,33 @@ export default function RentalsPage() {
     );
   });
 
+  // EXPORT CURRENT FILTERED LEDGER TO CSV
+  const handleExportCSV = () => {
+    const headers = 'Voucher No,Date,Shop Unit,Tenant Name,Period/Transaction,Amount,Payment Method\n';
+    const rows = filteredPayments
+      .map((p) => {
+        const date = new Date(p.paymentDate).toLocaleDateString('en-IN');
+        const vNo = p.receiptNo || 'RNT-OFFICIAL';
+        const shop = `"${(p.shopNo || '').replace(/"/g, '""')}"`;
+        const tenant = `"${(p.tenantName || '').replace(/"/g, '""')}"`;
+        const period = `"${(p.forMonth || '').replace(/"/g, '""')}"`;
+        const amount = p.amount || 0;
+        const method = p.paymentMethod || 'BANK_TRANSFER';
+        return `${vNo},${date},${shop},${tenant},${period},${amount},${method}`;
+      })
+      .join('\n');
+
+    const blob = new Blob([headers + rows], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Rental-Statement-${filterShopId !== 'ALL' ? filterShopId : 'All'}-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const printStatementUrl = `/dashboard/rentals/print?shopId=${filterShopId}&tenant=${encodeURIComponent(filterTenant)}&month=${encodeURIComponent(filterMonth)}`;
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto text-slate-800 font-sans pb-12">
       {/* 1. HEADER */}
@@ -375,9 +411,9 @@ export default function RentalsPage() {
           <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#0F766E] block">
             FINANCE & HUMAN RESOURCES
           </span>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Rental Management</h1>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Rental Property Management</h1>
           <p className="text-slate-500 text-xs sm:text-sm mt-0.5">
-            Manage mosque-owned rental units, tenants, and track monthly rent collection.
+            Track Mosque commercial shops, tenant agreements, and rent collection vouchers
           </p>
         </div>
 
@@ -401,7 +437,7 @@ export default function RentalsPage() {
             }}
             className="px-5 py-2.5 bg-[#0F3D26] hover:bg-emerald-950 text-white font-extrabold text-xs rounded-2xl shadow-sm transition flex items-center gap-2 self-start sm:self-auto cursor-pointer"
           >
-            <i className="fas fa-store text-[#F4D06F]"></i> Register Rental Unit
+            <i className="fas fa-store text-[#F4D06F]"></i> Register New Shop
           </button>
         )}
       </div>
@@ -435,6 +471,95 @@ export default function RentalsPage() {
           Financials
         </button>
       </div>
+
+      {/* 3. FILTER STRIP (SHOP-WISE, TENANT-WISE, MONTH-WISE & DOWNLOAD STATEMENT) */}
+      {(activeTab === 'COLLECTION' || activeTab === 'FINANCIALS') && (
+        <div className="bg-white p-4 rounded-3xl border border-slate-200 shadow-xs flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2.5 flex-1">
+            {/* SHOP-WISE FILTER */}
+            <div className="flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200 flex-1 sm:flex-initial min-w-[180px]">
+              <i className="fas fa-store text-emerald-800 text-xs"></i>
+              <select
+                value={filterShopId}
+                onChange={(e) => setFilterShopId(e.target.value)}
+                className="bg-transparent text-xs font-extrabold text-slate-800 outline-none w-full cursor-pointer"
+              >
+                <option value="ALL">All Shops & Units ({shops.length})</option>
+                {shops.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.shopNo} ({s.tenantName})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* TENANT-WISE FILTER */}
+            <div className="flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200 flex-1 sm:flex-initial min-w-[170px]">
+              <i className="fas fa-user-tag text-emerald-800 text-xs"></i>
+              <select
+                value={filterTenant}
+                onChange={(e) => setFilterTenant(e.target.value)}
+                className="bg-transparent text-xs font-extrabold text-slate-800 outline-none w-full cursor-pointer"
+              >
+                <option value="ALL">All Tenants ({distinctTenants.length})</option>
+                {distinctTenants.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* MONTH-WISE FILTER */}
+            <div className="flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200 flex-1 sm:flex-initial min-w-[160px]">
+              <i className="fas fa-calendar-days text-emerald-800 text-xs"></i>
+              <select
+                value={filterMonth}
+                onChange={(e) => setFilterMonth(e.target.value)}
+                className="bg-transparent text-xs font-extrabold text-slate-800 outline-none w-full cursor-pointer"
+              >
+                <option value="ALL">All Month Periods</option>
+                {distinctMonths.map((m) => (
+                  <option key={m} value={m}>
+                    {m}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* QUICK SEARCH */}
+            <div className="relative flex-1 min-w-[160px]">
+              <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search voucher, tenant..."
+                className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium outline-none focus:border-emerald-700"
+              />
+            </div>
+          </div>
+
+          {/* DOWNLOAD STATEMENT & EXPORT BUTTONS */}
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={handleExportCSV}
+              className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs rounded-xl transition flex items-center gap-1.5 cursor-pointer"
+              title="Export filtered records to CSV"
+            >
+              <i className="fas fa-file-csv text-emerald-800"></i> Export CSV
+            </button>
+
+            <Link
+              href={printStatementUrl}
+              target="_blank"
+              className="px-4 py-2 bg-[#0F3D26] hover:bg-emerald-950 text-white font-extrabold text-xs rounded-xl shadow-xs transition flex items-center gap-1.5 cursor-pointer"
+            >
+              <i className="fas fa-print text-[#F4D06F]"></i> Download Statement
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* SEARCH BAR (FOR RENTAL UNITS TAB) */}
       {activeTab === 'UNITS' && (
@@ -543,15 +668,13 @@ export default function RentalsPage() {
 
                     {/* ACTION BUTTONS (MATCHING USER SCREENSHOT) */}
                     <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-                      <button
-                        onClick={() => {
-                          setSelectedShop(s);
-                          setActiveTab('FINANCIALS');
-                        }}
+                      <Link
+                        href={`/dashboard/rentals/print?shopId=${s.id}`}
+                        target="_blank"
                         className="px-4 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 font-extrabold text-xs rounded-xl border border-slate-200 transition flex items-center gap-1.5 cursor-pointer"
                       >
                         <i className="fas fa-file-invoice text-emerald-800"></i> View Statement
-                      </button>
+                      </Link>
 
                       {!isViewer && (
                         <>
@@ -592,64 +715,100 @@ export default function RentalsPage() {
         </div>
       )}
 
-      {/* TAB 2: RENT COLLECTION ROSTER */}
+      {/* TAB 2: RENT COLLECTION RECEIPTS TABLE (MATCHING SCREENSHOT media_1787145544986.png) */}
       {activeTab === 'COLLECTION' && (
         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden space-y-3 p-6">
-          <div className="flex items-center justify-between border-b pb-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b pb-3">
             <div>
-              <h3 className="text-sm font-extrabold text-slate-900">Rent Collection Register</h3>
-              <p className="text-xs text-slate-400">Monthly commercial tenant payout collections and receipts</p>
+              <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider">
+                RENT COLLECTION RECEIPTS
+              </h3>
+              <p className="text-xs text-slate-400">
+                Filtered: {filteredPayments.length} of {payments.length} collection receipts
+              </p>
             </div>
-            <span className="text-xs font-bold text-emerald-800 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
-              {shops.length} Units Registered
-            </span>
+
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-emerald-800 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
+                Total Collected: ₹{filteredPayments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0).toLocaleString('en-IN')}
+              </span>
+            </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead className="bg-slate-50 border-b border-slate-200 text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">
-                <tr>
-                  <th className="py-3 px-4">Property Unit</th>
-                  <th className="py-3 px-4">Tenant Name</th>
-                  <th className="py-3 px-4">Phone Number</th>
-                  <th className="py-3 px-4">Monthly Rate</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {shops.map((s) => (
-                  <tr key={s.id} className="hover:bg-slate-50/70 transition">
-                    <td className="py-3 px-4 font-bold text-slate-900">{s.shopNo}</td>
-                    <td className="py-3 px-4 font-semibold text-slate-700">{s.tenantName}</td>
-                    <td className="py-3 px-4 font-mono text-slate-600">{s.tenantPhone || '—'}</td>
-                    <td className="py-3 px-4 font-extrabold text-emerald-800">
-                      IN ₹ {Number(s.monthlyRent || 0).toLocaleString('en-IN')}
-                    </td>
-                    <td className="py-3 px-4">
-                      <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-md text-[10px] font-bold">
-                        {s.status || 'OCCUPIED'}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-right space-x-2">
-                      {!isViewer && (
+          {filteredPayments.length === 0 ? (
+            <div className="p-16 text-center text-slate-400 text-xs font-semibold">
+              <i className="fas fa-receipt text-3xl mb-2 text-slate-300 block"></i>
+              No collection receipts found for this filter selection.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead className="bg-slate-50 border-b border-slate-200 text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">
+                  <tr>
+                    <th className="py-3 px-4 whitespace-nowrap">VOUCHER NO</th>
+                    <th className="py-3 px-4 whitespace-nowrap">DATE</th>
+                    <th className="py-3 px-4 whitespace-nowrap">SHOP & TENANT</th>
+                    <th className="py-3 px-4 whitespace-nowrap">MONTH PERIOD</th>
+                    <th className="py-3 px-4 whitespace-nowrap">AMOUNT</th>
+                    <th className="py-3 px-4 whitespace-nowrap">PAYMENT MODE</th>
+                    <th className="py-3 px-4 text-right whitespace-nowrap">ACTION</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {filteredPayments.map((p) => (
+                    <tr key={p.id} className="hover:bg-slate-50/70 transition">
+                      <td className="py-3 px-4 font-mono font-extrabold text-emerald-800 whitespace-nowrap">
+                        {p.receiptNo || 'RNT-2026-0001'}
+                      </td>
+                      <td className="py-3 px-4 whitespace-nowrap text-slate-700 font-medium">
+                        {new Date(p.paymentDate).toLocaleDateString('en-IN', {
+                          day: '2-digit',
+                          month: 'short',
+                          year: 'numeric',
+                        })}
+                      </td>
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        <div className="font-extrabold text-slate-900">{p.shopNo}</div>
+                        <div className="text-[11px] text-slate-400 font-medium">{p.tenantName}</div>
+                      </td>
+                      <td className="py-3 px-4 whitespace-nowrap font-semibold text-slate-800">
+                        {p.forMonth?.replace(/^Rent • /, '') || 'August 2026'}
+                      </td>
+                      <td className="py-3 px-4 whitespace-nowrap font-black text-slate-900">
+                        ₹{Number(p.amount || 0).toLocaleString('en-IN')}
+                      </td>
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        <span className="px-2.5 py-0.5 bg-slate-100 border border-slate-200 text-slate-700 rounded-md text-[10px] font-bold uppercase">
+                          {p.paymentMethod || 'BANK_TRANSFER'}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-right space-x-1.5 whitespace-nowrap">
                         <button
                           onClick={() => {
-                            setSelectedShop(s);
-                            setPayAmount(String(s.monthlyRent || 5000));
-                            setShowPayModal(true);
+                            setSelectedVoucher(p);
+                            setShowVoucherModal(true);
                           }}
-                          className="px-3 py-1.5 bg-[#0F3D26] hover:bg-emerald-950 text-white font-extrabold rounded-lg text-xs transition cursor-pointer"
+                          className="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 font-bold rounded-lg text-xs transition shadow-2xs cursor-pointer"
                         >
-                          Collect Rent
+                          <i className="fas fa-receipt text-emerald-800 mr-1"></i> Voucher
                         </button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+
+                        {!isViewer && (
+                          <button
+                            onClick={() => handleDeletePayment(p.id)}
+                            className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition inline-flex items-center justify-center text-xs cursor-pointer"
+                            title="Delete Voucher"
+                          >
+                            <i className="fas fa-trash-can"></i>
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
 
@@ -716,7 +875,7 @@ export default function RentalsPage() {
             {parsedLedger.length === 0 ? (
               <div className="p-16 text-center text-slate-400 text-xs font-semibold">
                 <i className="fas fa-file-invoice-dollar text-3xl mb-2 text-slate-300 block"></i>
-                No rental transactions recorded yet.
+                No rental transactions recorded yet for this filter selection.
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -810,7 +969,7 @@ export default function RentalsPage() {
         </div>
       )}
 
-      {/* 3. EDIT RENTAL UNIT DETAILS MODAL (MATCHING SCREENSHOT EXACTLY) */}
+      {/* EDIT / REGISTER RENTAL UNIT DETAILS MODAL */}
       {(showEditModal || showAddModal) && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl space-y-5 border border-slate-200 max-h-[92vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
@@ -894,7 +1053,7 @@ export default function RentalsPage() {
                     value={monthlyRent}
                     onChange={(e) => setMonthlyRent(e.target.value)}
                     placeholder="5000"
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-extrabold text-emerald-800 outline-none focus:border-emerald-700 focus:bg-white"
+                    className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs font-extrabold text-emerald-800 outline-none focus:border-emerald-700 focus:bg-white"
                   />
                 </div>
               </div>
@@ -910,7 +1069,7 @@ export default function RentalsPage() {
                     value={securityDeposit}
                     onChange={(e) => setSecurityDeposit(e.target.value)}
                     placeholder="25000"
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-extrabold text-slate-900 outline-none focus:border-emerald-700 focus:bg-white"
+                    className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs font-extrabold text-slate-900 outline-none focus:border-emerald-700 focus:bg-white"
                   />
                 </div>
 
@@ -925,7 +1084,7 @@ export default function RentalsPage() {
                     value={dueDay}
                     onChange={(e) => setDueDay(e.target.value)}
                     placeholder="5"
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 outline-none focus:border-emerald-700 focus:bg-white"
+                    className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 outline-none focus:border-emerald-700 focus:bg-white"
                   />
                 </div>
               </div>
@@ -1023,70 +1182,6 @@ export default function RentalsPage() {
                 />
               </div>
 
-              {/* TENANT PHOTOS & DOCUMENTS UPLOAD PLACEHOLDERS (MATCHING SCREENSHOT) */}
-              <div className="space-y-3 pt-1">
-                <div className="p-3 bg-white border border-slate-200 rounded-2xl flex items-center justify-between">
-                  <div>
-                    <span className="text-[11px] font-extrabold text-slate-800 uppercase block">
-                      TENANT PHOTOS <span className="text-slate-400 font-normal">(optional, multiple)</span>
-                    </span>
-                    <span className="text-[10px] text-slate-400">Upload photos of tenant with zoom support</span>
-                  </div>
-                  <button
-                    type="button"
-                    className="px-3 py-1.5 bg-[#0F3D26] text-white rounded-xl text-[11px] font-bold flex items-center gap-1.5"
-                  >
-                    <i className="fas fa-camera text-[10px]"></i> Add Photos
-                  </button>
-                </div>
-
-                <div className="p-3 bg-white border border-slate-200 rounded-2xl flex items-center justify-between">
-                  <div>
-                    <span className="text-[11px] font-extrabold text-slate-800 uppercase block">
-                      TENANT ID CARDS / DOCUMENTS <span className="text-slate-400 font-normal">(optional)</span>
-                    </span>
-                    <span className="text-[10px] text-slate-400">Upload ID proof (Aadhaar, Passport, Driving License)</span>
-                  </div>
-                  <button
-                    type="button"
-                    className="px-3 py-1.5 bg-[#0F3D26] text-white rounded-xl text-[11px] font-bold flex items-center gap-1.5"
-                  >
-                    <i className="fas fa-id-card text-[10px]"></i> Add ID Cards
-                  </button>
-                </div>
-              </div>
-
-              {/* RENT REVISIONS & RATE UPDATES SECTION (MATCHING SCREENSHOT) */}
-              <div className="pt-2">
-                <span className="text-xs font-black text-slate-900 block mb-2">Rent Revisions & Rate Updates</span>
-                <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-[10px] font-extrabold text-slate-600 uppercase mb-1">Effective Month</label>
-                      <input
-                        type="text"
-                        value={revisionMonth}
-                        onChange={(e) => setRevisionMonth(e.target.value)}
-                        className="w-full px-3 py-2 border rounded-xl text-xs font-bold text-slate-900 bg-white"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-extrabold text-slate-600 uppercase mb-1">New Rent (IN ₹)</label>
-                      <input
-                        type="number"
-                        value={revisionRent}
-                        onChange={(e) => {
-                          setRevisionRent(e.target.value);
-                          if (e.target.value) setMonthlyRent(e.target.value);
-                        }}
-                        placeholder="e.g. 5500"
-                        className="w-full px-3 py-2 border rounded-xl text-xs font-bold text-emerald-800 bg-white"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
               <div className="flex justify-end gap-3 pt-3 border-t">
                 <button
                   type="button"
@@ -1111,7 +1206,7 @@ export default function RentalsPage() {
         </div>
       )}
 
-      {/* 4. END TENANCY & ADVANCE RETURN SETTLEMENT MODAL (REQUESTED SPECIFICALLY) */}
+      {/* END TENANCY & SETTLEMENT MODAL */}
       {showEndTenancyModal && selectedShop && (
         <div className="fixed inset-0 z-60 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl space-y-5 border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
@@ -1331,7 +1426,7 @@ export default function RentalsPage() {
                   type="text"
                   value={settlementNotes}
                   onChange={(e) => setSettlementNotes(e.target.value)}
-                  placeholder="e.g. Keys handed over, shop painted..."
+                  placeholder="e.g. Keys handed over, shop inspected..."
                   className="w-full px-3.5 py-2 border rounded-xl text-xs bg-white"
                 />
               </div>
@@ -1357,7 +1452,7 @@ export default function RentalsPage() {
         </div>
       )}
 
-      {/* 5. COLLECT RENT MODAL */}
+      {/* COLLECT RENT MODAL */}
       {showPayModal && selectedShop && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
@@ -1431,7 +1526,7 @@ export default function RentalsPage() {
         </div>
       )}
 
-      {/* 6. VOUCHER MODAL */}
+      {/* VOUCHER MODAL */}
       {showVoucherModal && selectedVoucher && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl space-y-5 border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
@@ -1445,32 +1540,26 @@ export default function RentalsPage() {
 
             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2 text-xs">
               <div className="flex justify-between py-1 border-b border-slate-200">
-                <span className="text-slate-500 font-bold">Transaction Type:</span>
-                <span className="font-extrabold text-slate-900">{selectedVoucher.transactionType}</span>
-              </div>
-              <div className="flex justify-between py-1 border-b border-slate-200">
-                <span className="text-slate-500 font-bold">Reference:</span>
-                <span className="font-extrabold text-slate-900">{selectedVoucher.reference}</span>
+                <span className="text-slate-500 font-bold">Transaction / Period:</span>
+                <span className="font-extrabold text-slate-900">{selectedVoucher.forMonth || selectedVoucher.reference || 'Monthly Rent'}</span>
               </div>
               <div className="flex justify-between py-1 border-b border-slate-200">
                 <span className="text-slate-500 font-bold">Receipt / Voucher No:</span>
                 <span className="font-mono font-bold text-slate-800">{selectedVoucher.receiptNo || 'RNT-OFFICIAL'}</span>
               </div>
               <div className="flex justify-between py-1 border-b border-slate-200">
-                <span className="text-slate-500 font-bold">Payment Method:</span>
+                <span className="text-slate-500 font-bold">Payment Mode:</span>
                 <span className="font-bold text-slate-800">{selectedVoucher.paymentMethod}</span>
               </div>
+              <div className="flex justify-between py-1 border-b border-slate-200">
+                <span className="text-slate-500 font-bold">Date:</span>
+                <span className="font-bold text-slate-800">{new Date(selectedVoucher.paymentDate).toLocaleDateString('en-IN')}</span>
+              </div>
               <div className="flex justify-between py-2 text-sm">
-                <span className="font-black text-slate-900">
-                  {selectedVoucher.returned !== null ? 'Amount Returned:' : 'Amount Received:'}
-                </span>
-                <span className={`font-black text-base ${selectedVoucher.returned !== null ? 'text-rose-600' : 'text-emerald-800'}`}>
+                <span className="font-black text-slate-900">Amount Paid:</span>
+                <span className="font-black text-base text-emerald-800">
                   ₹{Number(selectedVoucher.amount || 0).toLocaleString('en-IN')}
                 </span>
-              </div>
-              <div className="flex justify-between py-1 text-[11px] text-slate-500 border-t border-slate-200 pt-2">
-                <span>Running Advance Balance:</span>
-                <span className="font-bold text-slate-900">₹{selectedVoucher.runningBalance?.toLocaleString('en-IN') || 0}</span>
               </div>
             </div>
 
