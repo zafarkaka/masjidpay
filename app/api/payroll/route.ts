@@ -156,6 +156,41 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Staff member not found' }, { status: 404 });
       }
 
+      const cleanMonth = (monthPaid || 'August 2026').trim();
+
+      // STRICT CHECK: PREVENT PAYING SALARY TWICE TO THE SAME STAFF IN THE SAME MONTH
+      let existingPayroll: any = null;
+      try {
+        existingPayroll = await prisma.payroll.findFirst({
+          where: {
+            masjidId: masjid.id,
+            staffId,
+            monthPaid: cleanMonth,
+          },
+        });
+      } catch (e) {}
+
+      if (!existingPayroll && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+        const { data: sbExisting } = await supabaseAdmin
+          .from('Payroll')
+          .select('id, receiptNo, paymentDate, amount, netSalary')
+          .eq('masjidId', masjid.id)
+          .eq('staffId', staffId)
+          .or(`monthPaid.eq.${cleanMonth},month.eq.${cleanMonth}`)
+          .maybeSingle();
+
+        if (sbExisting) existingPayroll = sbExisting;
+      }
+
+      if (existingPayroll) {
+        return NextResponse.json(
+          {
+            error: `Salary for ${staffMember.name} has already been paid for ${cleanMonth} (Receipt: ${existingPayroll.receiptNo || 'Processed'}). Duplicate salary payments in the same month are not allowed.`,
+          },
+          { status: 400 }
+        );
+      }
+
       const receiptNo = `PAY-${Date.now().toString().slice(-6)}`;
       const finalBaseSalary = Number(baseSalary || staffMember.monthlySalary || staffMember.salary || amount || 0);
       const finalWorkingDays = Number(workingDays || 30);
@@ -166,7 +201,6 @@ export async function POST(req: NextRequest) {
       const finalAllowance = Number(allowance || 0);
       const finalDeduction = Number(deduction || 0);
       const finalNet = Number(netSalary || (finalEarned + finalAllowance - finalDeduction));
-      const cleanMonth = monthPaid || 'August 2026';
       const cleanMethod = paymentMethod || 'CASH';
       const cleanPayrollId = `pay-${crypto.randomUUID()}`;
 
@@ -236,3 +270,39 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error?.message || 'Failed to save payroll record' }, { status: 500 });
   }
 }
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
+    const masjidIdParam = searchParams.get('masjidId');
+
+    if (!id) {
+      return NextResponse.json({ error: 'Payroll ID is required' }, { status: 400 });
+    }
+
+    const session = requireTenantWriteAccess(masjidIdParam);
+    const masjid = await getOrResolveMasjid(session?.masjidId, masjidIdParam);
+
+    if (!masjid) {
+      return NextResponse.json({ error: 'Masjid not found' }, { status: 404 });
+    }
+
+    await prisma.payroll.deleteMany({
+      where: {
+        id,
+        masjidId: masjid.id,
+      },
+    });
+
+    if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      await supabaseAdmin.from('Payroll').delete().eq('id', id).eq('masjidId', masjid.id);
+    }
+
+    return NextResponse.json({ success: true, message: 'Payroll voucher removed successfully' });
+  } catch (error: any) {
+    console.error('Payroll DELETE API error:', error);
+    return NextResponse.json({ error: error?.message || 'Failed to delete payroll record' }, { status: 500 });
+  }
+}
+

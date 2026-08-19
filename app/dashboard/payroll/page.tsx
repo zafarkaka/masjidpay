@@ -32,8 +32,17 @@ export default function PayrollPage() {
   const [deduction, setDeduction] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState('CASH');
   const [notes, setNotes] = useState('');
+  const [payError, setPayError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [isViewer, setIsViewer] = useState(false);
+
+  const MONTH_OPTIONS = [
+    'January 2026', 'February 2026', 'March 2026', 'April 2026',
+    'May 2026', 'June 2026', 'July 2026', 'August 2026',
+    'September 2026', 'October 2026', 'November 2026', 'December 2026',
+    'January 2027', 'February 2027', 'March 2027', 'April 2027',
+    'May 2027', 'June 2027', 'July 2027', 'August 2027',
+  ];
 
   // Calculated Real-Time Values
   const absentDays = Math.max(0, Number(workingDays) - Number(presentDays));
@@ -79,6 +88,17 @@ export default function PayrollPage() {
   const tenureMonths = 1;
   const pendingMonthsCount = Math.max(0, tenureMonths - paidMonthsCount);
 
+  // Check if chosen month is already paid for activeStaff
+  const isMonthAlreadyPaid = Boolean(
+    activeStaff &&
+    payrolls.some(
+      (p) =>
+        p.staffId === activeStaff.id &&
+        ((p.monthPaid && p.monthPaid.trim().toLowerCase() === monthPaid.trim().toLowerCase()) ||
+         (p.month && p.month.trim().toLowerCase() === monthPaid.trim().toLowerCase()))
+    )
+  );
+
   const handleOpenPayModal = (staffMember?: any) => {
     const target = staffMember || activeStaff;
     if (target) {
@@ -88,6 +108,23 @@ export default function PayrollPage() {
       setAllowance(0);
       setDeduction(0);
       setNotes('');
+      setPayError('');
+
+      // Auto-suggest next unpaid month if August 2026 is already paid
+      const paidMonthsForTarget = payrolls
+        .filter((p) => p.staffId === target.id)
+        .map((p) => (p.monthPaid || p.month || '').trim().toLowerCase());
+
+      const firstUnpaidMonth = MONTH_OPTIONS.find(
+        (m) => !paidMonthsForTarget.includes(m.toLowerCase())
+      );
+
+      if (firstUnpaidMonth) {
+        setMonthPaid(firstUnpaidMonth);
+      } else {
+        setMonthPaid('August 2026');
+      }
+
       setShowPayModal(true);
     }
   };
@@ -123,7 +160,15 @@ export default function PayrollPage() {
   const handleRecordPayment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeStaff) return;
+
+    if (isMonthAlreadyPaid) {
+      setPayError(`Salary for ${activeStaff.name} has already been paid for ${monthPaid}. Duplicate monthly disbursements are not allowed.`);
+      return;
+    }
+
     setSubmitting(true);
+    setPayError('');
+
     try {
       const res = await fetch('/api/payroll', {
         method: 'POST',
@@ -131,7 +176,7 @@ export default function PayrollPage() {
         body: JSON.stringify({
           action: 'PAY_SALARY',
           staffId: activeStaff.id,
-          monthPaid,
+          monthPaid: monthPaid.trim(),
           baseSalary,
           workingDays,
           presentDays,
@@ -145,15 +190,36 @@ export default function PayrollPage() {
           notes,
         }),
       });
+
+      const data = await res.json();
+
       if (res.ok) {
         setShowPayModal(false);
         setNotes('');
+        setPayError('');
         loadData();
+      } else {
+        setPayError(data.error || 'Failed to process salary payment.');
+      }
+    } catch (err: any) {
+      setPayError(err.message || 'An error occurred during payment processing.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDeletePayroll = async (id: string) => {
+    if (!confirm('Are you sure you want to remove this payroll voucher record?')) return;
+    try {
+      const res = await fetch(`/api/payroll?id=${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        loadData();
+      } else {
+        const d = await res.json();
+        alert(d.error || 'Failed to delete record.');
       }
     } catch (err) {
       console.error(err);
-    } finally {
-      setSubmitting(false);
     }
   };
 
@@ -180,121 +246,130 @@ export default function PayrollPage() {
         <div className="flex items-center gap-1 bg-white p-1 rounded-2xl border border-[#D4AF37]/30 shadow-xs">
           <button
             onClick={() => setViewMode('LEDGER')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
-              viewMode === 'LEDGER' ? 'bg-[#064E3B] text-[#FFF9EC] shadow-sm' : 'text-slate-600 hover:text-slate-900'
+            className={`px-4 py-2 rounded-xl text-xs font-black transition ${
+              viewMode === 'LEDGER' ? 'bg-[#064E3B] text-[#F4D06F] shadow-sm' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            <i className="fas fa-receipt text-xs text-[#F4D06F]"></i> Payroll Ledger
+            <i className="fas fa-receipt mr-1.5"></i> Payroll Ledger
           </button>
           <button
             onClick={() => setViewMode('PROFILES')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
-              viewMode === 'PROFILES' ? 'bg-[#064E3B] text-[#FFF9EC] shadow-sm' : 'text-slate-600 hover:text-slate-900'
+            className={`px-4 py-2 rounded-xl text-xs font-black transition ${
+              viewMode === 'PROFILES' ? 'bg-[#064E3B] text-[#F4D06F] shadow-sm' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            <i className="fas fa-user-group text-xs text-[#F4D06F]"></i> Staff Profiles
+            <i className="fas fa-users-gear mr-1.5"></i> Staff Profiles
           </button>
         </div>
       </div>
 
-      {/* SELECT STAFF MEMBER DROPDOWN BAR */}
-      <div className="masjid-card p-5 bg-white border border-[#D4AF37]/30 shadow-xs flex flex-col sm:flex-row sm:items-center gap-4 rounded-2xl">
-        <label className="text-xs font-black text-[#064E3B] uppercase tracking-wider shrink-0">SELECT STAFF MEMBER:</label>
-        <select
-          value={selectedStaffId}
-          onChange={(e) => {
-            setSelectedStaffId(e.target.value);
-            const selected = staff.find((s) => s.id === e.target.value);
-            if (selected) setBaseSalary(selected.monthlySalary || 15000);
-          }}
-          className="w-full sm:w-80 px-4 py-2.5 bg-[#FFF9EC] border border-[#D4AF37]/40 rounded-xl text-xs font-bold text-slate-900 outline-none focus:border-[#064E3B]"
-        >
-          <option value="ALL">All Staff Members ({staff.length})</option>
-          {staff.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name} ({s.roleTitle}) — ₹{s.monthlySalary?.toLocaleString('en-IN')}/mo
-            </option>
-          ))}
-        </select>
+      {/* FILTER & TOP ACTION STRIP */}
+      <div className="bg-white p-4 rounded-3xl border border-[#D4AF37]/30 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          <label className="text-xs font-black text-[#064E3B] uppercase tracking-wider whitespace-nowrap">Select Staff Member:</label>
+          <select
+            value={selectedStaffId}
+            onChange={(e) => {
+              setSelectedStaffId(e.target.value);
+              const found = staff.find((s) => s.id === e.target.value);
+              if (found) setBaseSalary(found.monthlySalary || 15000);
+            }}
+            className="w-full sm:w-64 px-3.5 py-2 bg-[#FFF9EC] border border-[#D4AF37]/40 rounded-xl text-xs font-extrabold text-slate-800 outline-none focus:border-[#064E3B] cursor-pointer"
+          >
+            <option value="ALL">All Staff Members ({staff.length})</option>
+            {staff.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name} ({s.roleTitle})
+              </option>
+            ))}
+          </select>
+        </div>
 
         {!isViewer && (
-          <div className="ml-auto flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
             <button
               onClick={() => handleOpenPayModal()}
-              className="px-4 py-2.5 bg-[#064E3B] hover:bg-[#102A25] text-white font-extrabold text-xs rounded-xl shadow-md transition flex items-center gap-1.5"
+              className="px-4 py-2.5 bg-[#064E3B] hover:bg-[#102A25] text-white font-extrabold text-xs rounded-xl shadow-sm transition flex items-center gap-1.5 cursor-pointer"
             >
               <i className="fas fa-money-bill-wave text-[#F4D06F]"></i> Record Payout
             </button>
             <button
               onClick={() => setShowStaffModal(true)}
-              className="px-4 py-2.5 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs rounded-xl transition flex items-center gap-1.5 border border-slate-300 shadow-xs"
+              className="px-4 py-2.5 bg-white text-[#064E3B] border border-[#D4AF37] hover:bg-[#FFF9EC] font-extrabold text-xs rounded-xl transition flex items-center gap-1.5 cursor-pointer"
             >
-              <i className="fas fa-user-plus text-[#064E3B]"></i> Add Staff
+              <i className="fas fa-user-plus text-[#D4AF37]"></i> Add Staff
             </button>
           </div>
         )}
       </div>
 
-      {activeStaff && viewMode === 'LEDGER' && (
+      {/* VIEW 1: PAYROLL LEDGER */}
+      {viewMode === 'LEDGER' && (
         <>
-          {/* SELECTED STAFF PROFILE / KPI CARD */}
-          <div className="masjid-card p-6 bg-white border border-[#D4AF37]/30 shadow-sm space-y-6 rounded-2xl">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
-              <div>
-                <div className="flex items-center gap-2">
-                  <h2 className="text-2xl font-extrabold text-[#102A25]">{activeStaff.name}</h2>
-                  <span className="px-2.5 py-0.5 bg-amber-100 text-amber-900 text-[10px] font-black rounded-md uppercase tracking-wider">
-                    {activeStaff.roleTitle}
-                  </span>
+          {/* PROFILE SUMMARY BAR IF SINGLE STAFF SELECTED */}
+          {selectedStaffId !== 'ALL' && activeStaff && (
+            <div className="bg-white p-6 rounded-3xl border border-[#D4AF37]/30 shadow-sm space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-12 h-12 rounded-2xl bg-[#064E3B] text-[#F4D06F] flex items-center justify-center font-black text-lg shadow-sm">
+                    {activeStaff.name.slice(0, 3).toLowerCase()}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-xl font-black text-slate-900">{activeStaff.name}</h2>
+                      <span className="px-2.5 py-0.5 bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-black rounded-md uppercase tracking-wider">
+                        {activeStaff.roleTitle}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 font-medium">Base Monthly Salary: <strong className="text-[#064E3B]">₹{activeStaff.monthlySalary?.toLocaleString('en-IN')}</strong></p>
+                  </div>
                 </div>
-                <p className="text-xs font-semibold text-slate-500 mt-1">
-                  Base Monthly Salary: <span className="font-extrabold text-[#064E3B]">₹{activeStaff.monthlySalary?.toLocaleString('en-IN')}</span>
-                  {activeStaff.phone && <span className="ml-3 text-slate-400">📞 {activeStaff.phone}</span>}
-                </p>
+
+                {!isViewer && (
+                  <button
+                    onClick={() => handleOpenPayModal(activeStaff)}
+                    className="px-5 py-2.5 bg-[#064E3B] hover:bg-[#102A25] text-white font-extrabold text-xs rounded-xl shadow-md transition flex items-center gap-2 self-start sm:self-auto cursor-pointer"
+                  >
+                    <i className="fas fa-plus text-[#F4D06F]"></i> Process Monthly Payout
+                  </button>
+                )}
               </div>
 
-              {!isViewer && (
-                <button
-                  onClick={() => handleOpenPayModal(activeStaff)}
-                  className="px-5 py-3 bg-[#064E3B] hover:bg-[#102A25] text-white font-extrabold text-xs rounded-xl shadow-lg transition flex items-center gap-2"
-                >
-                  <i className="fas fa-plus text-[#F4D06F]"></i> Process Monthly Payout
-                </button>
-              )}
-            </div>
+              {/* 4 SUMMARY STAT CARDS */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+                <div className="p-4 bg-[#FFF9EC] border border-[#D4AF37]/30 rounded-2xl space-y-1">
+                  <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#0F766E] block">ACTIVE TENURE</span>
+                  <div className="text-xl font-black text-slate-900">{tenureMonths} Month(s)</div>
+                </div>
 
-            {/* 4 STAT METRICS ROW */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-left">
-              <div className="bg-[#FFF9EC] p-3.5 rounded-xl border border-[#D4AF37]/20">
-                <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest block">ACTIVE TENURE</span>
-                <span className="text-xl font-black text-slate-900 block mt-1">{tenureMonths} Month(s)</span>
-              </div>
+                <div className="p-4 bg-[#FFF9EC] border border-[#D4AF37]/30 rounded-2xl space-y-1">
+                  <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#0F766E] block">PAYROLLS ISSUED</span>
+                  <div className="text-xl font-black text-[#064E3B]">{paidMonthsCount} Disbursed</div>
+                </div>
 
-              <div className="bg-[#FFF9EC] p-3.5 rounded-xl border border-[#D4AF37]/20">
-                <span className="text-[10px] font-extrabold text-[#0F766E] uppercase tracking-widest block">PAYROLLS ISSUED</span>
-                <span className="text-xl font-black text-slate-900 block mt-1">{paidMonthsCount} Disbursed</span>
-              </div>
+                <div className="p-4 bg-[#FFF9EC] border border-[#D4AF37]/30 rounded-2xl space-y-1">
+                  <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#0F766E] block">PENDING DISBURSEMENTS</span>
+                  <div className="text-xl font-black text-amber-800">{pendingMonthsCount} Pending</div>
+                </div>
 
-              <div className="bg-[#FFF9EC] p-3.5 rounded-xl border border-[#D4AF37]/20">
-                <span className="text-[10px] font-extrabold text-amber-800 uppercase tracking-widest block">PENDING DISBURSEMENTS</span>
-                <span className="text-xl font-black text-amber-900 block mt-1">{pendingMonthsCount} Pending</span>
-              </div>
-
-              <div className="bg-[#FFF9EC] p-3.5 rounded-xl border border-[#D4AF37]/20">
-                <span className="text-[10px] font-extrabold text-[#064E3B] uppercase tracking-widest block">TOTAL SALARY PAID</span>
-                <span className="text-xl font-black text-[#064E3B] block mt-1">₹{totalSalaryPaid.toLocaleString('en-IN')}</span>
+                <div className="p-4 bg-[#FFF9EC] border border-[#D4AF37]/30 rounded-2xl space-y-1">
+                  <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#0F766E] block">TOTAL SALARY PAID</span>
+                  <div className="text-xl font-black text-[#064E3B]">₹{totalSalaryPaid.toLocaleString('en-IN')}</div>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
-          {/* COMPREHENSIVE PAYROLL LEDGER TABLE */}
-          <div className="masjid-card overflow-hidden bg-white border border-[#D4AF37]/30 rounded-2xl shadow-xs">
-            <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+          {/* ATTENDANCE & PAYROLL LEDGER TABLE */}
+          <div className="bg-white rounded-3xl border border-[#D4AF37]/30 shadow-sm overflow-hidden space-y-3 p-6">
+            <div className="flex items-center justify-between border-b pb-3">
               <div>
-                <h3 className="font-extrabold text-slate-900 text-sm">Automated Payroll & Attendance Ledger</h3>
-                <p className="text-[11px] text-slate-400">All calculated salary disbursements with per-day breakdowns, allowances, and deductions</p>
+                <h3 className="text-sm font-extrabold text-slate-900">Automated Payroll & Attendance Ledger</h3>
+                <p className="text-xs text-slate-400">All calculated salary disbursements with per-day breakdowns, allowances, and deductions</p>
               </div>
-              <span className="masjid-badge masjid-badge-success">{staffPayrolls.length} Records</span>
+              <span className="text-xs font-bold text-[#064E3B] bg-[#FFF9EC] px-3 py-1 rounded-full border border-[#D4AF37]/40">
+                {staffPayrolls.length} Records
+              </span>
             </div>
 
             {staffPayrolls.length === 0 ? (
@@ -378,16 +453,26 @@ export default function PayrollPage() {
                             </span>
                           </td>
 
-                          <td className="py-3 px-3 text-right">
+                          <td className="py-3 px-3 text-right space-x-1.5 whitespace-nowrap">
                             <button
                               onClick={() => {
                                 setSelectedVoucher(p);
                                 setShowVoucherModal(true);
                               }}
-                              className="px-2.5 py-1 bg-white hover:bg-slate-100 text-[#064E3B] border border-[#064E3B]/30 font-bold rounded-lg text-xs transition shadow-xs"
+                              className="px-2.5 py-1 bg-white hover:bg-slate-100 text-[#064E3B] border border-[#064E3B]/30 font-bold rounded-lg text-xs transition shadow-xs cursor-pointer inline-flex items-center"
                             >
                               <i className="fas fa-file-invoice mr-1"></i> Voucher
                             </button>
+
+                            {!isViewer && (
+                              <button
+                                onClick={() => handleDeletePayroll(p.id)}
+                                className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition inline-flex items-center justify-center text-xs cursor-pointer"
+                                title="Delete Payout Record"
+                              >
+                                <i className="fas fa-trash-can"></i>
+                              </button>
+                            )}
                           </td>
                         </tr>
                       );
@@ -434,7 +519,7 @@ export default function PayrollPage() {
                     setSelectedStaffId(s.id);
                     handleOpenPayModal(s);
                   }}
-                  className="w-full py-2.5 bg-[#064E3B] hover:bg-[#102A25] text-white font-extrabold text-xs rounded-xl shadow-xs transition flex items-center justify-center gap-1.5"
+                  className="w-full py-2.5 bg-[#064E3B] hover:bg-[#102A25] text-white font-extrabold text-xs rounded-xl shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   <i className="fas fa-money-bill-wave text-[#F4D06F]"></i> Record Payout
                 </button>
@@ -444,7 +529,7 @@ export default function PayrollPage() {
         </div>
       )}
 
-      {/* RECORD SALARY PAYMENT MODAL WITH AUTOMATED CALCULATIONS */}
+      {/* RECORD SALARY PAYMENT MODAL WITH STRICT DUPLICATE PREVENTION */}
       {showPayModal && activeStaff && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-7 shadow-2xl space-y-5 border border-[#D4AF37]/30 max-h-[90vh] overflow-y-auto">
@@ -453,23 +538,57 @@ export default function PayrollPage() {
                 <h3 className="text-lg font-extrabold text-slate-900">Record Salary Payment</h3>
                 <p className="text-xs text-slate-500 font-medium">Recipient: <strong className="text-[#064E3B]">{activeStaff.name}</strong> ({activeStaff.roleTitle})</p>
               </div>
-              <button onClick={() => setShowPayModal(false)} className="text-slate-400 hover:text-slate-600">
+              <button onClick={() => setShowPayModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
                 <i className="fas fa-times text-lg"></i>
               </button>
             </div>
+
+            {/* DUPLICATE WARNING ALERT IF MONTH IS ALREADY PAID */}
+            {isMonthAlreadyPaid && (
+              <div className="p-4 bg-rose-50 border-2 border-rose-300 rounded-2xl text-xs font-bold text-rose-900 flex items-start gap-2.5 shadow-xs">
+                <i className="fas fa-circle-exclamation text-rose-600 text-base mt-0.5 shrink-0"></i>
+                <div>
+                  <span className="block font-black text-rose-950">Duplicate Salary Payment Blocked</span>
+                  <span className="text-[11px] font-medium text-rose-800 leading-tight block mt-0.5">
+                    Salary for <strong>{activeStaff.name}</strong> has already been disbursed for <strong>{monthPaid}</strong>. You cannot pay salary twice for the same month. Please select a different month.
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {payError && (
+              <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl text-xs font-bold text-rose-800 flex items-center gap-2">
+                <i className="fas fa-triangle-exclamation text-rose-600"></i> {payError}
+              </div>
+            )}
 
             <form onSubmit={handleRecordPayment} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Salary Month *</label>
-                  <input
-                    type="text"
-                    required
+                  <select
                     value={monthPaid}
-                    onChange={(e) => setMonthPaid(e.target.value)}
-                    placeholder="e.g. August 2026"
-                    className="w-full px-3.5 py-2.5 border rounded-xl text-xs outline-none focus:border-[#064E3B] font-bold text-slate-900 bg-[#FFF9EC]"
-                  />
+                    onChange={(e) => {
+                      setMonthPaid(e.target.value);
+                      setPayError('');
+                    }}
+                    className="w-full px-3.5 py-2.5 border rounded-xl text-xs outline-none focus:border-[#064E3B] font-extrabold text-slate-900 bg-[#FFF9EC] cursor-pointer"
+                  >
+                    {MONTH_OPTIONS.map((m) => {
+                      const alreadyPaidThisMonth = payrolls.some(
+                        (p) =>
+                          p.staffId === activeStaff.id &&
+                          ((p.monthPaid && p.monthPaid.trim().toLowerCase() === m.toLowerCase()) ||
+                           (p.month && p.month.trim().toLowerCase() === m.toLowerCase()))
+                      );
+
+                      return (
+                        <option key={m} value={m}>
+                          {m} {alreadyPaidThisMonth ? '— (Already Paid ✓)' : ''}
+                        </option>
+                      );
+                    })}
+                  </select>
                 </div>
 
                 <div>
@@ -585,7 +704,7 @@ export default function PayrollPage() {
                   <select
                     value={paymentMethod}
                     onChange={(e) => setPaymentMethod(e.target.value)}
-                    className="w-full px-3.5 py-2.5 border rounded-xl text-xs outline-none focus:border-[#064E3B] font-semibold bg-white"
+                    className="w-full px-3.5 py-2.5 border rounded-xl text-xs outline-none focus:border-[#064E3B] font-semibold bg-white cursor-pointer"
                   >
                     <option value="CASH">Cash Payment</option>
                     <option value="BANK_TRANSFER">Direct Bank Transfer</option>
@@ -610,18 +729,22 @@ export default function PayrollPage() {
                 <button
                   type="button"
                   onClick={() => setShowPayModal(false)}
-                  className="px-4 py-2.5 bg-slate-100 text-xs font-bold rounded-xl text-slate-700 hover:bg-slate-200 transition"
+                  className="px-4 py-2.5 bg-slate-100 text-xs font-bold rounded-xl text-slate-700 hover:bg-slate-200 transition cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  disabled={submitting}
-                  className="px-6 py-2.5 bg-[#064E3B] hover:bg-[#102A25] text-white rounded-xl text-xs font-extrabold shadow-md transition disabled:opacity-50 flex items-center gap-1.5"
+                  disabled={submitting || isMonthAlreadyPaid}
+                  className="px-6 py-2.5 bg-[#064E3B] hover:bg-[#102A25] text-white rounded-xl text-xs font-extrabold shadow-md transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5 cursor-pointer"
                 >
                   {submitting ? (
                     <>
                       <i className="fas fa-circle-notch fa-spin"></i> Processing...
+                    </>
+                  ) : isMonthAlreadyPaid ? (
+                    <>
+                      <i className="fas fa-ban text-rose-300"></i> Already Paid for {monthPaid}
                     </>
                   ) : (
                     <>
@@ -641,7 +764,7 @@ export default function PayrollPage() {
           <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 border border-[#D4AF37]/30">
             <div className="flex justify-between items-center border-b pb-3">
               <h3 className="text-base font-extrabold text-slate-900">Add New Staff Member</h3>
-              <button onClick={() => setShowStaffModal(false)} className="text-slate-400 hover:text-slate-600">
+              <button onClick={() => setShowStaffModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
                 <i className="fas fa-times"></i>
               </button>
             </div>
@@ -654,36 +777,27 @@ export default function PayrollPage() {
                   required
                   value={staffName}
                   onChange={(e) => setStaffName(e.target.value)}
-                  placeholder="e.g. Moulana Abdul Kareem"
-                  className="w-full px-3.5 py-2.5 border rounded-xl text-xs outline-none focus:border-[#064E3B] font-semibold"
+                  placeholder="e.g. Maulana Bilal Ahmed"
+                  className="w-full px-3.5 py-2.5 border rounded-xl text-xs outline-none focus:border-[#064E3B]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Role / Title *</label>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Designation / Role *</label>
                 <select
                   value={roleTitle}
                   onChange={(e) => setRoleTitle(e.target.value)}
-                  className="w-full px-3.5 py-2.5 border rounded-xl text-xs outline-none focus:border-[#064E3B] font-semibold"
+                  className="w-full px-3.5 py-2.5 border rounded-xl text-xs outline-none focus:border-[#064E3B] bg-white cursor-pointer"
                 >
-                  <option value="Muazzin">Muazzin</option>
                   <option value="Imam & Khateeb">Imam & Khateeb</option>
-                  <option value="Ustadh / Teacher">Ustadh / Teacher</option>
-                  <option value="Cleaner / Caretaker">Cleaner / Caretaker</option>
+                  <option value="Second Imam">Second Imam</option>
+                  <option value="Muazzin">Muazzin</option>
+                  <option value="Madrasa Ustadh / Teacher">Madrasa Ustadh / Teacher</option>
+                  <option value="Caretaker / Khadim">Caretaker / Khadim</option>
                   <option value="Security Guard">Security Guard</option>
-                  <option value="Administrator">Administrator</option>
+                  <option value="Accountant">Accountant</option>
+                  <option value="Cleaner / Maintenance">Cleaner / Maintenance</option>
                 </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Phone Number</label>
-                <input
-                  type="text"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="+91 98765 12345"
-                  className="w-full px-3.5 py-2.5 border rounded-xl text-xs outline-none focus:border-[#064E3B] font-mono"
-                />
               </div>
 
               <div>
@@ -694,15 +808,35 @@ export default function PayrollPage() {
                   min="0"
                   value={monthlySalary}
                   onChange={(e) => setMonthlySalary(e.target.value)}
-                  placeholder="15000"
-                  className="w-full px-3.5 py-2.5 border rounded-xl text-xs outline-none focus:border-[#064E3B] font-extrabold text-slate-900"
+                  className="w-full px-3.5 py-2.5 border rounded-xl text-xs outline-none focus:border-[#064E3B] font-extrabold text-[#064E3B]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Contact Phone</label>
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="e.g. 9840123456"
+                  className="w-full px-3.5 py-2.5 border rounded-xl text-xs outline-none focus:border-[#064E3B]"
                 />
               </div>
 
               <div className="flex justify-end gap-3 pt-3 border-t">
-                <button type="button" onClick={() => setShowStaffModal(false)} className="px-4 py-2.5 bg-slate-100 text-xs font-bold rounded-xl">Cancel</button>
-                <button type="submit" disabled={submitting} className="px-5 py-2.5 bg-[#064E3B] text-white rounded-xl text-xs font-extrabold shadow-md">
-                  {submitting ? 'Saving...' : 'Save Staff Profile'}
+                <button
+                  type="button"
+                  onClick={() => setShowStaffModal(false)}
+                  className="px-4 py-2 bg-slate-100 text-xs font-bold rounded-xl text-slate-700 hover:bg-slate-200 transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="px-5 py-2 bg-[#064E3B] hover:bg-[#102A25] text-white rounded-xl text-xs font-extrabold shadow-md transition disabled:opacity-50 cursor-pointer"
+                >
+                  Save Staff Member
                 </button>
               </div>
             </form>
@@ -712,70 +846,55 @@ export default function PayrollPage() {
 
       {/* SALARY VOUCHER MODAL */}
       {showVoucherModal && selectedVoucher && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl space-y-5 border border-[#D4AF37]/30">
-            <div className="flex justify-between items-center border-b pb-3">
-              <div className="flex items-center gap-2">
-                <div className="w-9 h-9 rounded-xl bg-[#064E3B] text-[#F4D06F] flex items-center justify-center font-bold">
-                  <i className="fas fa-file-invoice"></i>
-                </div>
-                <div>
-                  <h3 className="text-base font-extrabold text-slate-900">Official Salary Voucher</h3>
-                  <p className="text-[11px] font-mono text-slate-400">{selectedVoucher.receiptNo || 'PAY-VOUCHER'}</p>
-                </div>
-              </div>
-              <button onClick={() => setShowVoucherModal(false)} className="text-slate-400 hover:text-slate-600">
-                <i className="fas fa-times"></i>
-              </button>
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl space-y-6 border border-[#D4AF37]/40 animate-in fade-in zoom-in-95 duration-150">
+            <div className="text-center space-y-1 border-b pb-4">
+              <div className="text-[10px] font-black uppercase tracking-widest text-[#0F766E]">Official Payout Voucher</div>
+              <h3 className="text-xl font-black text-slate-900">{selectedVoucher.staffName}</h3>
+              <p className="text-xs text-slate-500 font-medium">Month: <strong className="text-[#064E3B]">{selectedVoucher.monthPaid}</strong> • Receipt: {selectedVoucher.receiptNo || 'PAY-OFFICIAL'}</p>
             </div>
 
-            <div className="space-y-3 bg-[#FFF9EC] p-5 rounded-2xl border border-[#D4AF37]/30 text-xs">
-              <div className="flex justify-between">
-                <span className="text-slate-500 font-bold">Staff Member:</span>
-                <span className="font-black text-slate-900">{selectedVoucher.staffName}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500 font-bold">Salary Month:</span>
-                <span className="font-black text-slate-900">{selectedVoucher.monthPaid}</span>
-              </div>
-              <div className="flex justify-between">
+            <div className="p-4 bg-[#FFF9EC] rounded-2xl border border-[#D4AF37]/30 space-y-2 text-xs text-slate-800">
+              <div className="flex justify-between py-1 border-b border-[#e8dfc8]">
                 <span className="text-slate-500 font-bold">Attendance:</span>
-                <span className="font-bold text-slate-800">
-                  {selectedVoucher.presentDays ?? 30} Present / {selectedVoucher.workingDays ?? 30} Working ({selectedVoucher.absentDays ?? 0} Absent)
-                </span>
+                <span className="font-extrabold text-slate-900">{selectedVoucher.presentDays ?? 30} Days Present / {selectedVoucher.workingDays ?? 30} Total</span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between py-1 border-b border-[#e8dfc8]">
+                <span className="text-slate-500 font-bold">Base Monthly Rate:</span>
+                <span className="font-extrabold text-slate-900">₹{(selectedVoucher.baseSalary ?? selectedVoucher.amount ?? 0).toLocaleString('en-IN')}</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-[#e8dfc8]">
                 <span className="text-slate-500 font-bold">Earned Salary:</span>
-                <span className="font-bold text-slate-900">₹{(selectedVoucher.earnedSalary ?? selectedVoucher.amount).toLocaleString('en-IN')}</span>
+                <span className="font-extrabold text-slate-900">₹{(selectedVoucher.earnedSalary ?? selectedVoucher.amount ?? 0).toLocaleString('en-IN')}</span>
               </div>
               {selectedVoucher.allowance > 0 && (
-                <div className="flex justify-between text-emerald-800">
+                <div className="flex justify-between py-1 border-b border-[#e8dfc8] text-emerald-800">
                   <span className="font-bold">+ Allowance:</span>
-                  <span className="font-black">+₹{selectedVoucher.allowance.toLocaleString('en-IN')}</span>
+                  <span className="font-extrabold">+₹{selectedVoucher.allowance.toLocaleString('en-IN')}</span>
                 </div>
               )}
               {selectedVoucher.deduction > 0 && (
-                <div className="flex justify-between text-rose-700">
-                  <span className="font-bold">- Deduction:</span>
-                  <span className="font-black">-₹{selectedVoucher.deduction.toLocaleString('en-IN')}</span>
+                <div className="flex justify-between py-1 border-b border-[#e8dfc8] text-rose-700">
+                  <span className="font-bold">- Deductions:</span>
+                  <span className="font-extrabold">-₹{selectedVoucher.deduction.toLocaleString('en-IN')}</span>
                 </div>
               )}
-              <div className="border-t border-[#D4AF37]/30 pt-2 flex justify-between items-center">
-                <span className="font-black text-slate-900 uppercase">Net Salary Disbursed:</span>
-                <span className="text-lg font-black text-[#064E3B]">₹{(selectedVoucher.netSalary ?? selectedVoucher.amount).toLocaleString('en-IN')}</span>
+              <div className="flex justify-between py-2 text-sm">
+                <span className="font-black text-slate-900">Net Salary Paid:</span>
+                <span className="font-black text-[#064E3B] text-base">₹{(selectedVoucher.netSalary ?? selectedVoucher.amount ?? 0).toLocaleString('en-IN')}</span>
               </div>
-              <div className="flex justify-between text-[11px] text-slate-500 pt-1">
-                <span>Payment Mode: {selectedVoucher.paymentMethod}</span>
+              <div className="flex justify-between py-1 text-[11px] text-slate-500 border-t border-[#e8dfc8] pt-2">
+                <span>Payment Mode: <strong>{selectedVoucher.paymentMethod}</strong></span>
                 <span>Date: {new Date(selectedVoucher.paymentDate).toLocaleDateString('en-IN')}</span>
               </div>
             </div>
 
-            <div className="flex justify-end gap-2">
+            <div className="flex justify-end gap-2.5 pt-2">
               <button
-                onClick={() => window.print()}
-                className="px-5 py-2.5 bg-[#064E3B] text-white font-extrabold rounded-xl text-xs shadow-md flex items-center gap-2"
+                onClick={() => setShowVoucherModal(false)}
+                className="px-5 py-2.5 bg-slate-900 hover:bg-black text-white font-extrabold rounded-xl text-xs transition cursor-pointer"
               >
-                <i className="fas fa-print"></i> Print Voucher
+                Close Voucher
               </button>
             </div>
           </div>
