@@ -81,7 +81,7 @@ export async function PUT(req: NextRequest) {
     const updatedMasjid = await prisma.masjid.update({
       where: { id: masjid.id },
       data: {
-        name: body.name || masjid.name,
+        name: (isSuperAdmin || !masjid.name) ? (body.name || masjid.name) : masjid.name,
         address: body.address !== undefined ? body.address : masjid.address,
         city: body.city || masjid.city,
         state: body.state || masjid.state,
