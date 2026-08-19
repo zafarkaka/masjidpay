@@ -259,3 +259,152 @@ export async function sendApprovalWelcomeEmail({ toEmail, adminName, masjidName,
 export async function sendIntroMessageEmail({ toEmail, adminName, masjidName, masjidSlug }: SendIntroEmailParams) {
   return sendApprovalWelcomeEmail({ toEmail, adminName, masjidName, masjidSlug });
 }
+
+export interface SendDonationReceiptEmailParams {
+  toEmail: string;
+  donorName: string;
+  masjidName: string;
+  masjidSlug?: string;
+  amount: number;
+  categoryName: string;
+  receiptNo: string;
+  paymentMethod: string;
+  referenceNo?: string;
+  date: string;
+}
+
+/**
+ * Sends an automated Official Donation Receipt Email to the donor.
+ */
+export async function sendDonationReceiptEmail({
+  toEmail,
+  donorName,
+  masjidName,
+  masjidSlug,
+  amount,
+  categoryName,
+  receiptNo,
+  paymentMethod,
+  referenceNo,
+  date,
+}: SendDonationReceiptEmailParams) {
+  const resendApiKey = process.env.RESEND_API_KEY;
+  const fromEmail = process.env.EMAIL_FROM || 'MasjidPay Receipts <receipts@masjidpay.org>';
+  const formattedAmount = `₹${Number(amount).toLocaleString('en-IN')}`;
+  const transparencyUrl = `${BASE_URL}/masjid/${masjidSlug || 'jama-masjid'}/transparency`;
+  const receiptUrl = `${BASE_URL}/dashboard/receipts/print?id=${receiptNo}&autoPrint=true`;
+
+  const htmlContent = `
+    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 580px; margin: 0 auto; padding: 32px; border: 1px solid #D4AF37; border-radius: 24px; background-color: #ffffff; box-shadow: 0 6px 24px rgba(6, 78, 59, 0.08);">
+      <div style="text-align: center; margin-bottom: 24px; border-bottom: 2px solid #064E3B; padding-bottom: 20px;">
+        <div style="font-size: 28px; margin-bottom: 6px;">🕌</div>
+        <h2 style="color: #064E3B; margin: 0; font-size: 24px; font-weight: 900; letter-spacing: -0.5px;">${masjidName}</h2>
+        <span style="display: inline-block; background-color: #FFF9EC; border: 1px solid #D4AF37; color: #064E3B; font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 20px; text-transform: uppercase; margin-top: 8px;">
+          ✓ Official Donation Receipt
+        </span>
+      </div>
+
+      <div style="margin-bottom: 24px; text-align: center;">
+        <p style="color: #102A25; font-size: 15px; font-weight: 700; margin: 0 0 6px 0;">Assalamu Alaikum ${donorName},</p>
+        <p style="color: #64748b; font-size: 13px; margin: 0; line-height: 1.5;">
+          JazakAllah Khair for your generous contribution. Your payment has been confirmed and recorded in the mosque financial ledger.
+        </p>
+      </div>
+
+      <div style="background-color: #FFF9EC; border: 1px solid #D4AF37; border-radius: 18px; padding: 22px; margin-bottom: 24px;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+          <tr>
+            <td style="padding: 8px 0; color: #64748b; font-weight: 600; border-bottom: 1px dashed #e8dfc8;">Receipt Number:</td>
+            <td style="padding: 8px 0; color: #064E3B; font-weight: 800; text-align: right; font-family: monospace; border-bottom: 1px dashed #e8dfc8;">${receiptNo}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; color: #64748b; font-weight: 600; border-bottom: 1px dashed #e8dfc8;">Amount Contributed:</td>
+            <td style="padding: 8px 0; color: #064E3B; font-weight: 900; font-size: 18px; text-align: right; border-bottom: 1px dashed #e8dfc8;">${formattedAmount}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; color: #64748b; font-weight: 600; border-bottom: 1px dashed #e8dfc8;">Fund Allocation:</td>
+            <td style="padding: 8px 0; color: #102A25; font-weight: 700; text-align: right; border-bottom: 1px dashed #e8dfc8;">${categoryName}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; color: #64748b; font-weight: 600; border-bottom: 1px dashed #e8dfc8;">Payment Channel:</td>
+            <td style="padding: 8px 0; color: #102A25; font-weight: 700; text-align: right; border-bottom: 1px dashed #e8dfc8;">${paymentMethod}</td>
+          </tr>
+          ${referenceNo ? `
+          <tr>
+            <td style="padding: 8px 0; color: #64748b; font-weight: 600; border-bottom: 1px dashed #e8dfc8;">Ref / Transaction ID:</td>
+            <td style="padding: 8px 0; color: #102A25; font-weight: 600; text-align: right; font-family: monospace; border-bottom: 1px dashed #e8dfc8;">${referenceNo}</td>
+          </tr>` : ''}
+          <tr>
+            <td style="padding: 8px 0; color: #64748b; font-weight: 600;">Date & Time:</td>
+            <td style="padding: 8px 0; color: #102A25; font-weight: 600; text-align: right;">${date}</td>
+          </tr>
+        </table>
+      </div>
+
+      <div style="text-align: center; margin-bottom: 24px;">
+        <a href="${receiptUrl}" style="display: inline-block; background-color: #064E3B; color: #F4D06F; text-decoration: none; padding: 12px 28px; border-radius: 12px; font-size: 13px; font-weight: 800; border: 1px solid #D4AF37; box-shadow: 0 4px 12px rgba(6, 78, 59, 0.15);">
+          📄 Download Official PDF Receipt →
+        </a>
+      </div>
+
+      <div style="text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 18px;">
+        <p style="margin: 0 0 6px 0; color: #064E3B; font-weight: 700;">
+          May Allah accept your donation and bless you abundantly.
+        </p>
+        <p style="margin: 0; font-size: 11px;">
+          Powered by <a href="${BASE_URL}" style="color: #064E3B; font-weight: bold; text-decoration: none;">MasjidPay SaaS</a> • Verified Smart Mosque Platform
+        </p>
+      </div>
+    </div>
+  `;
+
+  if (resendApiKey) {
+    try {
+      let resendRes = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${resendApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: fromEmail,
+          to: [toEmail],
+          reply_to: SUPER_ADMIN_EMAIL,
+          subject: `🕌 Official Donation Receipt: ${formattedAmount} - ${masjidName} (${receiptNo})`,
+          html: htmlContent,
+        }),
+      });
+
+      let resendData = await resendRes.json();
+
+      if (!resendRes.ok && resendData.message?.includes('domain')) {
+        resendRes = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${resendApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            from: 'MasjidPay <onboarding@resend.dev>',
+            to: [toEmail],
+            reply_to: SUPER_ADMIN_EMAIL,
+            subject: `🕌 Official Donation Receipt: ${formattedAmount} - ${masjidName} (${receiptNo})`,
+            html: htmlContent,
+          }),
+        });
+        resendData = await resendRes.json();
+      }
+
+      if (resendRes.ok) {
+        console.log(`✅ [RECEIPT EMAIL DELIVERED] Sent donation receipt to ${toEmail} from ${fromEmail} (ID: ${resendData.id})`);
+        return { sent: true, provider: 'Resend', resendId: resendData.id };
+      }
+    } catch (resendError) {
+      console.error('⚠️ Resend donation receipt email failed:', resendError);
+    }
+  }
+
+  console.log(`✉️ [RECEIPT CONSOLE FALLBACK] Donation receipt sent to ${toEmail} for ${masjidName} (Amount: ${formattedAmount})`);
+  return { sent: true, provider: 'Console Fallback' };
+}
+

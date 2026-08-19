@@ -67,15 +67,14 @@ export default function PublicDonationPage() {
     setSubmitting(true);
 
     try {
-      // Simulate real checkout & generate receipt record via API
-      const res = await fetch('/api/donations', {
+      const res = await fetch('/api/donations/public', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          masjidId: slug,
+          slug,
           donorName: isAnonymous ? 'Anonymous Donor' : donorName || 'Devoted Donor',
-          donorEmail: donorEmail || 'donor@masjidpay.org',
-          donorPhone: donorPhone || '9876543210',
+          donorEmail: donorEmail.trim(),
+          donorPhone: donorPhone.trim(),
           amount: Number(amount),
           categoryName: selectedCat,
           paymentMethod,
@@ -85,28 +84,13 @@ export default function PublicDonationPage() {
       });
 
       const data = await res.json();
-      if (res.ok && data.donation) {
-        setSuccessData(data.donation);
+      if (res.ok) {
+        setSuccessData(data);
       } else {
-        // Mock success receipt for smooth donor demonstration
-        setSuccessData({
-          receiptNo: `MP-REC-${Math.floor(100000 + Math.random() * 900000)}`,
-          amount: Number(amount),
-          donorName: isAnonymous ? 'Anonymous Donor' : donorName || 'Devoted Donor',
-          createdAt: new Date().toISOString(),
-          paymentMethod,
-          category: { name: selectedCat },
-        });
+        alert(data.error || 'Unable to complete donation. Please try again.');
       }
     } catch (err) {
-      setSuccessData({
-        receiptNo: `MP-REC-${Math.floor(100000 + Math.random() * 900000)}`,
-        amount: Number(amount),
-        donorName: isAnonymous ? 'Anonymous Donor' : donorName || 'Devoted Donor',
-        createdAt: new Date().toISOString(),
-        paymentMethod,
-        category: { name: selectedCat },
-      });
+      console.error(err);
     } finally {
       setSubmitting(false);
     }
@@ -126,7 +110,7 @@ export default function PublicDonationPage() {
   if (successData) {
     return (
       <div className="min-h-screen bg-[#FFF9EC] py-12 px-4 sm:px-6 lg:px-8 font-sans flex flex-col justify-center items-center">
-        <div className="max-w-md w-full bg-white border border-[#D4AF37]/40 shadow-2xl rounded-3xl p-8 text-center space-y-6">
+        <div className="max-w-md w-full bg-white border border-[#D4AF37]/40 shadow-2xl rounded-3xl p-8 text-center space-y-6 animate-in fade-in zoom-in-95 duration-200">
           <div className="w-16 h-16 bg-emerald-50 text-[#064E3B] border border-[#D4AF37]/50 rounded-2xl flex items-center justify-center text-2xl mx-auto shadow-sm">
             <i className="fas fa-check-double text-[#D4AF37]"></i>
           </div>
@@ -141,37 +125,72 @@ export default function PublicDonationPage() {
             </p>
           </div>
 
+          {/* AUTO RECEIPT NOTIFICATION BADGES */}
+          <div className="space-y-2 text-left">
+            {successData.donorEmail && (
+              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl text-xs font-bold text-emerald-900 flex items-center gap-2.5">
+                <i className="fas fa-envelope-circle-check text-emerald-700 text-sm"></i>
+                <div className="min-w-0">
+                  <span className="block font-black text-emerald-950">Email Receipt Sent!</span>
+                  <span className="text-[11px] text-emerald-800 font-medium truncate block">{successData.donorEmail}</span>
+                </div>
+              </div>
+            )}
+
+            {successData.whatsappUrl && (
+              <a
+                href={successData.whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-3.5 bg-gradient-to-r from-emerald-600 to-[#064E3B] hover:from-emerald-700 hover:to-[#102A25] text-white rounded-2xl text-xs font-extrabold flex items-center justify-between shadow-md transition group"
+              >
+                <div className="flex items-center gap-2.5">
+                  <i className="fab fa-whatsapp text-lg text-[#25D366]"></i>
+                  <div className="text-left">
+                    <span className="block font-black leading-tight">Send WhatsApp Receipt</span>
+                    <span className="text-[10px] text-emerald-200 font-medium">{successData.donorPhone || 'Click to open WhatsApp'}</span>
+                  </div>
+                </div>
+                <i className="fas fa-arrow-up-right-from-square text-xs text-[#F4D06F] group-hover:translate-x-0.5 transition"></i>
+              </a>
+            )}
+          </div>
+
           <div className="p-4 bg-[#FFF9EC] border border-[#D4AF37]/30 rounded-2xl text-left space-y-2 text-xs">
             <div className="flex justify-between py-1 border-b border-[#e8dfc8]">
+              <span className="text-slate-500 font-bold">Mosque:</span>
+              <span className="font-extrabold text-[#064E3B]">{masjid.name}</span>
+            </div>
+            <div className="flex justify-between py-1 border-b border-[#e8dfc8]">
               <span className="text-slate-500 font-bold">Amount:</span>
-              <span className="font-extrabold text-[#064E3B] text-base">₹{Number(successData.amount).toLocaleString('en-IN')}</span>
+              <span className="font-extrabold text-[#064E3B] text-base">₹{Number(successData.donation?.amount || amount).toLocaleString('en-IN')}</span>
             </div>
             <div className="flex justify-between py-1 border-b border-[#e8dfc8]">
               <span className="text-slate-500 font-bold">Donor:</span>
-              <span className="font-extrabold text-slate-800">{successData.donorName}</span>
+              <span className="font-extrabold text-slate-800">{successData.donation?.donorName || donorName || 'Devoted Donor'}</span>
             </div>
             <div className="flex justify-between py-1 border-b border-[#e8dfc8]">
               <span className="text-slate-500 font-bold">Category:</span>
-              <span className="font-extrabold text-slate-800">{successData.category?.name || selectedCat}</span>
+              <span className="font-extrabold text-slate-800">{successData.donation?.category?.name || selectedCat}</span>
             </div>
             <div className="flex justify-between py-1">
               <span className="text-slate-500 font-bold">Payment Mode:</span>
-              <span className="font-extrabold text-emerald-800">{successData.paymentMethod}</span>
+              <span className="font-extrabold text-emerald-800">{paymentMethod}</span>
             </div>
           </div>
 
-          <div className="space-y-3 pt-2">
+          <div className="space-y-2.5 pt-1">
             <Link
               href={`/dashboard/receipts/print?id=${successData.receiptNo || 'demo'}&autoPrint=true`}
               target="_blank"
-              className="w-full py-3.5 px-4 bg-[#064E3B] hover:bg-[#102A25] text-white font-extrabold rounded-2xl text-xs shadow-md transition flex items-center justify-center gap-2"
+              className="w-full py-3 px-4 bg-slate-900 hover:bg-black text-white font-extrabold rounded-2xl text-xs shadow-md transition flex items-center justify-center gap-2"
             >
               <i className="fas fa-file-pdf text-[#F4D06F]"></i> Download Official PDF Receipt
             </Link>
 
             <button
               onClick={() => setSuccessData(null)}
-              className="w-full py-3 px-4 bg-white border border-[#D4AF37]/50 hover:bg-[#FFF9EC] text-[#064E3B] font-bold rounded-2xl text-xs transition block"
+              className="w-full py-3 px-4 bg-white border border-[#D4AF37]/50 hover:bg-[#FFF9EC] text-[#064E3B] font-bold rounded-2xl text-xs transition block cursor-pointer"
             >
               Make Another Donation
             </button>
