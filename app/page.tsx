@@ -384,21 +384,13 @@ export default function HomePage() {
                 </div>
 
                 {/* CARD ACTIONS */}
-                <div className="pt-4 border-t border-[#e8dfc8] flex items-center gap-2">
+                <div className="pt-4 border-t border-[#e8dfc8]">
                   <Link
                     href={`/donate/${masjid.id}`}
-                    className="flex-1 py-2.5 bg-[#064E3B] hover:bg-[#102A25] text-white font-extrabold rounded-xl text-xs text-center shadow-xs transition flex items-center justify-center gap-1.5"
+                    className="w-full py-3 bg-[#064E3B] hover:bg-[#102A25] text-white font-extrabold rounded-2xl text-xs text-center shadow-md shadow-[#064E3B]/15 transition flex items-center justify-center gap-2"
                   >
                     <i className="fas fa-hand-holding-heart text-[#F4D06F]"></i>
                     <span>Donate Now</span>
-                  </Link>
-
-                  <Link
-                    href={`/masjid/${masjid.id}/transparency`}
-                    className="p-2.5 bg-[#FFF9EC] hover:bg-white text-[#064E3B] border border-[#D4AF37]/50 rounded-xl text-xs transition"
-                    title="View Public Financial Transparency Portal"
-                  >
-                    <i className="fas fa-scale-balanced"></i>
                   </Link>
                 </div>
               </div>
