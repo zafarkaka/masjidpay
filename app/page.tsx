@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 export default function HomePage() {
@@ -28,9 +28,10 @@ export default function HomePage() {
     { id: 'PAYMENTS', label: 'UPI & Razorpay QR', icon: 'fa-qrcode' },
   ];
 
-  const featuredMasjids = [
+  const initialFeaturedMasjids = [
     {
       id: 'jama-masjid',
+      slug: 'jama-masjid',
       name: 'Jama Masjid Vaniyambadi',
       city: 'Vaniyambadi, Tamil Nadu',
       tag: 'Verified Historical Mosque',
@@ -44,6 +45,7 @@ export default function HomePage() {
     },
     {
       id: 'al-noor',
+      slug: 'al-noor',
       name: 'Al-Noor Islamic Center',
       city: 'Chennai, Tamil Nadu',
       tag: 'Community Hub',
@@ -57,6 +59,7 @@ export default function HomePage() {
     },
     {
       id: 'madina-masjid',
+      slug: 'madina-masjid',
       name: 'Madina Grand Mosque',
       city: 'Bengaluru, Karnataka',
       tag: 'Urban Islamic Center',
@@ -69,6 +72,33 @@ export default function HomePage() {
       percent: 89,
     },
   ];
+
+  const [featuredMasjids, setFeaturedMasjids] = useState<any[]>(initialFeaturedMasjids);
+
+  useEffect(() => {
+    fetch('/api/masjids/public')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.masjids && data.masjids.length > 0) {
+          const mapped = data.masjids.map((m: any, idx: number) => ({
+            id: m.slug || m.id,
+            slug: m.slug || m.id,
+            name: m.name,
+            city: `${m.city || 'Tamil Nadu'}, ${m.state || 'India'}`,
+            tag: m.waqfId ? `Waqf Reg #${m.waqfId}` : 'Super Admin Verified',
+            rating: '4.9' + ((idx % 5) + 5),
+            monthlyMembers: 120 + idx * 45,
+            activeFunds: ['General Donation', 'Zakat Fund', 'Maintenance'],
+            image: '/images/masjid_hero_sunset.jpg',
+            collectedThisMonth: '₹1,50,000',
+            target: '₹3,00,000',
+            percent: 75,
+          }));
+          setFeaturedMasjids(mapped);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col bg-[#FFF9EC] text-[#1c2e28] font-sans selection:bg-[#D4AF37]/30">
@@ -342,7 +372,7 @@ export default function HomePage() {
 
                   {/* ACTIVE FUNDS PILLS */}
                   <div className="flex flex-wrap gap-1.5 pt-1">
-                    {masjid.activeFunds.map((fund, idx) => (
+                    {(masjid.activeFunds || []).map((fund: any, idx: number) => (
                       <span
                         key={idx}
                         className="text-[10px] font-bold bg-[#FFF9EC] text-[#064E3B] border border-[#D4AF37]/30 px-2 py-0.5 rounded-full"

@@ -41,6 +41,10 @@ export async function GET(req: NextRequest) {
             },
           },
         },
+        documents: {
+          orderBy: { createdAt: 'desc' },
+        },
+        settings: true,
         _count: {
           select: {
             donations: true,
@@ -199,7 +203,82 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // 3. SEND WELCOME / ACTIVATION EMAIL MANUALLY
+    // 3. SUPER ADMIN EXCLUSIVE: CONFIGURE PAYMENT GATEWAY & UPI DETAILS
+    if (action === 'UPDATE_PAYMENT_GATEWAY') {
+      const {
+        upiId,
+        upiPayeeName,
+        bankName,
+        bankAccNo,
+        bankIfsc,
+        enableUpi,
+        enableRazorpay,
+        razorpayKeyId,
+        razorpayKeySecret,
+        razorpayWebhookSecret,
+      } = body;
+
+      // Update Masjid model fields
+      const updatedMasjid = await prisma.masjid.update({
+        where: { id: masjidId },
+        data: {
+          upiId: upiId !== undefined ? upiId : masjid.upiId,
+          bankName: bankName !== undefined ? bankName : masjid.bankName,
+          bankAccNo: bankAccNo !== undefined ? bankAccNo : masjid.bankAccNo,
+          bankIfsc: bankIfsc !== undefined ? bankIfsc : masjid.bankIfsc,
+        },
+      });
+
+      // Upsert into Setting table
+      const gatewaySettings: Record<string, string> = {
+        upiId: upiId || '',
+        upiPayeeName: upiPayeeName || '',
+        bankName: bankName || '',
+        bankAccNo: bankAccNo || '',
+        bankIfsc: bankIfsc || '',
+        enableUpi: enableUpi !== undefined ? String(enableUpi) : 'true',
+        enableRazorpay: enableRazorpay !== undefined ? String(enableRazorpay) : 'false',
+        razorpayKeyId: razorpayKeyId || '',
+        razorpayKeySecret: razorpayKeySecret || '',
+        razorpayWebhookSecret: razorpayWebhookSecret || '',
+      };
+
+      for (const [key, value] of Object.entries(gatewaySettings)) {
+        await prisma.setting.upsert({
+          where: { masjidId_key: { masjidId, key } },
+          update: { value },
+          create: { masjidId, key, value },
+        });
+      }
+
+      await recordAuditLog({
+        masjidId,
+        userId: session.userId,
+        userEmail: session.email,
+        userRole: session.role,
+        action: 'SUPER_ADMIN_UPDATE_PAYMENT_GATEWAY',
+        entity: 'MasjidPaymentGateway',
+        entityId: masjidId,
+        afterState: {
+          upiId,
+          upiPayeeName,
+          bankName,
+          bankAccNo,
+          bankIfsc,
+          enableUpi,
+          enableRazorpay,
+          configuredBy: session.email,
+        },
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: 'Payment Gateway (UPI & Razorpay) settings successfully configured by Super Admin!',
+        masjid: updatedMasjid,
+      });
+    }
+
+    // 4. SEND WELCOME / ACTIVATION EMAIL MANUALLY
     if (action === 'SEND_WELCOME_EMAIL') {
       const adminUser = masjid.masjidUsers[0]?.user;
       const targetEmail = adminUser?.email || masjid.email;

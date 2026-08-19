@@ -60,6 +60,7 @@ export async function GET(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   try {
     const session = requireTenantWriteAccess();
+    const isSuperAdmin = session.role === 'SUPER_ADMIN';
     const body = await req.json();
 
     const masjid = await prisma.masjid.findFirst({
@@ -75,7 +76,8 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: 'Masjid not found' }, { status: 404 });
     }
 
-    // Update Masjid profile
+    // Update Masjid general profile
+    // Only Super Admin can modify verified banking & UPI info
     const updatedMasjid = await prisma.masjid.update({
       where: { id: masjid.id },
       data: {
@@ -88,48 +90,53 @@ export async function PUT(req: NextRequest) {
         email: body.email || masjid.email,
         regNumber: body.regNumber !== undefined ? body.regNumber : masjid.regNumber,
         waqfId: body.waqfId !== undefined ? body.waqfId : masjid.waqfId,
-        bankName: body.bankName !== undefined ? body.bankName : masjid.bankName,
-        bankAccNo: body.bankAccNo !== undefined ? body.bankAccNo : masjid.bankAccNo,
-        bankIfsc: body.bankIfsc !== undefined ? body.bankIfsc : masjid.bankIfsc,
-        upiId: body.upiId !== undefined ? body.upiId : masjid.upiId,
         financialYear: body.financialYear || masjid.financialYear,
         communityAccessCode: (body.communityAccessCode && body.communityAccessCode.trim() && body.communityAccessCode.trim() !== '0')
           ? body.communityAccessCode.trim()
           : (masjid.communityAccessCode || '7860'),
+        // Super Admin exclusive bank & UPI update
+        bankName: isSuperAdmin && body.bankName !== undefined ? body.bankName : masjid.bankName,
+        bankAccNo: isSuperAdmin && body.bankAccNo !== undefined ? body.bankAccNo : masjid.bankAccNo,
+        bankIfsc: isSuperAdmin && body.bankIfsc !== undefined ? body.bankIfsc : masjid.bankIfsc,
+        upiId: isSuperAdmin && body.upiId !== undefined ? body.upiId : masjid.upiId,
       },
     });
 
-    // Save gateway settings in Setting table
-    const gatewayKeys = [
-      'razorpayKeyId',
-      'razorpayKeySecret',
-      'razorpayWebhookSecret',
-      'enableRazorpay',
-      'enableUpi',
-      'upiId',
-      'upiPayeeName',
-      'bankName',
-      'bankAccNo',
-      'bankIfsc',
-    ];
+    // Save gateway settings in Setting table (ONLY ALLOWED FOR SUPER ADMIN)
+    if (isSuperAdmin) {
+      const gatewayKeys = [
+        'razorpayKeyId',
+        'razorpayKeySecret',
+        'razorpayWebhookSecret',
+        'enableRazorpay',
+        'enableUpi',
+        'upiId',
+        'upiPayeeName',
+        'bankName',
+        'bankAccNo',
+        'bankIfsc',
+      ];
 
-    for (const key of gatewayKeys) {
-      if (body[key] !== undefined) {
-        await prisma.setting.upsert({
-          where: { masjidId_key: { masjidId: masjid.id, key } },
-          update: { value: String(body[key]) },
-          create: { masjidId: masjid.id, key, value: String(body[key]) },
-        });
+      for (const key of gatewayKeys) {
+        if (body[key] !== undefined) {
+          await prisma.setting.upsert({
+            where: { masjidId_key: { masjidId: masjid.id, key } },
+            update: { value: String(body[key]) },
+            create: { masjidId: masjid.id, key, value: String(body[key]) },
+          });
+        }
       }
     }
 
     return NextResponse.json({
       success: true,
       masjid: updatedMasjid,
-      message: 'Masjid settings and Payment Gateway API keys updated successfully',
+      message: isSuperAdmin
+        ? 'Masjid settings and Payment Gateway credentials updated successfully by Super Admin'
+        : 'Masjid general profile updated. (Note: Payment & UPI credentials are verified and managed exclusively by Super Admin)',
     });
   } catch (error: any) {
     console.error('Update settings error:', error);
-    return NextResponse.json({ error: 'Failed to update settings' }, { status: 500 });
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

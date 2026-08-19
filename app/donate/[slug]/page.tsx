@@ -8,16 +8,7 @@ export default function PublicDonationPage() {
   const params = useParams();
   const slug = (params?.slug as string) || 'jama-masjid';
 
-  const [masjid, setMasjid] = useState<any>({
-    name: 'Jama Masjid Vaniyambadi',
-    city: 'Vaniyambadi',
-    state: 'Tamil Nadu',
-    upiId: 'jamamasjid@sbi',
-    bankName: 'State Bank of India',
-    accNo: '30492817405',
-    ifsc: 'SBIN0000921',
-  });
-
+  const [masjid, setMasjid] = useState<any>(null);
   const [categories, setCategories] = useState<any[]>([
     { id: 'gen', name: 'General Donation' },
     { id: 'zak', name: 'Zakat Fund' },
@@ -26,7 +17,8 @@ export default function PublicDonationPage() {
     { id: 'mai', name: 'Masjid Maintenance' },
   ]);
   const [campaigns, setCampaigns] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [unapprovedError, setUnapprovedError] = useState<string | null>(null);
 
   // Donor form
   const [amount, setAmount] = useState('1000');
@@ -43,15 +35,31 @@ export default function PublicDonationPage() {
   const [successData, setSuccessData] = useState<any>(null);
 
   useEffect(() => {
-    // Attempt to load active campaigns for this mosque
-    fetch(`/api/campaigns?masjidId=${slug}&status=ACTIVE`)
-      .then((res) => res.json())
-      .then((cData) => {
-        if (cData.campaigns && cData.campaigns.length > 0) {
-          setCampaigns(cData.campaigns);
+    setLoading(true);
+    setUnapprovedError(null);
+
+    fetch(`/api/masjids/public/${slug}`)
+      .then(async (res) => {
+        const data = await res.json();
+        if (res.ok && data.masjid) {
+          setMasjid(data.masjid);
+          if (data.masjid.categories && data.masjid.categories.length > 0) {
+            setCategories(data.masjid.categories);
+          }
+          if (data.masjid.campaigns) {
+            setCampaigns(data.masjid.campaigns);
+          }
+        } else {
+          setUnapprovedError(
+            data.error || 'This Mosque is currently undergoing verification and is not yet open for public donations.'
+          );
         }
+        setLoading(false);
       })
-      .catch(() => {});
+      .catch(() => {
+        setUnapprovedError('Unable to load mosque details. Please try again later.');
+        setLoading(false);
+      });
   }, [slug]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -173,6 +181,64 @@ export default function PublicDonationPage() {
     );
   }
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#FFF9EC] p-4 font-sans text-slate-800">
+        <div className="text-center space-y-3">
+          <div className="w-14 h-14 rounded-2xl bg-[#064E3B] text-[#F4D06F] flex items-center justify-center text-2xl mx-auto shadow-lg shadow-[#064E3B]/20 animate-pulse">
+            <i className="fas fa-mosque"></i>
+          </div>
+          <p className="text-sm font-black text-[#064E3B]">Verifying Mosque Security Credentials...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (unapprovedError || !masjid) {
+    return (
+      <div className="min-h-screen bg-[#FFF9EC] py-16 px-4 font-sans flex items-center justify-center">
+        <div className="max-w-md w-full text-center space-y-5 p-8 bg-white border border-[#D4AF37]/30 shadow-2xl rounded-3xl">
+          <div className="w-16 h-16 rounded-2xl bg-amber-100 border border-amber-300 text-amber-700 flex items-center justify-center text-3xl mx-auto shadow-md">
+            <i className="fas fa-shield-halved"></i>
+          </div>
+
+          <div className="space-y-2">
+            <span className="px-3 py-1 bg-amber-50 text-amber-800 border border-amber-200 rounded-full text-[10px] font-black uppercase tracking-wider">
+              Verification Required
+            </span>
+            <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+              Mosque Verification in Progress
+            </h2>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              {unapprovedError || 'This mosque is currently undergoing official verification by Super Admin and is not yet authorized to accept public donations.'}
+            </p>
+          </div>
+
+          <div className="p-4 bg-[#FFF9EC] rounded-2xl border border-[#D4AF37]/30 text-left text-xs space-y-1.5 text-slate-700">
+            <div className="font-bold text-[#064E3B] flex items-center gap-1.5">
+              <i className="fas fa-circle-info"></i> Why is this locked?
+            </div>
+            <p className="text-[11px] text-slate-600 leading-normal">
+              MasjidPay enforces 100% Super Admin verification of Waqf, committee documents, and bank credentials before opening public donation channels.
+            </p>
+          </div>
+
+          <Link
+            href="/"
+            className="w-full py-3.5 px-4 bg-[#064E3B] hover:bg-[#102A25] text-[#F4D06F] font-black rounded-2xl text-xs shadow-lg transition block"
+          >
+            ← Return to Homepage
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const activePayeeName = masjid.upiPayeeName || masjid.name || 'Mosque Trust';
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(
+    `upi://pay?pa=${encodeURIComponent(masjid.upiId || '')}&pn=${encodeURIComponent(activePayeeName)}&cu=INR`
+  )}`;
+
   return (
     <div className="min-h-screen bg-[#FFF9EC] py-12 px-4 sm:px-6 lg:px-8 font-sans text-[#1c2e28]">
       <div className="max-w-xl mx-auto space-y-6">
@@ -184,9 +250,12 @@ export default function PublicDonationPage() {
             </div>
             <span>Masjid<span className="text-[#064E3B]">Pay</span></span>
           </Link>
-          <h1 className="text-3xl font-black text-[#102A25] tracking-tight">{masjid?.name}</h1>
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-900 text-[11px] font-black">
+            <i className="fas fa-check-circle text-emerald-600"></i> Super Admin Verified Mosque
+          </div>
+          <h1 className="text-3xl font-black text-[#102A25] tracking-tight">{masjid.name}</h1>
           <p className="text-xs text-slate-600 font-medium">
-            <i className="fas fa-location-dot text-[#D4AF37] mr-1"></i> {masjid?.city}, {masjid?.state} • Public Contribution Portal
+            <i className="fas fa-location-dot text-[#D4AF37] mr-1"></i> {masjid.city}, {masjid.state} • Public Contribution Portal
           </p>
         </div>
 
@@ -282,7 +351,7 @@ export default function PublicDonationPage() {
               <label className="block text-xs font-black text-[#064E3B] uppercase tracking-wider mb-2">
                 Payment Channel
               </label>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-3 gap-2 mb-3">
                 {['UPI', 'NetBanking', 'Card'].map((pm) => (
                   <button
                     key={pm}
@@ -298,6 +367,63 @@ export default function PublicDonationPage() {
                   </button>
                 ))}
               </div>
+
+              {/* DYNAMIC VERIFIED PAYMENT DETAILS BOX */}
+              {paymentMethod === 'UPI' && (
+                <div className="p-4 bg-[#FFF9EC] rounded-2xl border border-[#D4AF37]/40 flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
+                  <div className="w-28 h-28 bg-white p-1.5 rounded-xl border border-[#D4AF37]/50 shadow-sm shrink-0 flex items-center justify-center">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(
+                        `upi://pay?pa=${encodeURIComponent(masjid.upiId || '')}&pn=${encodeURIComponent(activePayeeName)}&am=${amount}&cu=INR`
+                      )}`}
+                      alt="Verified UPI QR"
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <div className="space-y-1 text-xs">
+                    <div className="text-[10px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md inline-block">
+                      <i className="fas fa-check-circle"></i> Verified Mosque UPI
+                    </div>
+                    <div className="font-mono font-black text-slate-900 text-sm">{masjid.upiId || 'Direct UPI Active'}</div>
+                    <div className="text-[11px] text-slate-600 font-bold">{activePayeeName}</div>
+                    <p className="text-[10px] text-slate-500">Scan via Google Pay, PhonePe, Paytm or BHIM to pay instantly.</p>
+                  </div>
+                </div>
+              )}
+
+              {paymentMethod === 'NetBanking' && (
+                <div className="p-4 bg-[#FFF9EC] rounded-2xl border border-[#D4AF37]/40 space-y-2 text-xs">
+                  <div className="text-[10px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md inline-block">
+                    <i className="fas fa-check-circle"></i> Official Mosque Bank Account
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 text-slate-800">
+                    <div>
+                      <span className="text-[10px] text-slate-500 font-bold block uppercase">Bank Name</span>
+                      <span className="font-black text-slate-900">{masjid.bankName || 'State Bank of India'}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-500 font-bold block uppercase">Account No</span>
+                      <span className="font-mono font-black text-slate-900">{masjid.bankAccNo || 'Verified Account'}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-500 font-bold block uppercase">IFSC Code</span>
+                      <span className="font-mono font-black text-slate-900">{masjid.bankIfsc || 'SBIN0000921'}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {paymentMethod === 'Card' && (
+                <div className="p-4 bg-[#FFF9EC] rounded-2xl border border-[#D4AF37]/40 space-y-1 text-xs text-slate-700">
+                  <div className="text-[10px] font-black uppercase tracking-wider text-sky-800 bg-sky-100 px-2 py-0.5 rounded-md inline-block">
+                    <i className="fas fa-shield-halved"></i> 256-Bit Encrypted Razorpay Checkout
+                  </div>
+                  <p className="text-[11px] text-slate-600">
+                    Secure credit & debit cards processing powered by official 128/256-bit encrypted gateway.
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* SUBMIT BUTTON */}

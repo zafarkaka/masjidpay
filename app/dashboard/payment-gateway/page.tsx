@@ -23,7 +23,18 @@ export default function PaymentGatewaySettingsPage() {
   const [bankAccNo, setBankAccNo] = useState('38920194821');
   const [bankIfsc, setBankIfsc] = useState('SBIN0001234');
 
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+
   useEffect(() => {
+    fetch('/api/auth/me')
+      .then((res) => res.json())
+      .then((uData) => {
+        if (uData.user?.role === 'SUPER_ADMIN') {
+          setIsSuperAdmin(true);
+        }
+      })
+      .catch(() => {});
+
     fetch('/api/masjid/settings')
       .then((res) => res.json())
       .then((data) => {
@@ -129,6 +140,36 @@ export default function PaymentGatewaySettingsPage() {
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* SUPER ADMIN LOCK NOTIFICATION FOR MASJID ADMINS */}
+          {!isSuperAdmin && (
+            <div className="p-4 bg-emerald-950 text-white rounded-3xl border border-emerald-800 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-900 text-emerald-300 flex items-center justify-center text-lg font-black shrink-0 border border-emerald-700">
+                  <i className="fas fa-shield-halved"></i>
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-xs font-extrabold uppercase tracking-wider text-emerald-400">
+                      Super Admin Verified & Protected
+                    </h4>
+                    <span className="px-2 py-0.5 rounded-md bg-emerald-900/80 text-[10px] font-bold text-emerald-300 border border-emerald-700">
+                      READ ONLY
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-300 mt-0.5 leading-relaxed">
+                    Direct UPI and Razorpay payment details are strictly verified and locked by Super Admin to ensure 100% security against tampering and maintain verified donor trust.
+                  </p>
+                </div>
+              </div>
+
+              <a
+                href="mailto:masjidpay3@gmail.com?subject=Request%20Payment%20Gateway%20Update"
+                className="px-4 py-2 bg-emerald-800 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition shrink-0 inline-flex items-center gap-1.5 border border-emerald-600 shadow-xs"
+              >
+                <i className="fas fa-envelope"></i> Request Update
+              </a>
+            </div>
+          )}
           {/* RAZORPAY CONFIGURATION CARD */}
           <div className="masjid-card p-6 sm:p-8 bg-white border border-slate-200 shadow-sm rounded-3xl space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4">
@@ -145,9 +186,10 @@ export default function PaymentGatewaySettingsPage() {
               <label className="inline-flex items-center gap-3 cursor-pointer p-2 rounded-2xl bg-slate-50 border border-slate-200">
                 <input
                   type="checkbox"
+                  disabled={!isSuperAdmin}
                   checked={enableRazorpay}
                   onChange={(e) => setEnableRazorpay(e.target.checked)}
-                  className="w-4 h-4 rounded text-emerald-700 accent-[#0F3D26] cursor-pointer"
+                  className="w-4 h-4 rounded text-emerald-700 accent-[#0F3D26] cursor-pointer disabled:cursor-not-allowed"
                 />
                 <span className={`text-xs font-bold ${enableRazorpay ? 'text-emerald-800' : 'text-slate-400'}`}>
                   {enableRazorpay ? '☑ Enabled' : '☐ Disabled'}
@@ -159,41 +201,44 @@ export default function PaymentGatewaySettingsPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
                   <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
-                    RAZORPAY KEY ID <span className="text-rose-500">*</span>
+                    RAZORPAY KEY ID {!isSuperAdmin && <span className="text-emerald-700 font-bold">(VERIFIED)</span>}
                   </label>
                   <input
                     type="text"
+                    disabled={!isSuperAdmin}
                     value={razorpayKeyId}
                     onChange={(e) => setRazorpayKeyId(e.target.value)}
-                    placeholder="rzp_live_..."
-                    className="w-full px-4 py-3 bg-slate-50/70 border border-slate-200 rounded-2xl text-xs font-mono font-semibold text-slate-900 outline-none focus:border-emerald-700 focus:bg-white transition"
+                    placeholder={isSuperAdmin ? "rzp_live_..." : "Razorpay Key ID not configured by Super Admin"}
+                    className="w-full px-4 py-3 bg-slate-50/70 border border-slate-200 rounded-2xl text-xs font-mono font-semibold text-slate-900 outline-none focus:border-emerald-700 focus:bg-white transition disabled:bg-slate-100 disabled:text-slate-600 disabled:cursor-not-allowed"
                   />
                 </div>
 
                 <div>
                   <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
-                    RAZORPAY KEY SECRET <span className="text-rose-500">*</span>
+                    RAZORPAY KEY SECRET {!isSuperAdmin && <span className="text-emerald-700 font-bold">(ENCRYPTED)</span>}
                   </label>
                   <input
                     type="password"
-                    value={razorpayKeySecret}
+                    disabled={!isSuperAdmin}
+                    value={razorpayKeySecret ? '••••••••••••••••' : ''}
                     onChange={(e) => setRazorpayKeySecret(e.target.value)}
                     placeholder="••••••••••••••••"
-                    className="w-full px-4 py-3 bg-slate-50/70 border border-slate-200 rounded-2xl text-xs font-mono font-semibold text-slate-900 outline-none focus:border-emerald-700 focus:bg-white transition"
+                    className="w-full px-4 py-3 bg-slate-50/70 border border-slate-200 rounded-2xl text-xs font-mono font-semibold text-slate-900 outline-none focus:border-emerald-700 focus:bg-white transition disabled:bg-slate-100 disabled:text-slate-600 disabled:cursor-not-allowed"
                   />
                 </div>
               </div>
 
               <div>
                 <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
-                  WEBHOOK SECRET <span className="text-slate-400 font-normal">(OPTIONAL FOR INSTANT WEBHOOK SYNC)</span>
+                  WEBHOOK SECRET
                 </label>
                 <input
                   type="text"
-                  value={razorpayWebhookSecret}
+                  disabled={!isSuperAdmin}
+                  value={razorpayWebhookSecret ? '••••••••••••••••' : ''}
                   onChange={(e) => setRazorpayWebhookSecret(e.target.value)}
                   placeholder="whsec_..."
-                  className="w-full px-4 py-3 bg-slate-50/70 border border-slate-200 rounded-2xl text-xs font-mono font-semibold text-slate-900 outline-none focus:border-emerald-700 focus:bg-white transition"
+                  className="w-full px-4 py-3 bg-slate-50/70 border border-slate-200 rounded-2xl text-xs font-mono font-semibold text-slate-900 outline-none focus:border-emerald-700 focus:bg-white transition disabled:bg-slate-100 disabled:text-slate-600 disabled:cursor-not-allowed"
                 />
               </div>
             </div>
@@ -215,9 +260,10 @@ export default function PaymentGatewaySettingsPage() {
               <label className="inline-flex items-center gap-3 cursor-pointer p-2 rounded-2xl bg-slate-50 border border-slate-200">
                 <input
                   type="checkbox"
+                  disabled={!isSuperAdmin}
                   checked={enableUpi}
                   onChange={(e) => setEnableUpi(e.target.checked)}
-                  className="w-4 h-4 rounded text-emerald-700 accent-[#0F3D26] cursor-pointer"
+                  className="w-4 h-4 rounded text-emerald-700 accent-[#0F3D26] cursor-pointer disabled:cursor-not-allowed"
                 />
                 <span className={`text-xs font-bold ${enableUpi ? 'text-emerald-800' : 'text-slate-400'}`}>
                   {enableUpi ? '☑ Enabled' : '☐ Disabled'}
@@ -230,28 +276,29 @@ export default function PaymentGatewaySettingsPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
-                      MOSQUE UPI VPA ID <span className="text-rose-500">*</span>
+                      MOSQUE UPI VPA ID <span className="text-emerald-700 font-bold">(VERIFIED)</span>
                     </label>
                     <input
                       type="text"
-                      required
+                      disabled={!isSuperAdmin}
                       value={upiId}
                       onChange={(e) => setUpiId(e.target.value)}
-                      placeholder="e.g. yourname@upi or 9894977003@okaxis"
-                      className="w-full px-4 py-3 bg-slate-50/70 border border-slate-200 rounded-2xl text-xs font-mono font-bold text-slate-900 outline-none focus:border-emerald-700 focus:bg-white transition"
+                      placeholder="e.g. yourname@upi"
+                      className="w-full px-4 py-3 bg-slate-50/70 border border-slate-200 rounded-2xl text-xs font-mono font-bold text-slate-900 outline-none focus:border-emerald-700 focus:bg-white transition disabled:bg-slate-100 disabled:cursor-not-allowed"
                     />
                   </div>
 
                   <div>
                     <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
-                      UPI PAYEE / DISPLAY NAME <span className="text-slate-400 font-normal">(AS IN BANK / UPI APP)</span>
+                      UPI PAYEE / DISPLAY NAME <span className="text-emerald-700 font-bold">(VERIFIED)</span>
                     </label>
                     <input
                       type="text"
+                      disabled={!isSuperAdmin}
                       value={upiPayeeName}
                       onChange={(e) => setUpiPayeeName(e.target.value)}
                       placeholder={masjidName || 'e.g. Your Registered Mosque / Trust Name'}
-                      className="w-full px-4 py-3 bg-slate-50/70 border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 outline-none focus:border-emerald-700 focus:bg-white transition"
+                      className="w-full px-4 py-3 bg-slate-50/70 border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 outline-none focus:border-emerald-700 focus:bg-white transition disabled:bg-slate-100 disabled:cursor-not-allowed"
                     />
                   </div>
                 </div>
@@ -263,10 +310,11 @@ export default function PaymentGatewaySettingsPage() {
                     </label>
                     <input
                       type="text"
+                      disabled={!isSuperAdmin}
                       value={bankName}
                       onChange={(e) => setBankName(e.target.value)}
                       placeholder="e.g. State Bank of India"
-                      className="w-full px-4 py-3 bg-slate-50/70 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-900 outline-none focus:border-emerald-700 focus:bg-white transition"
+                      className="w-full px-4 py-3 bg-slate-50/70 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-900 outline-none focus:border-emerald-700 focus:bg-white transition disabled:bg-slate-100 disabled:cursor-not-allowed"
                     />
                   </div>
 
@@ -276,10 +324,11 @@ export default function PaymentGatewaySettingsPage() {
                     </label>
                     <input
                       type="text"
+                      disabled={!isSuperAdmin}
                       value={bankIfsc}
                       onChange={(e) => setBankIfsc(e.target.value)}
                       placeholder="e.g. SBIN0001234"
-                      className="w-full px-4 py-3 bg-slate-50/70 border border-slate-200 rounded-2xl text-xs font-mono font-semibold text-slate-900 outline-none focus:border-emerald-700 focus:bg-white transition"
+                      className="w-full px-4 py-3 bg-slate-50/70 border border-slate-200 rounded-2xl text-xs font-mono font-semibold text-slate-900 outline-none focus:border-emerald-700 focus:bg-white transition disabled:bg-slate-100 disabled:cursor-not-allowed"
                     />
                   </div>
                 </div>
@@ -290,17 +339,20 @@ export default function PaymentGatewaySettingsPage() {
                   </label>
                   <input
                     type="text"
+                    disabled={!isSuperAdmin}
                     value={bankAccNo}
                     onChange={(e) => setBankAccNo(e.target.value)}
                     placeholder="e.g. 38920194821"
-                    className="w-full px-4 py-3 bg-slate-50/70 border border-slate-200 rounded-2xl text-xs font-mono font-semibold text-slate-900 outline-none focus:border-emerald-700 focus:bg-white transition"
+                    className="w-full px-4 py-3 bg-slate-50/70 border border-slate-200 rounded-2xl text-xs font-mono font-semibold text-slate-900 outline-none focus:border-emerald-700 focus:bg-white transition disabled:bg-slate-100 disabled:cursor-not-allowed"
                   />
                 </div>
               </div>
 
               {/* LIVE GENERATED UPI QR CODE PREVIEW */}
               <div className="flex flex-col items-center justify-center p-6 bg-slate-50 border border-slate-200 rounded-3xl text-center space-y-3">
-                <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">LIVE DYNAMIC QR CODE</span>
+                <div className="flex items-center gap-1 text-[10px] font-extrabold uppercase tracking-widest text-emerald-800 bg-emerald-100 px-2.5 py-1 rounded-full border border-emerald-300">
+                  <i className="fas fa-check-circle"></i> VERIFIED UPI QR
+                </div>
                 <div className="w-36 h-36 bg-white p-2 border rounded-2xl shadow-sm flex items-center justify-center">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={qrCodeUrl} alt="UPI QR Code" className="w-full h-full object-contain" />
@@ -316,15 +368,30 @@ export default function PaymentGatewaySettingsPage() {
           </div>
 
           {/* ACTION BUTTON */}
-          <div className="flex justify-end pt-2">
-            <button
-              type="submit"
-              disabled={submitting}
-              className="px-8 py-3.5 bg-[#0F3D26] hover:bg-emerald-950 text-white font-extrabold text-xs rounded-2xl shadow-lg shadow-emerald-950/20 transition flex items-center gap-2 disabled:opacity-50"
-            >
-              <i className="fas fa-save"></i>
-              {submitting ? 'Saving Gateway Settings...' : 'Save Payment Gateway & UPI Settings'}
-            </button>
+          <div className="flex justify-between items-center pt-2">
+            {!isSuperAdmin ? (
+              <div className="text-xs text-slate-500 flex items-center gap-1.5">
+                <i className="fas fa-lock text-emerald-700"></i> Locked by Super Admin Security Protocol
+              </div>
+            ) : <div></div>}
+
+            {isSuperAdmin ? (
+              <button
+                type="submit"
+                disabled={submitting}
+                className="px-8 py-3.5 bg-[#0F3D26] hover:bg-emerald-950 text-white font-extrabold text-xs rounded-2xl shadow-lg shadow-emerald-950/20 transition flex items-center gap-2 disabled:opacity-50"
+              >
+                <i className="fas fa-save"></i>
+                {submitting ? 'Saving Gateway Settings...' : 'Save Payment Gateway & UPI Settings'}
+              </button>
+            ) : (
+              <a
+                href="mailto:masjidpay3@gmail.com?subject=Payment%20Gateway%20Change%20Request"
+                className="px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-2xl transition flex items-center gap-2"
+              >
+                <i className="fas fa-headset"></i> Contact Super Admin for Changes
+              </a>
+            )}
           </div>
         </form>
       )}
