@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 
 export default function SuperAdminMasjidsPage() {
   const [masjids, setMasjids] = useState<any[]>([]);
@@ -286,6 +287,14 @@ export default function SuperAdminMasjidsPage() {
           <h1 className="text-2xl font-black text-white tracking-tight">Masjid Approvals & Management</h1>
           <p className="text-slate-400 text-xs mt-1">Review onboarding applications, activate accounts, and manage mosque settings</p>
         </div>
+
+        <Link
+          href="/super-admin/payment-requests"
+          className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold rounded-xl text-xs transition flex items-center gap-2 shadow-lg shadow-emerald-600/20 shrink-0 self-start sm:self-auto"
+        >
+          <i className="fas fa-file-invoice-dollar text-[#F4D06F]"></i>
+          <span>Payment Onboarding Requests →</span>
+        </Link>
       </div>
 
       {/* FILTER TABS & SEARCH */}

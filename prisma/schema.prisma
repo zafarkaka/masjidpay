@@ -96,6 +96,7 @@ model Masjid {
   bankAccounts        BankAccount[]
   bankTransactions    BankTransaction[]
   financialYears      MasjidFinancialYear[]
+  paymentRequests     PaymentOnboardingRequest[]
 }
 
 model MasjidUser {
@@ -655,6 +656,32 @@ model BankAccountYearlyOpening {
   bankAccount    BankAccount @relation(fields: [bankAccountId], references: [id], onDelete: Cascade)
 
   @@unique([bankAccountId, financialYear])
+}
+
+model PaymentOnboardingRequest {
+  id                    String    @id @default(uuid())
+  masjidId              String
+  requestType           String    @default("BOTH") // "UPI", "RAZORPAY", "BOTH"
+  upiId                 String?
+  upiPayeeName          String?
+  bankName              String?
+  bankAccNo             String?
+  bankIfsc              String?
+  razorpayKeyId         String?
+  razorpayKeySecret     String?
+  razorpayWebhookSecret String?
+  chequeDocUrl          String?
+  registrationDocUrl    String?
+  idProofDocUrl         String?
+  notes                 String?
+  status                String    @default("PENDING") // PENDING, UNDER_REVIEW, APPROVED, REJECTED, RESUBMIT_REQUIRED
+  rejectionReason       String?
+  reviewedBy            String?
+  reviewedAt            DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  masjid                Masjid    @relation(fields: [masjidId], references: [id], onDelete: Cascade)
 }
 
 
