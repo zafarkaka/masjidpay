@@ -11,13 +11,16 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
   const [loading, setLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [pendingPaymentsCount, setPendingPaymentsCount] = useState(0);
 
   const isLoginPage = !pathname || pathname.startsWith('/super-admin/login');
 
+  // Close mobile drawer on route change
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [pathname]);
 
+  // Auth verification effect
   useEffect(() => {
     setMounted(true);
     if (isLoginPage) {
@@ -46,6 +49,24 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
     };
   }, [router, isLoginPage, pathname]);
 
+  // Fetch pending payment requests count for sidebar badge
+  useEffect(() => {
+    if (isLoginPage) return;
+    fetch('/api/payment-requests?status=PENDING')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.requests) {
+          setPendingPaymentsCount(data.requests.length);
+        }
+      })
+      .catch(() => {});
+  }, [pathname, isLoginPage]);
+
+  const handleLogout = async () => {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    router.push('/super-admin/login');
+  };
+
   if (!mounted) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-950 text-white">
@@ -71,24 +92,6 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
       </div>
     );
   }
-
-  const handleLogout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST' });
-    router.push('/super-admin/login');
-  };
-
-  const [pendingPaymentsCount, setPendingPaymentsCount] = useState(0);
-
-  useEffect(() => {
-    fetch('/api/payment-requests?status=PENDING')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.requests) {
-          setPendingPaymentsCount(data.requests.length);
-        }
-      })
-      .catch(() => {});
-  }, [pathname]);
 
   const navItems = [
     { label: 'Platform Overview', href: '/super-admin', icon: 'fa-chart-line' },
@@ -242,7 +245,10 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
           <div className="w-8"></div>
         </header>
 
-        <main className="flex-1 p-4 sm:p-6 md:p-8 overflow-y-auto">{children}</main>
+        {/* PAGE CONTENT */}
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto overflow-y-auto">
+          {children}
+        </main>
       </div>
     </div>
   );
