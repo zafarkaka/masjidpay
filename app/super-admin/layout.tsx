@@ -77,10 +77,28 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
     router.push('/super-admin/login');
   };
 
+  const [pendingPaymentsCount, setPendingPaymentsCount] = useState(0);
+
+  useEffect(() => {
+    fetch('/api/payment-requests?status=PENDING')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.requests) {
+          setPendingPaymentsCount(data.requests.length);
+        }
+      })
+      .catch(() => {});
+  }, [pathname]);
+
   const navItems = [
     { label: 'Platform Overview', href: '/super-admin', icon: 'fa-chart-line' },
     { label: 'Masjids Approval & Queue', href: '/super-admin/masjids', icon: 'fa-mosque' },
-    { label: 'Payment Setup Requests', href: '/super-admin/payment-requests', icon: 'fa-file-invoice-dollar' },
+    {
+      label: 'UPI & Razorpay Approvals',
+      href: '/super-admin/payment-requests',
+      icon: 'fa-qrcode',
+      badge: pendingPaymentsCount > 0 ? pendingPaymentsCount : null,
+    },
     { label: 'System Audit Logs', href: '/super-admin/audit', icon: 'fa-history' },
   ];
 
@@ -99,21 +117,28 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
             </div>
           </div>
 
-          <nav className="p-4 space-y-1">
+          <nav className="p-4 space-y-1.5">
             {navItems.map((item) => {
-              const active = pathname === item.href;
+              const active = pathname === item.href || (item.href !== '/super-admin' && pathname.startsWith(item.href));
               return (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold transition ${
+                  className={`flex items-center justify-between px-4 py-3 rounded-xl text-xs font-bold transition ${
                     active
                       ? 'bg-emerald-700 text-white shadow-md shadow-emerald-700/20'
                       : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
                   }`}
                 >
-                  <i className={`fas ${item.icon} text-sm`}></i>
-                  <span>{item.label}</span>
+                  <div className="flex items-center gap-3">
+                    <i className={`fas ${item.icon} text-sm ${active ? 'text-white' : 'text-emerald-400'}`}></i>
+                    <span>{item.label}</span>
+                  </div>
+                  {item.badge && (
+                    <span className="px-2 py-0.5 rounded-full bg-amber-500 text-slate-950 text-[10px] font-black animate-pulse">
+                      {item.badge}
+                    </span>
+                  )}
                 </Link>
               );
             })}
@@ -164,20 +189,27 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
                 </button>
               </div>
 
-              <nav className="space-y-1">
+              <nav className="space-y-1.5">
                 {navItems.map((item) => {
-                  const active = pathname === item.href;
+                  const active = pathname === item.href || (item.href !== '/super-admin' && pathname.startsWith(item.href));
                   return (
                     <Link
                       key={item.href}
                       href={item.href}
                       onClick={() => setMobileMenuOpen(false)}
-                      className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition ${
+                      className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition ${
                         active ? 'bg-emerald-700 text-white' : 'text-slate-400 hover:text-white'
                       }`}
                     >
-                      <i className={`fas ${item.icon} text-sm`}></i>
-                      <span>{item.label}</span>
+                      <div className="flex items-center gap-3">
+                        <i className={`fas ${item.icon} text-sm ${active ? 'text-white' : 'text-emerald-400'}`}></i>
+                        <span>{item.label}</span>
+                      </div>
+                      {item.badge && (
+                        <span className="px-2 py-0.5 rounded-full bg-amber-500 text-slate-950 text-[10px] font-black">
+                          {item.badge}
+                        </span>
+                      )}
                     </Link>
                   );
                 })}
