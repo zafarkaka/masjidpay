@@ -5,8 +5,43 @@ import { recordAuditLog } from '@/lib/audit';
 
 export const dynamic = 'force-dynamic';
 
+async function ensurePaymentRequestsTable() {
+  try {
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "PaymentOnboardingRequest" (
+        "id" TEXT NOT NULL PRIMARY KEY,
+        "masjidId" TEXT NOT NULL,
+        "requestType" TEXT NOT NULL DEFAULT 'BOTH',
+        "upiId" TEXT,
+        "upiPayeeName" TEXT,
+        "bankName" TEXT,
+        "bankAccNo" TEXT,
+        "bankIfsc" TEXT,
+        "razorpayKeyId" TEXT,
+        "razorpayKeySecret" TEXT,
+        "razorpayWebhookSecret" TEXT,
+        "chequeDocUrl" TEXT,
+        "registrationDocUrl" TEXT,
+        "idProofDocUrl" TEXT,
+        "notes" TEXT,
+        "status" TEXT NOT NULL DEFAULT 'PENDING',
+        "rejectionReason" TEXT,
+        "reviewedBy" TEXT,
+        "reviewedAt" TIMESTAMP(3),
+        "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT "PaymentOnboardingRequest_masjidId_fkey" FOREIGN KEY ("masjidId") REFERENCES "Masjid"("id") ON DELETE CASCADE ON UPDATE CASCADE
+      );
+    `);
+  } catch (e) {
+    // ignore if table exists or permission restriction
+  }
+}
+
 export async function GET(req: NextRequest) {
   try {
+    await ensurePaymentRequestsTable();
+
     const session = requireTenantAccess();
     const isSuperAdmin = session.role === 'SUPER_ADMIN';
     const { searchParams } = new URL(req.url);
@@ -18,24 +53,29 @@ export async function GET(req: NextRequest) {
         where.status = statusFilter;
       }
 
-      const requests = await prisma.paymentOnboardingRequest.findMany({
-        where,
-        include: {
-          masjid: {
-            select: {
-              id: true,
-              name: true,
-              slug: true,
-              city: true,
-              state: true,
-              waqfId: true,
-              regNumber: true,
-              status: true,
+      let requests: any[] = [];
+      try {
+        requests = await prisma.paymentOnboardingRequest.findMany({
+          where,
+          include: {
+            masjid: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+                city: true,
+                state: true,
+                waqfId: true,
+                regNumber: true,
+                status: true,
+              },
             },
           },
-        },
-        orderBy: { createdAt: 'desc' },
-      });
+          orderBy: { createdAt: 'desc' },
+        });
+      } catch (dbErr) {
+        console.warn('paymentOnboardingRequest table not found on GET, returning empty array');
+      }
 
       return NextResponse.json({ success: true, requests });
     }
@@ -54,10 +94,15 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Mosque not found' }, { status: 404 });
     }
 
-    const requests = await prisma.paymentOnboardingRequest.findMany({
-      where: { masjidId: masjid.id },
-      orderBy: { createdAt: 'desc' },
-    });
+    let requests: any[] = [];
+    try {
+      requests = await prisma.paymentOnboardingRequest.findMany({
+        where: { masjidId: masjid.id },
+        orderBy: { createdAt: 'desc' },
+      });
+    } catch (dbErr) {
+      console.warn('paymentOnboardingRequest table not found on Mosque GET');
+    }
 
     return NextResponse.json({
       success: true,
@@ -73,6 +118,8 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    await ensurePaymentRequestsTable();
+
     const session = requireTenantWriteAccess();
     const body = await req.json();
 
@@ -162,6 +209,8 @@ export async function POST(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   try {
+    await ensurePaymentRequestsTable();
+
     const session = requireTenantWriteAccess();
     if (session.role !== 'SUPER_ADMIN') {
       return NextResponse.json({ error: 'Only Super Admin can review payment onboarding requests' }, { status: 403 });
