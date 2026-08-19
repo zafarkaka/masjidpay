@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { generateMemberStatusWhatsAppUrl } from '@/lib/whatsapp';
 
 export default function MonthlyMembersPage() {
   const searchParams = useSearchParams();
@@ -11,7 +12,11 @@ export default function MonthlyMembersPage() {
   const [activeTab, setActiveTab] = useState<'add' | 'directory' | 'import'>(initialTab);
   const [members, setMembers] = useState<any[]>([]);
   const [masjidSlug, setMasjidSlug] = useState('jama-masjid');
+  const [masjidName, setMasjidName] = useState('Newtown Masjid');
   const [loading, setLoading] = useState(false);
+
+  // Expanded Member State (For Details / Hide)
+  const [expandedMemberId, setExpandedMemberId] = useState<string | null>(null);
 
   // Add Member Form State
   const [name, setName] = useState('');
@@ -52,6 +57,7 @@ export default function MonthlyMembersPage() {
       .then((data) => {
         setMembers(data.members || []);
         if (data.masjidSlug) setMasjidSlug(data.masjidSlug);
+        if (data.masjidName) setMasjidName(data.masjidName);
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -176,6 +182,7 @@ export default function MonthlyMembersPage() {
       });
       if (res.ok) {
         setDeletingMember(null);
+        if (expandedMemberId === deletingMember.id) setExpandedMemberId(null);
         loadMembers();
       }
     } catch (err) {
@@ -185,17 +192,17 @@ export default function MonthlyMembersPage() {
     }
   };
 
-  // DOWNLOAD CSV TEMPLATE
-  const handleDownloadTemplate = () => {
-    const csvContent = `Name,Phone,MonthlyAmount,Address,Email\nMohammed Irfan,9840123456,500,Fort Street Vaniyambadi,irfan@example.com\nHaji Farooq Ahmed,9840234567,1000,Main Bazaar Road Vaniyambadi,farooq@example.com\nSyed Bilal,9876500001,250,Khadir Nagar Vaniyambadi,bilal@example.com`;
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', 'MasjidPay-Members-Template.csv');
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  // DELETE SINGLE COLLECTION PAYOUT RECORD
+  const handleDeleteCollection = async (collectionId: string) => {
+    if (!confirm('Are you sure you want to remove this collection payout record?')) return;
+    try {
+      const res = await fetch(`/api/member-collections?id=${collectionId}`, { method: 'DELETE' });
+      if (res.ok) {
+        loadMembers();
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   // PARSE CSV / EXCEL FILE
@@ -266,7 +273,7 @@ export default function MonthlyMembersPage() {
     } catch (err) {
       setErrorMsg('Failed to process bulk member import.');
     } finally {
-      setImporting(false);
+      setSubmitting(false);
     }
   };
 
@@ -296,306 +303,311 @@ export default function MonthlyMembersPage() {
     );
   });
 
+  // COMPUTE LIVE MONTHLY STATS, ADVANCE, PENDING & WHATSAPP URL FOR A MEMBER
+  const getMemberMetrics = (mbr: any) => {
+    const monthlyRate = Number(mbr.monthlyAmount || 100);
+    const collections: any[] = mbr.memberCollections || [];
+
+    const totalPaid = collections.reduce((acc, c) => acc + Number(c.amount || 0), 0);
+
+    // List of months paid
+    const paidMonths: string[] = [];
+    collections.forEach((c) => {
+      if (c.forMonths) {
+        const parts = c.forMonths.split(',').map((p: string) => p.trim()).filter(Boolean);
+        paidMonths.push(...parts);
+      }
+    });
+
+    const now = new Date();
+    const currentMonthIdx = now.getMonth(); // 0-11
+    const currentYear = now.getFullYear();
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+
+    // Expected months up to current month (e.g. Jan 2026 to Aug 2026)
+    const expectedMonths: string[] = [];
+    for (let i = 0; i <= currentMonthIdx; i++) {
+      expectedMonths.push(`${monthNames[i]} ${currentYear}`);
+    }
+
+    const expectedMonthsCount = Math.max(1, expectedMonths.length);
+    const requiredAmountUpToNow = expectedMonthsCount * monthlyRate;
+
+    // Detect unpaid months in current year
+    const pendingMonthsList = expectedMonths.filter(
+      (em) => !paidMonths.some((pm) => pm.toLowerCase().includes(em.toLowerCase()))
+    );
+
+    let statusType: 'ADVANCE' | 'FULLY_PAID' | 'PENDING' = 'FULLY_PAID';
+    let statusText = 'Fully Paid (Up to date)';
+    let advanceAmount = 0;
+    let pendingAmount = 0;
+
+    if (totalPaid > requiredAmountUpToNow) {
+      statusType = 'ADVANCE';
+      advanceAmount = totalPaid - requiredAmountUpToNow;
+      statusText = `Fully Paid (+IN ₹${advanceAmount.toLocaleString('en-IN')} adv)`;
+    } else if (totalPaid === requiredAmountUpToNow && pendingMonthsList.length === 0) {
+      statusType = 'FULLY_PAID';
+      statusText = 'Fully Paid (Up to date)';
+    } else {
+      statusType = 'PENDING';
+      pendingAmount = Math.max(0, requiredAmountUpToNow - totalPaid);
+      const monthsPendingCount = pendingMonthsList.length || Math.max(1, Math.ceil(pendingAmount / (monthlyRate || 1)));
+      statusText = monthsPendingCount === 1 ? `1 Month Pending (Due: IN ₹${pendingAmount})` : `${monthsPendingCount} Months Pending (Due: IN ₹${pendingAmount})`;
+    }
+
+    const latestPaidMonth = paidMonths[0] || `${monthNames[currentMonthIdx]} ${currentYear}`;
+    const totalMonthsPaidCount = Math.max(paidMonths.length, Math.floor(totalPaid / (monthlyRate || 1)));
+    const progressPercent = Math.min(100, Math.round((totalMonthsPaidCount / expectedMonthsCount) * 100));
+
+    const whatsappUrl = generateMemberStatusWhatsAppUrl({
+      phone: mbr.phone,
+      memberName: mbr.name,
+      memberNo: mbr.memberNo || 'MBR',
+      monthlyRate,
+      totalPaid,
+      pendingAmount,
+      statusText,
+      statusType,
+      advanceAmount,
+      paidTillMonth: latestPaidMonth,
+      pendingMonthsList,
+      masjidName,
+    });
+
+    return {
+      monthlyRate,
+      totalPaid,
+      pendingAmount,
+      advanceAmount,
+      statusType,
+      statusText,
+      paidMonths,
+      pendingMonthsList,
+      expectedMonthsCount,
+      totalMonthsPaidCount,
+      progressPercent,
+      latestPaidMonth,
+      collections,
+      whatsappUrl,
+    };
+  };
+
   return (
     <div className="space-y-5 max-w-6xl mx-auto text-slate-800 font-sans pb-10">
-      {/* NAVIGATION HEADER & TAB TOGGLE */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      {/* 1. HEADER WITH TABS */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">
-              Community Directory
-            </span>
-            <span className="bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-semibold px-2 py-0.5 rounded-md">
-              {members.length} Registered Members
-            </span>
-          </div>
-          <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight mt-0.5">
-            Monthly Members
+          <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 block">
+            MEMBERS MANAGEMENT
+          </span>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+            Monthly Members & Fee Ledger
           </h1>
+          <p className="text-slate-500 text-xs sm:text-sm mt-0.5">
+            Track monthly member registrations, payment status, advance contributions, and WhatsApp statements
+          </p>
         </div>
 
-        {/* TAB SWITCHER */}
-        <div className="flex items-center p-1 bg-slate-100 border border-slate-200/80 rounded-xl gap-1 shrink-0">
+        {/* TABS BUTTONS */}
+        <div className="flex items-center gap-1.5 bg-white p-1 rounded-2xl border border-slate-200 shadow-xs self-start sm:self-auto">
           {!isViewer && (
-            <>
-              <button
-                onClick={() => setActiveTab('add')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 ${
-                  activeTab === 'add'
-                    ? 'bg-white text-slate-900 shadow-sm border border-slate-200/50'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                <i className="fas fa-user-plus text-emerald-700 text-[11px]"></i> Add Member
-              </button>
-              <button
-                onClick={() => setActiveTab('import')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 ${
-                  activeTab === 'import'
-                    ? 'bg-white text-slate-900 shadow-sm border border-slate-200/50'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                <i className="fas fa-file-excel text-emerald-600 text-[11px]"></i> Import Excel / CSV
-              </button>
-            </>
+            <button
+              onClick={() => setActiveTab('add')}
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+                activeTab === 'add'
+                  ? 'bg-[#0F3D26] text-white shadow-xs'
+                  : 'text-slate-600 hover:bg-slate-100'
+              }`}
+            >
+              <i className="fas fa-user-plus text-[11px]"></i> Add Member
+            </button>
           )}
+
           <button
             onClick={() => setActiveTab('directory')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 ${
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
               activeTab === 'directory'
-                ? 'bg-[#0F3D26] text-white shadow-sm'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'bg-[#0F3D26] text-white shadow-xs'
+                : 'text-slate-600 hover:bg-slate-100'
             }`}
           >
-            <i className="fas fa-address-book text-[11px]"></i> Directory ({members.length})
+            <i className="fas fa-address-book text-[11px]"></i> Member Directory ({members.length})
           </button>
+
+          {!isViewer && (
+            <button
+              onClick={() => setActiveTab('import')}
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+                activeTab === 'import'
+                  ? 'bg-[#0F3D26] text-white shadow-xs'
+                  : 'text-slate-600 hover:bg-slate-100'
+              }`}
+            >
+              <i className="fas fa-file-excel text-[11px]"></i> Import CSV
+            </button>
+          )}
         </div>
       </div>
 
-      {/* 1. ADD MEMBER TAB */}
-      {activeTab === 'add' && (
-        <div className="space-y-4">
-          <div className="p-3.5 bg-emerald-50/70 border border-emerald-200/80 rounded-xl flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center text-sm shrink-0">
-              <i className="fas fa-user-plus"></i>
-            </div>
-            <p className="text-xs text-slate-700 font-medium">
-              Register monthly members to track their contributions and share financial transparency links.
+      {/* 2. ADD MEMBER TAB VIEW */}
+      {activeTab === 'add' && !isViewer && (
+        <div className="bg-white border border-slate-200 shadow-sm rounded-3xl p-6 sm:p-8 space-y-6">
+          <div className="border-b border-slate-100 pb-4">
+            <h3 className="text-base font-extrabold text-slate-900">Register New Monthly Member</h3>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Add a new family head or monthly contributor with assigned monthly fee rate
             </p>
           </div>
 
           {successMsg && (
-            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs font-semibold text-emerald-800 flex items-center gap-2">
-              <i className="fas fa-check-circle text-emerald-600"></i> {successMsg}
+            <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-xs font-bold text-emerald-900 flex items-center gap-2">
+              <i className="fas fa-circle-check text-emerald-600 text-sm"></i> {successMsg}
             </div>
           )}
 
           {errorMsg && (
-            <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs font-semibold text-rose-800 flex items-center gap-2">
-              <i className="fas fa-circle-exclamation text-rose-600"></i> {errorMsg}
+            <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl text-xs font-bold text-rose-900 flex items-center gap-2">
+              <i className="fas fa-circle-exclamation text-rose-600 text-sm"></i> {errorMsg}
             </div>
           )}
 
-          <div className="bg-white border border-slate-200 shadow-sm rounded-2xl p-6 space-y-4">
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                    Full Name <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g. Yusuf Ali"
-                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 outline-none focus:border-emerald-700 focus:bg-white transition"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                    Phone Number <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="e.g. 9876543210"
-                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-semibold text-slate-900 outline-none focus:border-emerald-700 focus:bg-white transition"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                    Monthly Contribution (₹) <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    required
-                    value={monthlyAmount}
-                    onChange={(e) => setMonthlyAmount(e.target.value)}
-                    placeholder="100"
-                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 outline-none focus:border-emerald-700 focus:bg-white transition"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                    Joining Date
-                  </label>
-                  <input
-                    type="date"
-                    value={joiningDate}
-                    onChange={(e) => setJoiningDate(e.target.value)}
-                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-slate-900 outline-none focus:border-emerald-700 focus:bg-white transition"
-                  />
-                </div>
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Full Name <span className="text-rose-600">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="e.g. Haji Mohammed Farooq"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold outline-none focus:border-emerald-700 focus:bg-white transition"
+                />
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Email Address <span className="text-slate-400 font-normal">(Optional)</span>
+                <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Phone Number (WhatsApp) <span className="text-rose-600">*</span>
+                </label>
+                <input
+                  type="tel"
+                  required
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="e.g. 9840123456"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold outline-none focus:border-emerald-700 focus:bg-white transition"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Monthly Rate (₹) <span className="text-rose-600">*</span>
+                </label>
+                <input
+                  type="number"
+                  required
+                  min="10"
+                  value={monthlyAmount}
+                  onChange={(e) => setMonthlyAmount(e.target.value)}
+                  placeholder="100"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-extrabold text-emerald-800 outline-none focus:border-emerald-700 focus:bg-white transition"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Joining Date
+                </label>
+                <input
+                  type="date"
+                  value={joiningDate}
+                  onChange={(e) => setJoiningDate(e.target.value)}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold outline-none focus:border-emerald-700 focus:bg-white transition"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Email Address
                 </label>
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="e.g. yusuf@example.com"
-                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 outline-none focus:border-emerald-700 focus:bg-white transition"
+                  placeholder="Optional email"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold outline-none focus:border-emerald-700 focus:bg-white transition"
                 />
               </div>
+            </div>
 
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Address
-                </label>
-                <textarea
-                  rows={2}
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  placeholder="Enter address..."
-                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 outline-none focus:border-emerald-700 focus:bg-white transition"
-                ></textarea>
-              </div>
+            <div>
+              <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
+                Residential Street Address / Door No
+              </label>
+              <input
+                type="text"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                placeholder="e.g. 224/29 Hajee Street, Vaniyambadi"
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold outline-none focus:border-emerald-700 focus:bg-white transition"
+              />
+            </div>
 
-              <div className="flex items-center justify-start gap-3 pt-2 border-t border-slate-100">
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="px-5 py-2 bg-[#0F3D26] hover:bg-emerald-950 text-white font-bold rounded-xl text-xs shadow-sm transition flex items-center gap-1.5 disabled:opacity-50"
-                >
-                  <i className="fas fa-check"></i> {submitting ? 'Registering...' : 'Register Member'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* 2. EXCEL / CSV BULK IMPORT TAB */}
-      {activeTab === 'import' && (
-        <div className="space-y-4">
-          <div className="bg-white border border-slate-200 shadow-sm rounded-2xl p-6 space-y-4">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
-              <div>
-                <h3 className="text-sm font-extrabold text-slate-900">Bulk Upload Members</h3>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Upload a CSV file containing your mosque&apos;s member list.
-                </p>
-              </div>
+            <div className="flex justify-end pt-3 border-t">
               <button
-                type="button"
-                onClick={handleDownloadTemplate}
-                className="px-3.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-semibold rounded-lg text-xs transition flex items-center gap-1.5 shrink-0"
+                type="submit"
+                disabled={submitting}
+                className="px-6 py-3 bg-[#0F3D26] hover:bg-emerald-950 text-white font-extrabold rounded-2xl text-xs shadow-md transition flex items-center gap-2 cursor-pointer disabled:opacity-50"
               >
-                <i className="fas fa-download text-[11px]"></i> Download Template (.csv)
+                {submitting ? (
+                  <>
+                    <i className="fas fa-circle-notch fa-spin"></i> Saving...
+                  </>
+                ) : (
+                  <>
+                    <i className="fas fa-user-check text-[#F4D06F]"></i> Register Member
+                  </>
+                )}
               </button>
             </div>
-
-            {importMsg && (
-              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs font-semibold text-emerald-800 flex items-center gap-2">
-                <i className="fas fa-check-circle text-emerald-600"></i> {importMsg}
-              </div>
-            )}
-
-            {errorMsg && (
-              <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs font-semibold text-rose-800 flex items-center gap-2">
-                <i className="fas fa-circle-exclamation text-rose-600"></i> {errorMsg}
-              </div>
-            )}
-
-            <div className="border-2 border-dashed border-emerald-200 bg-emerald-50/30 hover:bg-emerald-50/60 transition rounded-2xl p-6 text-center cursor-pointer relative">
-              <input
-                type="file"
-                accept=".csv, .xlsx, .xls, text/csv"
-                onChange={handleFileUpload}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              />
-              <div className="w-10 h-10 mx-auto rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center text-lg mb-2">
-                <i className="fas fa-cloud-arrow-up"></i>
-              </div>
-              <h4 className="text-xs font-bold text-slate-900">
-                {importFile ? importFile.name : 'Click to select or drag CSV file here'}
-              </h4>
-              <p className="text-[11px] text-slate-500 mt-0.5">
-                Columns: <code className="bg-slate-100 px-1 py-0.5 rounded text-emerald-800 font-mono text-[10px]">Name, Phone, MonthlyAmount, Address, Email</code>
-              </p>
-            </div>
-
-            {/* PREVIEW PARSED ROWS */}
-            {parsedRows.length > 0 && (
-              <div className="space-y-3 pt-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-700">
-                    Preview: {parsedRows.length} members found
-                  </span>
-                  <button
-                    type="button"
-                    onClick={handleConfirmImport}
-                    disabled={importing}
-                    className="px-4 py-1.5 bg-[#0F3D26] hover:bg-emerald-950 text-white font-bold rounded-lg text-xs shadow-sm transition flex items-center gap-1.5 disabled:opacity-50"
-                  >
-                    <i className="fas fa-check-double text-[11px]"></i> {importing ? 'Importing...' : `Import ${parsedRows.length} Members`}
-                  </button>
-                </div>
-
-                <div className="border border-slate-200 rounded-xl overflow-hidden max-h-56 overflow-y-auto">
-                  <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-50 text-[11px] font-bold text-slate-500 uppercase border-b border-slate-200">
-                      <tr>
-                        <th className="py-2 px-3">#</th>
-                        <th className="py-2 px-3">Name</th>
-                        <th className="py-2 px-3">Phone</th>
-                        <th className="py-2 px-3">Monthly (₹)</th>
-                        <th className="py-2 px-3">Address</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 text-xs">
-                      {parsedRows.map((r, idx) => (
-                        <tr key={idx} className="hover:bg-slate-50/50">
-                          <td className="py-2 px-3 text-slate-400 font-mono">{idx + 1}</td>
-                          <td className="py-2 px-3 font-semibold text-slate-900">{r.name}</td>
-                          <td className="py-2 px-3 font-mono text-slate-600">{r.phone}</td>
-                          <td className="py-2 px-3 font-bold text-emerald-800">₹{r.monthlyAmount}</td>
-                          <td className="py-2 px-3 text-slate-500 text-[11px]">{r.address || '-'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-          </div>
+          </form>
         </div>
       )}
 
-      {/* 3. DIRECTORY TAB VIEW */}
+      {/* 3. DIRECTORY TAB VIEW (WITH SHOW DETAILS & HIDE TRANSITION) */}
       {activeTab === 'directory' && (
-        <div className="bg-white border border-slate-200 shadow-sm rounded-2xl overflow-hidden space-y-3">
-          <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+        <div className="bg-white border border-slate-200 shadow-sm rounded-3xl overflow-hidden space-y-4">
+          <div className="p-5 border-b border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-slate-900">Registered Monthly Members</span>
-                <span className="px-2 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-200/60 rounded-md text-[10px] font-bold">
-                  {filteredMembers.length} active
+                <span className="text-sm font-extrabold text-slate-900">Registered Monthly Members</span>
+                <span className="px-2.5 py-0.5 bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-full text-[10px] font-black">
+                  {filteredMembers.length} ACTIVE
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400 mt-0.5">
-                View, filter, edit and track records of registered members
+              <p className="text-xs text-slate-400 mt-0.5">
+                Click <strong>Details</strong> to view all month collection history, pending dues, or advance payments
               </p>
             </div>
-            <span className="text-[11px] text-slate-400">
-              Total: {filteredMembers.length} of {members.length} members
+
+            <span className="text-xs font-bold text-slate-500">
+              Total: {filteredMembers.length} of {members.length} Members
             </span>
           </div>
 
-          {/* SEARCH BOX WITH AUTO-SUGGESTIONS */}
-          <div className="px-4 relative">
+          {/* SEARCH BOX */}
+          <div className="px-5 relative">
             <div className="relative">
-              <i className="fas fa-search absolute left-3.5 top-3 text-slate-400 text-xs"></i>
+              <i className="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
               <input
                 type="text"
                 value={searchQuery}
@@ -604,241 +616,487 @@ export default function MonthlyMembersPage() {
                   setSearchQuery(e.target.value);
                   setShowSearchSuggestions(true);
                 }}
-                placeholder="Search by member name, phone or ID..."
-                className="w-full pl-9 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 outline-none focus:border-emerald-700 focus:bg-white transition"
+                placeholder="Search member name, phone or address..."
+                className="w-full pl-10 pr-8 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium text-slate-900 outline-none focus:border-emerald-700 focus:bg-white transition"
               />
               {searchQuery && (
                 <button
                   type="button"
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 text-xs p-1"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs p-1"
                 >
                   <i className="fas fa-times"></i>
                 </button>
               )}
             </div>
-
-            {/* AUTOCOMPLETE SUGGESTIONS POPUP */}
-            {showSearchSuggestions && searchSuggestions.length > 0 && (
-              <div
-                className="absolute left-4 right-4 top-full mt-1 bg-white border border-emerald-200 rounded-xl shadow-xl z-30 overflow-hidden divide-y divide-slate-100"
-                onMouseLeave={() => setShowSearchSuggestions(false)}
-              >
-                {searchSuggestions.map((m) => (
-                  <button
-                    key={m.id}
-                    type="button"
-                    onClick={() => {
-                      setSearchQuery(m.name);
-                      setShowSearchSuggestions(false);
-                    }}
-                    className="w-full px-3.5 py-2 text-left hover:bg-emerald-50 transition flex items-center justify-between text-xs group"
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-md bg-[#0F3D26] text-white flex items-center justify-center font-bold text-[11px]">
-                        {m.name?.charAt(0)}
-                      </div>
-                      <div>
-                        <span className="font-bold text-slate-900 group-hover:text-emerald-800 text-xs">
-                          {m.name}
-                        </span>
-                        <span className="text-[11px] text-slate-400 font-mono ml-2">
-                          {m.memberNo || 'MBR'} • 📞 {m.phone}
-                        </span>
-                      </div>
-                    </div>
-                    <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100/60 px-1.5 py-0.5 rounded">
-                      ₹{m.monthlyAmount || 100}/mo
-                    </span>
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
 
           {loading ? (
-            <div className="p-10 text-center text-slate-400 text-xs font-semibold">
-              <i className="fas fa-circle-notch fa-spin text-emerald-700 text-xl mb-2"></i>
+            <div className="p-12 text-center text-slate-400 text-xs font-semibold">
+              <i className="fas fa-circle-notch fa-spin text-emerald-700 text-2xl mb-2"></i>
               <p>Loading members directory...</p>
             </div>
           ) : filteredMembers.length === 0 ? (
-            <div className="p-10 text-center text-slate-400 text-xs font-semibold">
-              No registered members found. Use &quot;Add Member&quot; or &quot;Import Excel&quot; to add members.
+            <div className="p-12 text-center text-slate-400 text-xs font-semibold">
+              No registered members found. Use &quot;Add Member&quot; to add new records.
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead className="bg-slate-50/80 border-y border-slate-200 text-[11px] font-bold text-slate-600 uppercase tracking-wider">
-                  <tr>
-                    <th className="py-2.5 px-4 whitespace-nowrap">Member No</th>
-                    <th className="py-2.5 px-4 whitespace-nowrap">Full Name</th>
-                    <th className="py-2.5 px-4 whitespace-nowrap">Phone Number</th>
-                    <th className="py-2.5 px-4 whitespace-nowrap">Monthly Rate</th>
-                    <th className="py-2.5 px-4 text-right whitespace-nowrap">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 text-xs">
-                  {filteredMembers.map((mbr) => (
-                    <tr key={mbr.id} className="hover:bg-slate-50/60 transition">
-                      <td className="py-3 px-4 font-mono font-bold text-emerald-800 whitespace-nowrap text-xs">
-                        {mbr.memberNo || 'MBR-001'}
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className="font-bold text-slate-900 block text-xs leading-tight">
-                          {mbr.name}
-                        </span>
-                        <span className="text-[10px] text-slate-400 block leading-tight mt-0.5">
-                          {mbr.address ? mbr.address : 'Address N/A'}
-                          {mbr.email ? ` • ${mbr.email}` : ''}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 font-mono text-xs text-slate-600 whitespace-nowrap">
-                        {mbr.phone}
-                      </td>
-                      <td className="py-3 px-4 font-extrabold text-slate-900 whitespace-nowrap text-xs">
-                        IN ₹{mbr.monthlyAmount?.toLocaleString('en-IN')}
-                      </td>
+            <div className="divide-y divide-slate-100">
+              {filteredMembers.map((mbr) => {
+                const metrics = getMemberMetrics(mbr);
+                const isExpanded = expandedMemberId === mbr.id;
 
-                      <td className="py-3 px-4 text-right whitespace-nowrap space-x-1.5">
+                return (
+                  <div key={mbr.id} className="transition">
+                    {/* MEMBER ROW (EXACTLY MATCHING USER SCREENSHOT) */}
+                    <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-slate-50/70 transition">
+                      {/* MEMBER AVATAR & INFO */}
+                      <div className="flex items-center gap-3.5 min-w-0">
+                        <div className="w-10 h-10 rounded-2xl bg-emerald-100 border border-emerald-200 text-emerald-900 flex items-center justify-center font-black text-sm shrink-0 uppercase">
+                          {mbr.name?.charAt(0) || 'M'}
+                        </div>
+
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-extrabold text-slate-900 text-sm truncate">{mbr.name}</span>
+                            <span className="px-2 py-0.2 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-md text-[10px] font-bold">
+                              Active
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-500 font-medium truncate mt-0.5">
+                            <span className="font-mono text-slate-700">{mbr.phone}</span>
+                            {mbr.address && <span> • {mbr.address}</span>}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* STATS & ACTIONS (RIGHT SIDE) */}
+                      <div className="flex flex-wrap items-center gap-2.5 self-end md:self-auto shrink-0">
+                        {/* MONTHLY RATE PILL */}
+                        <div className="px-3 py-1.5 bg-slate-100 border border-slate-200 rounded-xl text-xs font-extrabold text-slate-800">
+                          IN ₹{metrics.monthlyRate} <span className="text-[10px] font-medium text-slate-400">/mo</span>
+                        </div>
+
+                        {/* STATUS BADGE (ADVANCE / FULLY PAID / PENDING) */}
+                        <div
+                          className={`px-3 py-1.5 rounded-xl text-xs font-black border transition ${
+                            metrics.statusType === 'ADVANCE'
+                              ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                              : metrics.statusType === 'FULLY_PAID'
+                              ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                              : 'bg-amber-50 text-amber-900 border-amber-300'
+                          }`}
+                        >
+                          {metrics.statusText}
+                        </div>
+
+                        {/* DETAILS / HIDE TOGGLE BUTTON */}
+                        <button
+                          type="button"
+                          onClick={() => setExpandedMemberId(isExpanded ? null : mbr.id)}
+                          className="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-extrabold transition cursor-pointer shadow-2xs"
+                        >
+                          {isExpanded ? 'Hide' : 'Details'}
+                        </button>
+
+                        {/* DOWNLOAD STATEMENT BUTTON */}
+                        <Link
+                          href={`/dashboard/reports/print?memberId=${mbr.id}`}
+                          target="_blank"
+                          className="w-8 h-8 rounded-xl bg-white hover:bg-slate-100 text-slate-600 border border-slate-200 flex items-center justify-center text-xs transition cursor-pointer"
+                          title="Download Statement"
+                        >
+                          <i className="fas fa-download"></i>
+                        </Link>
+
+                        {/* WHATSAPP BUTTON (AUTO SYNC STATUS & SEND) */}
+                        <a
+                          href={metrics.whatsappUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-8 h-8 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 flex items-center justify-center text-xs transition cursor-pointer"
+                          title={`Send WhatsApp Status to ${mbr.phone}`}
+                        >
+                          <i className="fab fa-whatsapp text-sm text-[#25D366]"></i>
+                        </a>
+
                         {/* EDIT BUTTON */}
                         {!isViewer && (
                           <button
+                            type="button"
                             onClick={() => handleOpenEdit(mbr)}
-                            className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200/80 font-semibold rounded-lg text-[11px] transition inline-flex items-center gap-1"
-                            title="Edit member details"
+                            className="w-8 h-8 rounded-xl bg-white hover:bg-slate-100 text-slate-600 border border-slate-200 flex items-center justify-center text-xs transition cursor-pointer"
+                            title="Edit Member"
                           >
-                            <i className="fas fa-pen-to-square text-[10px]"></i> Edit
+                            <i className="fas fa-pen-to-square"></i>
                           </button>
                         )}
 
                         {/* DELETE BUTTON */}
                         {!isViewer && (
                           <button
+                            type="button"
                             onClick={() => setDeletingMember(mbr)}
-                            className="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/80 font-semibold rounded-lg text-[11px] transition inline-flex items-center gap-1"
-                            title="Delete member"
+                            className="w-8 h-8 rounded-xl bg-white hover:bg-rose-50 text-slate-400 hover:text-rose-600 border border-slate-200 flex items-center justify-center text-xs transition cursor-pointer"
+                            title="Delete Member"
                           >
-                            <i className="fas fa-trash-can text-[10px]"></i> Delete
+                            <i className="fas fa-trash-can"></i>
                           </button>
                         )}
+                      </div>
+                    </div>
 
-                        {/* COLLECT FEE */}
-                        {!isViewer && (
-                          <Link
-                            href={`/dashboard/member-collections`}
-                            className="px-2.5 py-1 bg-[#0F3D26] hover:bg-emerald-950 text-white font-semibold rounded-lg text-[11px] transition inline-flex items-center gap-1 shadow-xs"
+                    {/* EXPANDED MEMBER SUMMARY & RECORDS (EXACTLY MATCHING USER SCREENSHOT) */}
+                    {isExpanded && (
+                      <div className="p-6 bg-slate-50/70 border-t border-slate-200 space-y-5 animate-in fade-in duration-150">
+                        {/* SUMMARY HEADER & CLOSE */}
+                        <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+                          <h3 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
+                            <i className="fas fa-chart-pie text-emerald-800"></i> Member Summary & Records
+                          </h3>
+                          <button
+                            type="button"
+                            onClick={() => setExpandedMemberId(null)}
+                            className="text-slate-400 hover:text-slate-700 text-base cursor-pointer p-1"
                           >
-                            <i className="fas fa-hand-holding-dollar text-[10px]"></i> Collect Fee
-                          </Link>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                            ✕
+                          </button>
+                        </div>
+
+                        {/* 4 SUMMARY METRIC BOXES */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                          <div className="p-4 bg-white border border-slate-200 rounded-2xl shadow-2xs space-y-1">
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">
+                              Contribution
+                            </span>
+                            <div className="text-base font-extrabold text-slate-900">
+                              IN ₹{metrics.monthlyRate}<span className="text-xs text-slate-400 font-normal">/mo</span>
+                            </div>
+                          </div>
+
+                          <div className="p-4 bg-white border border-slate-200 rounded-2xl shadow-2xs space-y-1">
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">
+                              Total Paid
+                            </span>
+                            <div className="text-base font-extrabold text-emerald-800">
+                              IN ₹{metrics.totalPaid.toLocaleString('en-IN')}
+                            </div>
+                          </div>
+
+                          <div className="p-4 bg-white border border-slate-200 rounded-2xl shadow-2xs space-y-1">
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">
+                              Pending Amount
+                            </span>
+                            <div
+                              className={`text-base font-extrabold ${
+                                metrics.pendingAmount > 0 ? 'text-rose-600' : 'text-slate-700'
+                              }`}
+                            >
+                              IN ₹{metrics.pendingAmount.toLocaleString('en-IN')}
+                            </div>
+                          </div>
+
+                          <div className="p-4 bg-white border border-slate-200 rounded-2xl shadow-2xs space-y-1">
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">
+                              Status
+                            </span>
+                            <div className="text-xs font-black text-emerald-800 leading-tight">
+                              {metrics.statusText}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* PAYMENT PROGRESS BAR */}
+                        <div className="space-y-1.5">
+                          <div className="flex justify-between text-[11px] font-bold text-slate-600">
+                            <span>Payment Progress</span>
+                            <span>
+                              {metrics.totalMonthsPaidCount} / {metrics.expectedMonthsCount} months ({metrics.progressPercent}%)
+                            </span>
+                          </div>
+                          <div className="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-emerald-800 rounded-full transition-all duration-500"
+                              style={{ width: `${metrics.progressPercent}%` }}
+                            />
+                          </div>
+                        </div>
+
+                        {/* 2 SUB-COLUMNS: GENERAL PAYMENTS & MONTHLY COLLECTION PAYOUTS */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+                          {/* LEFT COLUMN: GENERAL MEMBER PAYMENTS */}
+                          <div className="space-y-3">
+                            <h4 className="text-xs font-black text-slate-700 uppercase tracking-wider">
+                              General Member Payments (0)
+                            </h4>
+                            <div className="p-5 bg-white border border-slate-200 rounded-2xl text-center text-xs text-slate-400 font-medium">
+                              No general payments recorded
+                            </div>
+                          </div>
+
+                          {/* RIGHT COLUMN: MONTHLY COLLECTION PAYOUTS */}
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                              <h4 className="text-xs font-black text-slate-700 uppercase tracking-wider">
+                                Monthly Collection Payouts ({metrics.collections.length})
+                              </h4>
+                              {!isViewer && (
+                                <Link
+                                  href={`/dashboard/member-collections`}
+                                  className="text-[11px] font-bold text-emerald-800 hover:underline flex items-center gap-1"
+                                >
+                                  <i className="fas fa-plus text-[10px]"></i> Record New
+                                </Link>
+                              )}
+                            </div>
+
+                            {/* IF THERE ARE PENDING MONTHS */}
+                            {metrics.pendingMonthsList.length > 0 && (
+                              <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-2xl space-y-1">
+                                <span className="text-[11px] font-extrabold text-rose-800 flex items-center gap-1.5">
+                                  <i className="fas fa-circle-exclamation text-rose-600"></i> Pending Dues Detected:
+                                </span>
+                                <div className="flex flex-wrap gap-1.5 pt-1">
+                                  {metrics.pendingMonthsList.map((m, idx) => (
+                                    <span
+                                      key={idx}
+                                      className="px-2.5 py-1 bg-white border border-rose-300 text-rose-700 rounded-lg text-[10px] font-bold"
+                                    >
+                                      ❌ {m}: Due IN ₹{metrics.monthlyRate}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* LIST OF RECORDED PAYOUT MONTHS */}
+                            {metrics.collections.length === 0 ? (
+                              <div className="p-5 bg-white border border-slate-200 rounded-2xl text-center text-xs text-slate-400 font-medium">
+                                No monthly payouts recorded yet.
+                              </div>
+                            ) : (
+                              <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                                {metrics.collections.map((col) => (
+                                  <div
+                                    key={col.id}
+                                    className="p-3 bg-white border border-slate-200 rounded-2xl flex items-center justify-between text-xs shadow-2xs hover:border-emerald-300 transition"
+                                  >
+                                    <div>
+                                      <span className="font-extrabold text-slate-900 block text-xs">
+                                        {col.forMonths || 'Monthly Contribution'}
+                                      </span>
+                                      <span className="text-[10px] text-slate-400 font-medium">
+                                        {col.receiptNo || 'REC'} • {new Date(col.paymentDate).toLocaleDateString('en-IN')} • {col.paymentMethod}
+                                      </span>
+                                    </div>
+
+                                    <div className="flex items-center gap-3">
+                                      <span className="font-black text-emerald-800 text-xs">
+                                        IN ₹{Number(col.amount).toLocaleString('en-IN')}
+                                      </span>
+
+                                      {!isViewer && (
+                                        <button
+                                          type="button"
+                                          onClick={() => handleDeleteCollection(col.id)}
+                                          className="text-slate-300 hover:text-rose-600 text-xs p-1 transition cursor-pointer"
+                                          title="Remove Payout Record"
+                                        >
+                                          <i className="fas fa-trash-can"></i>
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
       )}
 
-      {/* 4. EDIT MEMBER MODAL */}
+      {/* 4. IMPORT CSV TAB VIEW */}
+      {activeTab === 'import' && !isViewer && (
+        <div className="bg-white border border-slate-200 shadow-sm rounded-3xl p-6 sm:p-8 space-y-6">
+          <div className="border-b border-slate-100 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h3 className="text-base font-extrabold text-slate-900">Bulk Import Members from CSV / Excel</h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Upload hundreds of members at once using a standard CSV spreadsheet format
+              </p>
+            </div>
+          </div>
+
+          {importMsg && (
+            <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-xs font-bold text-emerald-900 flex items-center gap-2">
+              <i className="fas fa-circle-check text-emerald-600 text-sm"></i> {importMsg}
+            </div>
+          )}
+
+          {errorMsg && (
+            <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl text-xs font-bold text-rose-900 flex items-center gap-2">
+              <i className="fas fa-circle-exclamation text-rose-600 text-sm"></i> {errorMsg}
+            </div>
+          )}
+
+          <div className="border-2 border-dashed border-emerald-200 bg-emerald-50/30 hover:bg-emerald-50/60 transition rounded-3xl p-8 text-center cursor-pointer relative">
+            <input
+              type="file"
+              accept=".csv, .xlsx, .xls, text/csv"
+              onChange={handleFileUpload}
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+            />
+            <div className="w-12 h-12 mx-auto rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center text-xl mb-3 shadow-xs">
+              <i className="fas fa-cloud-arrow-up"></i>
+            </div>
+            <h4 className="text-xs font-extrabold text-slate-900">
+              {importFile ? importFile.name : 'Click to select or drag CSV file here'}
+            </h4>
+            <p className="text-[11px] text-slate-500 mt-1">
+              Columns: <code className="bg-white px-2 py-0.5 rounded border border-emerald-200 text-emerald-800 font-mono text-[10px]">Name, Phone, MonthlyAmount, Address, Email</code>
+            </p>
+          </div>
+
+          {/* PREVIEW PARSED ROWS */}
+          {parsedRows.length > 0 && (
+            <div className="space-y-3 pt-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-extrabold text-slate-800">
+                  Preview: {parsedRows.length} members found
+                </span>
+                <button
+                  type="button"
+                  onClick={handleConfirmImport}
+                  disabled={importing}
+                  className="px-5 py-2.5 bg-[#0F3D26] hover:bg-emerald-950 text-white font-extrabold rounded-xl text-xs shadow-md transition flex items-center gap-2 disabled:opacity-50 cursor-pointer"
+                >
+                  <i className="fas fa-check-double text-[#F4D06F]"></i> {importing ? 'Importing...' : `Import ${parsedRows.length} Members`}
+                </button>
+              </div>
+
+              <div className="border border-slate-200 rounded-2xl overflow-hidden max-h-60 overflow-y-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-50 text-[11px] font-bold text-slate-500 uppercase border-b border-slate-200">
+                    <tr>
+                      <th className="py-2.5 px-3">#</th>
+                      <th className="py-2.5 px-3">Name</th>
+                      <th className="py-2.5 px-3">Phone</th>
+                      <th className="py-2.5 px-3">Monthly Rate (₹)</th>
+                      <th className="py-2.5 px-3">Address</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 text-xs">
+                    {parsedRows.map((r, idx) => (
+                      <tr key={idx} className="hover:bg-slate-50/50">
+                        <td className="py-2.5 px-3 text-slate-400 font-mono">{idx + 1}</td>
+                        <td className="py-2.5 px-3 font-bold text-slate-900">{r.name}</td>
+                        <td className="py-2.5 px-3 font-mono text-slate-600">{r.phone}</td>
+                        <td className="py-2.5 px-3 font-extrabold text-emerald-800">₹{r.monthlyAmount}</td>
+                        <td className="py-2.5 px-3 text-slate-500 text-[11px]">{r.address || '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 5. EDIT MEMBER MODAL */}
       {editingMember && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-5 sm:p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in duration-150">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
-                <h3 className="text-sm font-extrabold text-slate-900">Edit Member Details</h3>
-                <p className="text-[11px] text-slate-400 font-mono">ID: {editingMember.memberNo}</p>
+                <h3 className="text-base font-extrabold text-slate-900">Edit Member Details</h3>
+                <p className="text-xs text-slate-400 font-mono">ID: {editingMember.memberNo}</p>
               </div>
               <button
                 type="button"
                 onClick={() => setEditingMember(null)}
-                className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center text-xs"
+                className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center text-sm cursor-pointer"
               >
                 ✕
               </button>
             </div>
 
-            <form onSubmit={handleSaveEdit} className="space-y-3">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                    Full Name *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={editForm.name}
-                    onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                    className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-900 outline-none focus:border-emerald-600"
-                  />
-                </div>
+            <form onSubmit={handleSaveEdit} className="space-y-4">
+              <div>
+                <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Full Name
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editForm.name}
+                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-emerald-700 focus:bg-white"
+                />
+              </div>
 
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                    Phone Number *
+                  <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Phone Number
                   </label>
                   <input
-                    type="text"
+                    type="tel"
                     required
                     value={editForm.phone}
                     onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-                    className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono font-bold text-slate-900 outline-none focus:border-emerald-600"
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-emerald-700 focus:bg-white"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                    Monthly Contribution (₹) *
+                  <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Monthly Rate (₹)
                   </label>
                   <input
                     type="number"
                     required
+                    min="10"
                     value={editForm.monthlyAmount}
                     onChange={(e) => setEditForm({ ...editForm, monthlyAmount: e.target.value })}
-                    className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-extrabold text-slate-900 outline-none focus:border-emerald-600"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                    Email (Optional)
-                  </label>
-                  <input
-                    type="email"
-                    value={editForm.email}
-                    onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                    className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 outline-none focus:border-emerald-600"
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-extrabold text-emerald-800 outline-none focus:border-emerald-700 focus:bg-white"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
                   Address
                 </label>
-                <textarea
-                  rows={2}
+                <input
+                  type="text"
                   value={editForm.address}
                   onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
-                  className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 outline-none focus:border-emerald-600"
-                ></textarea>
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-emerald-700 focus:bg-white"
+                />
               </div>
 
-              <div className="flex justify-end gap-2.5 pt-2.5 border-t border-slate-100">
+              <div className="flex justify-end gap-2.5 pt-3 border-t">
                 <button
                   type="button"
                   onClick={() => setEditingMember(null)}
-                  className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg text-xs"
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-4 py-1.5 bg-[#0F3D26] hover:bg-emerald-950 text-white font-bold rounded-lg text-xs shadow-xs transition disabled:opacity-50"
+                  className="px-5 py-2 bg-[#0F3D26] hover:bg-emerald-950 text-white font-extrabold rounded-xl text-xs shadow-md transition disabled:opacity-50 cursor-pointer"
                 >
-                  {submitting ? 'Saving...' : 'Save Changes'}
+                  Save Changes
                 </button>
               </div>
             </form>
@@ -846,24 +1104,24 @@ export default function MonthlyMembersPage() {
         </div>
       )}
 
-      {/* 5. DELETE MEMBER CONFIRMATION MODAL */}
+      {/* 6. DELETE CONFIRMATION MODAL */}
       {deletingMember && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-sm w-full p-5 shadow-2xl space-y-3.5 text-center animate-in fade-in zoom-in duration-150">
-            <div className="w-12 h-12 mx-auto rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center text-xl">
-              <i className="fas fa-triangle-exclamation"></i>
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl text-center space-y-4 animate-in fade-in zoom-in-95 duration-150">
+            <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center text-xl mx-auto">
+              <i className="fas fa-trash-can"></i>
             </div>
             <div>
-              <h3 className="text-sm font-extrabold text-slate-900">Delete Member?</h3>
+              <h3 className="text-base font-extrabold text-slate-900">Delete Member?</h3>
               <p className="text-xs text-slate-500 mt-1">
-                Are you sure you want to remove <strong className="text-slate-900">{deletingMember.name}</strong> ({deletingMember.phone})?
+                Are you sure you want to remove <strong>{deletingMember.name}</strong> from monthly directory?
               </p>
             </div>
-            <div className="flex justify-center gap-2.5 pt-1.5">
+            <div className="flex justify-center gap-2.5 pt-2">
               <button
                 type="button"
                 onClick={() => setDeletingMember(null)}
-                className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg text-xs"
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold cursor-pointer"
               >
                 Cancel
               </button>
@@ -871,9 +1129,9 @@ export default function MonthlyMembersPage() {
                 type="button"
                 onClick={handleDeleteMember}
                 disabled={submitting}
-                className="px-4 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-lg text-xs shadow-xs transition disabled:opacity-50"
+                className="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white font-extrabold rounded-xl text-xs shadow-md transition disabled:opacity-50 cursor-pointer"
               >
-                {submitting ? 'Deleting...' : 'Yes, Delete'}
+                Yes, Delete
               </button>
             </div>
           </div>

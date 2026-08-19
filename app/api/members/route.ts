@@ -25,13 +25,22 @@ export async function GET(req: NextRequest) {
 
     const members = await prisma.member.findMany({
       where: { masjidId: masjid.id, status: 'ACTIVE' },
+      include: {
+        memberCollections: {
+          orderBy: { paymentDate: 'desc' },
+        },
+      },
       orderBy: { createdAt: 'desc' },
     });
 
-    return NextResponse.json({ members: members || [], masjidSlug: masjid.slug });
+    return NextResponse.json({
+      members: members || [],
+      masjidSlug: masjid.slug,
+      masjidName: masjid.name,
+    });
   } catch (error: any) {
     console.error('Fetch members error:', error);
-    return NextResponse.json({ members: [], masjidSlug: 'jama-masjid' });
+    return NextResponse.json({ members: [], masjidSlug: 'jama-masjid', masjidName: 'Mosque' });
   }
 }
 

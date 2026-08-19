@@ -26,7 +26,6 @@ export function generateWhatsAppInvoiceUrl({
   statusText = '✅ Fully Paid',
   transparencyUrl,
 }: WhatsAppInvoiceInput): string {
-  // Clean phone number (strip non-digits)
   const cleanPhone = phone.replace(/[^0-9]/g, '');
   const formattedPhone = cleanPhone.startsWith('91') ? cleanPhone : `91${cleanPhone}`;
 
@@ -111,6 +110,79 @@ May Allah (SWT) accept your charity, grant immense barakah in your sustenance, a
   }
 
   message += `\n\n━━━━━━━━━━━━━━━━━━━━━\n*MasjidPay Verified Digital Receipt*\n━━━━━━━━━━━━━━━━━━━━━`;
+
+  return `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
+}
+
+export interface MemberStatusWhatsAppInput {
+  phone: string;
+  memberName: string;
+  memberNo?: string;
+  monthlyRate: number;
+  totalPaid: number;
+  pendingAmount: number;
+  statusText: string;
+  statusType: 'ADVANCE' | 'FULLY_PAID' | 'PENDING';
+  advanceAmount?: number;
+  paidTillMonth?: string;
+  pendingMonthsList?: string[];
+  masjidName?: string;
+}
+
+export function generateMemberStatusWhatsAppUrl({
+  phone,
+  memberName,
+  memberNo,
+  monthlyRate,
+  totalPaid,
+  pendingAmount,
+  statusText,
+  statusType,
+  advanceAmount = 0,
+  paidTillMonth,
+  pendingMonthsList = [],
+  masjidName = 'NEWTOWN MASJID',
+}: MemberStatusWhatsAppInput): string {
+  const cleanPhone = phone.replace(/[^0-9]/g, '');
+  const formattedPhone = cleanPhone.startsWith('91') ? cleanPhone : `91${cleanPhone}`;
+
+  let message = `━━━━━━━━━━━━━━━━━━━━━
+🕌 *${masjidName.toUpperCase()}*
+━━━━━━━━━━━━━━━━━━━━━
+
+📋 *MONTHLY MEMBER SUBSCRIPTION STATUS*
+
+Assalamu Alaikum *${memberName}*,
+
+• *Member ID:* ${memberNo || 'MBR'}
+• *Monthly Rate:* IN ₹ ${monthlyRate.toLocaleString('en-IN')}/mo
+• *Total Paid:* IN ₹ ${totalPaid.toLocaleString('en-IN')}`;
+
+  if (statusType === 'ADVANCE') {
+    message += `
+• *Pending Due:* IN ₹ 0
+• *Status:* 🟢 *Fully Paid (+IN ₹${advanceAmount.toLocaleString('en-IN')} Adv)*
+${paidTillMonth ? `• *Paid in Advance Till:* ${paidTillMonth}` : ''}
+
+Alhamdulillah, you have paid in advance. JazakAllah Khair for your continuous support!`;
+  } else if (statusType === 'FULLY_PAID') {
+    message += `
+• *Pending Due:* IN ₹ 0
+• *Status:* ✅ *Fully Paid (Up to date)*
+${paidTillMonth ? `• *Paid Till:* ${paidTillMonth}` : ''}
+
+Alhamdulillah, your monthly subscription is completely up to date. JazakAllah Khair!`;
+  } else {
+    const monthsCount = pendingMonthsList.length || Math.max(1, Math.ceil(pendingAmount / (monthlyRate || 100)));
+    message += `
+• *Pending Amount Due:* IN ₹ ${pendingAmount.toLocaleString('en-IN')}
+• *Status:* ⚠️ *${monthsCount === 1 ? '1 Month Pending' : `${monthsCount} Months Pending`}*
+${pendingMonthsList.length > 0 ? `• *Pending Months:* ${pendingMonthsList.join(', ')}` : ''}
+
+Kindly clear your pending contribution when convenient to support ongoing mosque expenses.`;
+  }
+
+  message += `\n\n━━━━━━━━━━━━━━━━━━━━━\nMay Allah accept your donations.\n━━━━━━━━━━━━━━━━━━━━━`;
 
   return `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
 }
