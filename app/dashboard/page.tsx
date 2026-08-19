@@ -29,6 +29,20 @@ export default function DashboardPage() {
   const kpis = data?.kpis || {};
   const memberOverview = data?.memberOverview || { totalMembers: 0, paidMembers: 0, pendingMembers: 0, completionRate: 0, expected: 0, collected: 0, pending: 0 };
   const payrollOverview = data?.payrollOverview || { activeStaff: 0, salaryBudget: 0, salaryPaid: 0, salaryPending: 0 };
+  const rentalOverview = data?.rentalOverview || {
+    totalUnits: 0,
+    occupiedUnits: 0,
+    vacantUnits: 0,
+    occupancyRate: 0,
+    monthlyRentExpected: 0,
+    securityAdvanceHeld: 0,
+    totalAdvanceReceived: 0,
+    totalAdvanceReturned: 0,
+    rentCollectedTotal: 0,
+    rentCollectedThisMonth: 0,
+    rentPendingThisMonth: 0,
+    recentPayments: [],
+  };
 
   const currentDateFormatted = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
@@ -373,6 +387,119 @@ export default function DashboardPage() {
               </span>
               <span className="text-xs font-bold text-slate-600 block mt-0.5">Salary Pending</span>
               <span className="text-[11px] font-semibold text-slate-400 block mt-0.5">This month</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 4. RENTAL OVERVIEW SECTION */}
+      <div className="space-y-3.5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <h3 className="text-xs font-extrabold uppercase tracking-widest text-slate-500">Rental Overview</h3>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Track mosque commercial properties, security advances held, rent collections, and pending tenant dues.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <Link
+              href="/dashboard/rentals"
+              className="px-3.5 py-1 bg-[#0F3D26] hover:bg-emerald-950 text-white font-extrabold text-[11px] rounded-lg transition flex items-center gap-1.5 shadow-xs"
+            >
+              <i className="fas fa-store text-[9px] text-[#F4D06F]"></i> Manage Rentals
+            </Link>
+            <Link
+              href="/dashboard/rentals/print"
+              target="_blank"
+              className="px-3 py-1 bg-white hover:bg-slate-50 text-slate-700 font-extrabold text-[11px] rounded-lg border border-slate-200 transition flex items-center gap-1"
+            >
+              <i className="fas fa-print text-[9px] text-emerald-800"></i> Statement
+            </Link>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* SECURITY ADVANCE HELD */}
+          <div className="bg-white border border-slate-200/90 rounded-3xl p-5 shadow-xs flex flex-col justify-between space-y-4 hover:border-emerald-300 transition">
+            <div className="flex items-center justify-between">
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-800 flex items-center justify-center text-base">
+                <i className="fas fa-vault"></i>
+              </div>
+              <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200">
+                Deposit Held
+              </span>
+            </div>
+            <div>
+              <span className="text-2xl font-black text-slate-900 block">
+                IN ₹{rentalOverview.securityAdvanceHeld.toLocaleString('en-IN')}
+              </span>
+              <span className="text-xs font-bold text-slate-600 block mt-0.5">Security Advance Held</span>
+              <span className="text-[11px] font-semibold text-slate-400 block mt-0.5">
+                Total In: ₹{rentalOverview.totalAdvanceReceived.toLocaleString('en-IN')}
+              </span>
+            </div>
+          </div>
+
+          {/* RENT COLLECTED */}
+          <div className="bg-white border border-slate-200/90 rounded-3xl p-5 shadow-xs flex flex-col justify-between space-y-4 hover:border-emerald-300 transition">
+            <div className="flex items-center justify-between">
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center text-base">
+                <i className="fas fa-hand-holding-dollar"></i>
+              </div>
+              <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200">
+                Revenue
+              </span>
+            </div>
+            <div>
+              <span className="text-2xl font-black text-emerald-800 block">
+                IN ₹{rentalOverview.rentCollectedTotal.toLocaleString('en-IN')}
+              </span>
+              <span className="text-xs font-bold text-slate-600 block mt-0.5">Rent Collected</span>
+              <span className="text-[11px] font-semibold text-emerald-700 block mt-0.5">
+                This Month: ₹{rentalOverview.rentCollectedThisMonth.toLocaleString('en-IN')}
+              </span>
+            </div>
+          </div>
+
+          {/* RENT PENDING */}
+          <div className="bg-white border border-slate-200/90 rounded-3xl p-5 shadow-xs flex flex-col justify-between space-y-4 hover:border-amber-300 transition">
+            <div className="flex items-center justify-between">
+              <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center text-base">
+                <i className="fas fa-clock"></i>
+              </div>
+              <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200">
+                Due
+              </span>
+            </div>
+            <div>
+              <span className={`text-2xl font-black block ${rentalOverview.rentPendingThisMonth > 0 ? 'text-rose-600' : 'text-slate-900'}`}>
+                IN ₹{rentalOverview.rentPendingThisMonth.toLocaleString('en-IN')}
+              </span>
+              <span className="text-xs font-bold text-slate-600 block mt-0.5">Rent Pending</span>
+              <span className="text-[11px] font-semibold text-slate-400 block mt-0.5">
+                Expected: ₹{rentalOverview.monthlyRentExpected.toLocaleString('en-IN')}/mo
+              </span>
+            </div>
+          </div>
+
+          {/* OCCUPANCY & UNITS */}
+          <div className="bg-white border border-slate-200/90 rounded-3xl p-5 shadow-xs flex flex-col justify-between space-y-4 hover:border-teal-300 transition">
+            <div className="flex items-center justify-between">
+              <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center text-base">
+                <i className="fas fa-store"></i>
+              </div>
+              <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-teal-50 text-teal-800 border border-teal-200">
+                {rentalOverview.occupancyRate}% Occupied
+              </span>
+            </div>
+            <div>
+              <span className="text-2xl font-black text-slate-900 block">
+                {rentalOverview.occupiedUnits} / {rentalOverview.totalUnits} Units
+              </span>
+              <span className="text-xs font-bold text-slate-600 block mt-0.5">Commercial Occupancy</span>
+              <span className="text-[11px] font-semibold text-slate-400 block mt-0.5">
+                {rentalOverview.vacantUnits} Vacant Units
+              </span>
             </div>
           </div>
         </div>

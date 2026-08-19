@@ -187,6 +187,40 @@ export async function GET(req: NextRequest) {
 
     const insights = await generateFinancialInsights(masjidId).catch(() => []);
 
+    // RENTAL STATS CALCULATIONS
+    const [rentalShopsList, rentalPaymentsList] = await Promise.all([
+      prisma.rentalShop.findMany({ where: { masjidId } }).catch(() => []),
+      prisma.rentalPayment.findMany({ where: { masjidId }, orderBy: { paymentDate: 'desc' } }).catch(() => []),
+    ]);
+
+    const totalRentalUnits = rentalShopsList.length;
+    const occupiedRentalUnits = rentalShopsList.filter((s: any) => s.status !== 'VACANT').length;
+    const vacantRentalUnits = rentalShopsList.filter((s: any) => s.status === 'VACANT').length;
+    const rentalOccupancyRate = totalRentalUnits > 0 ? Math.round((occupiedRentalUnits / totalRentalUnits) * 100) : 0;
+    const monthlyRentExpected = rentalShopsList
+      .filter((s: any) => s.status !== 'VACANT')
+      .reduce((sum: number, s: any) => sum + Number(s.monthlyRent || 0), 0);
+
+    const totalAdvanceReceived = rentalPaymentsList
+      .filter((p: any) => p.forMonth?.toLowerCase().includes('advance received') || (p.forMonth?.toLowerCase().includes('security deposit') && !p.forMonth?.toLowerCase().includes('return')))
+      .reduce((sum: number, p: any) => sum + Number(p.amount || 0), 0);
+
+    const totalAdvanceReturned = rentalPaymentsList
+      .filter((p: any) => p.forMonth?.toLowerCase().includes('advance returned') || p.forMonth?.toLowerCase().includes('refund') || p.forMonth?.toLowerCase().includes('adjusted'))
+      .reduce((sum: number, p: any) => sum + Number(p.amount || 0), 0);
+
+    const securityAdvanceHeld = Math.max(0, totalAdvanceReceived - totalAdvanceReturned);
+
+    const rentCollectedTotal = rentalPaymentsList
+      .filter((p: any) => !p.forMonth?.toLowerCase().includes('advance returned') && !p.forMonth?.toLowerCase().includes('refund'))
+      .reduce((sum: number, p: any) => sum + Number(p.amount || 0), 0);
+
+    const rentCollectedThisMonth = rentalPaymentsList
+      .filter((p: any) => new Date(p.paymentDate) >= currentMonthStart && !p.forMonth?.toLowerCase().includes('advance returned') && !p.forMonth?.toLowerCase().includes('refund'))
+      .reduce((sum: number, p: any) => sum + Number(p.amount || 0), 0);
+
+    const rentPendingThisMonth = Math.max(0, monthlyRentExpected - rentCollectedThisMonth);
+
     return NextResponse.json({
       masjid: {
         id: masjid.id,
@@ -244,6 +278,20 @@ export async function GET(req: NextRequest) {
         salaryBudget,
         salaryPaid,
         salaryPending,
+      },
+      rentalOverview: {
+        totalUnits: totalRentalUnits,
+        occupiedUnits: occupiedRentalUnits,
+        vacantUnits: vacantRentalUnits,
+        occupancyRate: rentalOccupancyRate,
+        monthlyRentExpected,
+        securityAdvanceHeld,
+        totalAdvanceReceived,
+        totalAdvanceReturned,
+        rentCollectedTotal,
+        rentCollectedThisMonth,
+        rentPendingThisMonth,
+        recentPayments: rentalPaymentsList.slice(0, 4),
       },
       charts: {
         monthlyTrend,
