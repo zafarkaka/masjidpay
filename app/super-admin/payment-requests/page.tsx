@@ -14,6 +14,9 @@ export default function SuperAdminPaymentRequestsPage() {
   const [feedbackMsg, setFeedbackMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
+  // DOCUMENT PREVIEW MODAL STATE
+  const [previewDoc, setPreviewDoc] = useState<{ title: string; url: string; isPdf: boolean } | null>(null);
+
   const fetchRequests = () => {
     setLoading(true);
     fetch(`/api/payment-requests?status=${statusFilter}`)
@@ -62,6 +65,11 @@ export default function SuperAdminPaymentRequestsPage() {
     }
   };
 
+  const openDocumentPreview = (title: string, url: string) => {
+    const isPdf = url.startsWith('data:application/pdf') || url.toLowerCase().includes('.pdf');
+    setPreviewDoc({ title, url, isPdf });
+  };
+
   const pendingCount = requests.filter((r) => r.status === 'PENDING').length;
   const underReviewCount = requests.filter((r) => r.status === 'UNDER_REVIEW').length;
 
@@ -79,7 +87,7 @@ export default function SuperAdminPaymentRequestsPage() {
             )}
           </div>
           <p className="text-slate-400 text-xs mt-1">
-            Verify mosque banking credentials, cancelled cheques, and approve UPI / Razorpay payment gateways
+            Verify mosque banking credentials, cancelled cheques (PDF/JPEG up to 15MB), and approve UPI / Razorpay payment gateways
           </p>
         </div>
 
@@ -149,7 +157,7 @@ export default function SuperAdminPaymentRequestsPage() {
                   <th className="p-4">Mosque & Location</th>
                   <th className="p-4">Channel Requested</th>
                   <th className="p-4">Bank & UPI VPA</th>
-                  <th className="p-4">Proof Documents</th>
+                  <th className="p-4">Proof Documents (PDF/JPG)</th>
                   <th className="p-4">Status</th>
                   <th className="p-4 text-right">Actions</th>
                 </tr>
@@ -180,36 +188,33 @@ export default function SuperAdminPaymentRequestsPage() {
 
                     <td className="p-4 space-y-1">
                       {req.chequeDocUrl ? (
-                        <a
-                          href={req.chequeDocUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-[11px] text-sky-400 hover:underline flex items-center gap-1 font-bold"
+                        <button
+                          type="button"
+                          onClick={() => openDocumentPreview(`${req.masjid?.name} - Cheque / Passbook`, req.chequeDocUrl)}
+                          className="text-[11px] text-sky-400 hover:text-sky-300 hover:underline flex items-center gap-1 font-bold cursor-pointer"
                         >
-                          <i className="fas fa-file-pdf"></i> Cheque / Passbook
-                        </a>
+                          <i className="fas fa-file-pdf"></i> Cheque / Passbook Copy
+                        </button>
                       ) : (
-                        <span className="text-[10px] text-slate-500 italic block">No Cheque URL</span>
+                        <span className="text-[10px] text-slate-500 italic block">No Cheque Attached</span>
                       )}
                       {req.registrationDocUrl && (
-                        <a
-                          href={req.registrationDocUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-[11px] text-amber-400 hover:underline flex items-center gap-1 font-bold"
+                        <button
+                          type="button"
+                          onClick={() => openDocumentPreview(`${req.masjid?.name} - Registration Certificate`, req.registrationDocUrl)}
+                          className="text-[11px] text-amber-400 hover:text-amber-300 hover:underline flex items-center gap-1 font-bold cursor-pointer"
                         >
-                          <i className="fas fa-file-lines"></i> Registration Doc
-                        </a>
+                          <i className="fas fa-file-lines"></i> Registration Deed
+                        </button>
                       )}
                       {req.idProofDocUrl && (
-                        <a
-                          href={req.idProofDocUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-[11px] text-emerald-400 hover:underline flex items-center gap-1 font-bold"
+                        <button
+                          type="button"
+                          onClick={() => openDocumentPreview(`${req.masjid?.name} - Signatory ID Proof`, req.idProofDocUrl)}
+                          className="text-[11px] text-emerald-400 hover:text-emerald-300 hover:underline flex items-center gap-1 font-bold cursor-pointer"
                         >
                           <i className="fas fa-id-card"></i> Signatory ID Proof
-                        </a>
+                        </button>
                       )}
                     </td>
 
@@ -247,7 +252,7 @@ export default function SuperAdminPaymentRequestsPage() {
                           type="button"
                           onClick={() => handleAction(req.id, 'APPROVE')}
                           disabled={actionLoading}
-                          className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold rounded-xl text-xs transition shadow-sm"
+                          className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold rounded-xl text-xs transition shadow-sm cursor-pointer"
                         >
                           <i className="fas fa-check"></i> Approve
                         </button>
@@ -258,7 +263,7 @@ export default function SuperAdminPaymentRequestsPage() {
                           type="button"
                           onClick={() => handleAction(req.id, 'UNDER_REVIEW')}
                           disabled={actionLoading}
-                          className="px-2.5 py-1.5 bg-blue-900/60 hover:bg-blue-800 text-blue-200 font-bold rounded-xl text-xs transition border border-blue-700"
+                          className="px-2.5 py-1.5 bg-blue-900/60 hover:bg-blue-800 text-blue-200 font-bold rounded-xl text-xs transition border border-blue-700 cursor-pointer"
                         >
                           Reviewing
                         </button>
@@ -272,7 +277,7 @@ export default function SuperAdminPaymentRequestsPage() {
                             setRejectionModalAction('RESUBMIT_REQUIRED');
                           }}
                           disabled={actionLoading}
-                          className="px-2.5 py-1.5 bg-orange-950/60 hover:bg-orange-900 text-orange-300 font-bold rounded-xl text-xs transition border border-orange-800"
+                          className="px-2.5 py-1.5 bg-orange-950/60 hover:bg-orange-900 text-orange-300 font-bold rounded-xl text-xs transition border border-orange-800 cursor-pointer"
                         >
                           Resubmit
                         </button>
@@ -285,7 +290,7 @@ export default function SuperAdminPaymentRequestsPage() {
                           setRejectionModalAction('REJECT');
                         }}
                         disabled={actionLoading}
-                        className="px-2.5 py-1.5 bg-rose-950/60 hover:bg-rose-900 text-rose-300 font-bold rounded-xl text-xs transition border border-rose-800"
+                        className="px-2.5 py-1.5 bg-rose-950/60 hover:bg-rose-900 text-rose-300 font-bold rounded-xl text-xs transition border border-rose-800 cursor-pointer"
                       >
                         Reject
                       </button>
@@ -297,6 +302,63 @@ export default function SuperAdminPaymentRequestsPage() {
           </div>
         )}
       </div>
+
+      {/* DOCUMENT PREVIEW MODAL */}
+      {previewDoc && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-4xl w-full h-[85vh] flex flex-col overflow-hidden shadow-2xl">
+            <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-950">
+              <div className="flex items-center gap-2">
+                <i className={`fas ${previewDoc.isPdf ? 'fa-file-pdf text-red-400' : 'fa-file-image text-emerald-400'} text-base`}></i>
+                <h3 className="text-sm font-extrabold text-white truncate max-w-md">{previewDoc.title}</h3>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const win = window.open();
+                    if (win) {
+                      if (previewDoc.isPdf) {
+                        win.document.write(`<iframe src="${previewDoc.url}" frameborder="0" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>`);
+                      } else {
+                        win.document.write(`<img src="${previewDoc.url}" style="max-width:100%; height:auto; margin:20px auto; display:block;" />`);
+                      }
+                    }
+                  }}
+                  className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                >
+                  <i className="fas fa-arrow-up-right-from-square"></i> Open in New Tab
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewDoc(null)}
+                  className="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center text-sm cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            <div className="flex-1 bg-slate-950/80 p-4 flex items-center justify-center overflow-auto">
+              {previewDoc.isPdf ? (
+                <iframe
+                  src={previewDoc.url}
+                  className="w-full h-full rounded-2xl border border-slate-800 bg-white"
+                  title={previewDoc.title}
+                />
+              ) : (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={previewDoc.url}
+                  alt={previewDoc.title}
+                  className="max-h-full max-w-full object-contain rounded-2xl border border-slate-800 shadow-lg"
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* REJECTION / RESUBMIT REASON MODAL */}
       {selectedRequest && rejectionModalAction && (
@@ -312,7 +374,7 @@ export default function SuperAdminPaymentRequestsPage() {
                   setSelectedRequest(null);
                   setRejectionModalAction(null);
                 }}
-                className="text-slate-400 hover:text-white"
+                className="text-slate-400 hover:text-white cursor-pointer"
               >
                 <i className="fas fa-times"></i>
               </button>
@@ -343,7 +405,7 @@ export default function SuperAdminPaymentRequestsPage() {
                   setSelectedRequest(null);
                   setRejectionModalAction(null);
                 }}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold"
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold cursor-pointer"
               >
                 Cancel
               </button>
@@ -351,7 +413,7 @@ export default function SuperAdminPaymentRequestsPage() {
                 type="button"
                 disabled={actionLoading || !rejectionReason.trim()}
                 onClick={() => handleAction(selectedRequest.id, rejectionModalAction, rejectionReason)}
-                className={`px-5 py-2 text-white font-extrabold rounded-xl text-xs transition disabled:opacity-50 ${
+                className={`px-5 py-2 text-white font-extrabold rounded-xl text-xs transition disabled:opacity-50 cursor-pointer ${
                   rejectionModalAction === 'RESUBMIT_REQUIRED'
                     ? 'bg-orange-600 hover:bg-orange-500'
                     : 'bg-red-600 hover:bg-red-500'

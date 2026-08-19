@@ -1,7 +1,205 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
+
+interface FileUploadProps {
+  label: string;
+  required?: boolean;
+  value: string;
+  onChange: (value: string) => void;
+  hint?: string;
+}
+
+function DocumentAttachmentField({ label, required, value, onChange, hint }: FileUploadProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [fileName, setFileName] = useState('');
+  const [fileSizeStr, setFileSizeStr] = useState('');
+  const [fileType, setFileType] = useState<'PDF' | 'IMAGE' | 'URL' | null>(null);
+  const [uploadError, setUploadError] = useState('');
+  const [showUrlInput, setShowUrlInput] = useState(false);
+
+  // Detect existing value type
+  useEffect(() => {
+    if (!value) {
+      setFileName('');
+      setFileSizeStr('');
+      setFileType(null);
+      return;
+    }
+
+    if (value.startsWith('data:application/pdf')) {
+      setFileType('PDF');
+      if (!fileName) setFileName('Attached_Document.pdf');
+    } else if (value.startsWith('data:image/')) {
+      setFileType('IMAGE');
+      if (!fileName) setFileName('Attached_Image.jpg');
+    } else if (value.startsWith('http')) {
+      setFileType('URL');
+      if (!fileName) setFileName(value);
+    }
+  }, [value]);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    setUploadError('');
+    if (!file) return;
+
+    // Check 15MB limit (15 * 1024 * 1024 bytes)
+    const maxSizeBytes = 15 * 1024 * 1024;
+    if (file.size > maxSizeBytes) {
+      setUploadError(`File size exceeds 15MB limit (${(file.size / (1024 * 1024)).toFixed(2)} MB). Please select a file under 15MB.`);
+      return;
+    }
+
+    // Check allowed file types: PDF, JPEG, JPG, PNG, WEBP
+    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      setUploadError('Invalid format. Please attach a PDF or Image file (JPG, JPEG, PNG).');
+      return;
+    }
+
+    const sizeFormatted = file.size < 1024 * 1024
+      ? `${(file.size / 1024).toFixed(1)} KB`
+      : `${(file.size / (1024 * 1024)).toFixed(2)} MB`;
+
+    setFileName(file.name);
+    setFileSizeStr(sizeFormatted);
+    setFileType(file.type === 'application/pdf' ? 'PDF' : 'IMAGE');
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        onChange(reader.result);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemove = () => {
+    onChange('');
+    setFileName('');
+    setFileSizeStr('');
+    setFileType(null);
+    setUploadError('');
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">
+          {label} {required && <span className="text-rose-600">*</span>}
+        </label>
+        <button
+          type="button"
+          onClick={() => setShowUrlInput(!showUrlInput)}
+          className="text-[10px] text-emerald-700 hover:underline font-bold"
+        >
+          {showUrlInput ? 'Switch to File Upload' : 'Or paste URL link'}
+        </button>
+      </div>
+
+      {showUrlInput ? (
+        <div className="space-y-1">
+          <input
+            type="text"
+            placeholder="https://... or direct document URL"
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-mono outline-none focus:border-emerald-600"
+          />
+          <span className="text-[10px] text-slate-400 block">Enter an accessible online URL link for this document</span>
+        </div>
+      ) : (
+        <div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".pdf, .jpg, .jpeg, .png, .webp"
+            onChange={handleFileChange}
+            className="hidden"
+          />
+
+          {!value ? (
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              className="p-4 border-2 border-dashed border-slate-300 hover:border-emerald-600 rounded-2xl bg-white hover:bg-emerald-50/30 transition text-center cursor-pointer group"
+            >
+              <div className="w-10 h-10 rounded-xl bg-slate-100 group-hover:bg-emerald-100 text-slate-500 group-hover:text-emerald-700 flex items-center justify-center text-lg mx-auto mb-2 transition">
+                <i className="fas fa-cloud-arrow-up"></i>
+              </div>
+              <div className="text-xs font-extrabold text-slate-800">
+                Click to Attach File <span className="text-emerald-700 font-bold">(PDF or JPEG/PNG)</span>
+              </div>
+              <p className="text-[10px] text-slate-400 mt-0.5">
+                Maximum file size: <strong className="text-slate-600">15MB</strong>
+              </p>
+            </div>
+          ) : (
+            <div className="p-3.5 bg-emerald-50/80 border border-emerald-200 rounded-2xl flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0 ${
+                  fileType === 'PDF' ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-800'
+                }`}>
+                  <i className={`fas ${fileType === 'PDF' ? 'fa-file-pdf' : 'fa-file-image'}`}></i>
+                </div>
+                <div className="min-w-0 truncate">
+                  <div className="text-xs font-extrabold text-slate-900 truncate">
+                    {fileName || 'Document Attached'}
+                  </div>
+                  <div className="flex items-center gap-2 text-[10px] text-slate-500 font-bold">
+                    <span className="px-1.5 py-0.2 bg-white rounded border border-emerald-300 text-emerald-800 uppercase">
+                      {fileType || 'FILE'}
+                    </span>
+                    {fileSizeStr && <span>{fileSizeStr}</span>}
+                    <span className="text-emerald-700">✓ Ready for upload</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1.5 shrink-0">
+                {value.startsWith('data:') && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const win = window.open();
+                      if (win) {
+                        if (fileType === 'PDF') {
+                          win.document.write(`<iframe src="${value}" frameborder="0" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>`);
+                        } else {
+                          win.document.write(`<img src="${value}" style="max-width:100%; height:auto; margin:20px auto; display:block;" />`);
+                        }
+                      }
+                    }}
+                    className="px-2.5 py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-[10px] font-bold transition flex items-center gap-1 cursor-pointer"
+                  >
+                    <i className="fas fa-eye"></i> Preview
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={handleRemove}
+                  className="px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-[10px] font-bold transition flex items-center gap-1 cursor-pointer"
+                >
+                  <i className="fas fa-times"></i> Remove
+                </button>
+              </div>
+            </div>
+          )}
+
+          {uploadError && (
+            <p className="text-[11px] text-rose-600 font-bold mt-1.5 flex items-center gap-1">
+              <i className="fas fa-circle-exclamation"></i> {uploadError}
+            </p>
+          )}
+        </div>
+      )}
+
+      {hint && <p className="text-[10px] text-slate-400">{hint}</p>}
+    </div>
+  );
+}
 
 export default function PaymentGatewaySettingsPage() {
   const [loading, setLoading] = useState(true);
@@ -711,49 +909,39 @@ export default function PaymentGatewaySettingsPage() {
                 </div>
               )}
 
-              {/* DOCUMENT PROOF ATTACHMENTS */}
-              <div className="p-5 bg-slate-50/80 rounded-2xl border border-slate-200 space-y-4">
-                <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                  <i className="fas fa-paperclip text-[#D4AF37]"></i> Proof Documents (Upload / Attachment Link) *
-                </h4>
+              {/* DOCUMENT PROOF ATTACHMENTS (PDF & JPEG/PNG UP TO 15MB) */}
+              <div className="p-6 bg-slate-50/90 rounded-3xl border border-slate-200 space-y-5">
+                <div className="flex items-center justify-between border-b pb-3">
+                  <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                    <i className="fas fa-paperclip text-[#D4AF37]"></i> Proof Documents (PDF / JPEG / PNG • Max 15MB each) *
+                  </h4>
+                  <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full">
+                    Max 15MB / File
+                  </span>
+                </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">
-                      Cancelled Cheque / Passbook Copy URL *
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="https://... or doc attachment link"
-                      value={requestForm.chequeDocUrl}
-                      onChange={(e) => setRequestForm({ ...requestForm, chequeDocUrl: e.target.value })}
-                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-mono outline-none focus:border-emerald-600"
-                    />
-                  </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <DocumentAttachmentField
+                    label="1. Cancelled Cheque / Bank Passbook"
+                    required
+                    value={requestForm.chequeDocUrl || ''}
+                    onChange={(val) => setRequestForm({ ...requestForm, chequeDocUrl: val })}
+                    hint="Upload a clear scan or photo showing Mosque Trust Name, Account No & IFSC."
+                  />
 
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">
-                      Waqf / Trust Registration Certificate URL
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="https://... or certificate document URL"
-                      value={requestForm.registrationDocUrl}
-                      onChange={(e) => setRequestForm({ ...requestForm, registrationDocUrl: e.target.value })}
-                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-mono outline-none focus:border-emerald-600"
-                    />
-                  </div>
+                  <DocumentAttachmentField
+                    label="2. Waqf / Trust Registration Certificate"
+                    value={requestForm.registrationDocUrl || ''}
+                    onChange={(val) => setRequestForm({ ...requestForm, registrationDocUrl: val })}
+                    hint="Upload official Government / Waqf Board registration deed."
+                  />
 
-                  <div className="sm:col-span-2">
-                    <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">
-                      Authorized Signatory ID Proof URL (Aadhaar / PAN)
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="https://... or signatory ID proof URL"
-                      value={requestForm.idProofDocUrl}
-                      onChange={(e) => setRequestForm({ ...requestForm, idProofDocUrl: e.target.value })}
-                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-mono outline-none focus:border-emerald-600"
+                  <div className="md:col-span-2">
+                    <DocumentAttachmentField
+                      label="3. Authorized Signatory / Mutawalli ID Proof (Aadhaar / PAN)"
+                      value={requestForm.idProofDocUrl || ''}
+                      onChange={(val) => setRequestForm({ ...requestForm, idProofDocUrl: val })}
+                      hint="Upload identity proof of authorized administrator or mosque trustee."
                     />
                   </div>
                 </div>
