@@ -79,3 +79,42 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Failed to upload document' }, { status: 500 });
   }
 }
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
+    const masjidIdParam = searchParams.get('masjidId');
+
+    if (!id) {
+      return NextResponse.json({ error: 'Document ID is required' }, { status: 400 });
+    }
+
+    const session = requireTenantWriteAccess(masjidIdParam);
+    const masjid = await prisma.masjid.findFirst({
+      where: {
+        OR: [
+          { id: session.masjidId || '' },
+          { id: masjidIdParam || '' },
+          { slug: masjidIdParam || 'jama-masjid' },
+        ],
+      },
+    });
+
+    if (!masjid) {
+      return NextResponse.json({ error: 'Masjid not found' }, { status: 404 });
+    }
+
+    await prisma.document.delete({
+      where: { id },
+    });
+
+    return NextResponse.json({ success: true, message: 'Document deleted successfully' });
+  } catch (error: any) {
+    if (error.name === 'TenantAccessError' || error.name === 'UnauthorizedError') {
+      return NextResponse.json({ error: error.message }, { status: 403 });
+    }
+    return NextResponse.json({ error: 'Failed to delete document' }, { status: 500 });
+  }
+}
+
