@@ -16,23 +16,22 @@ export default function PublicDonationPage() {
     { id: 'con', name: 'Construction & Renovation' },
     { id: 'mai', name: 'Masjid Maintenance' },
   ]);
-  const [campaigns, setCampaigns] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [unapprovedError, setUnapprovedError] = useState<string | null>(null);
 
   // Donor form
   const [amount, setAmount] = useState('1000');
   const [selectedCat, setSelectedCat] = useState('General Donation');
-  const [selectedCampaign, setSelectedCampaign] = useState('');
   const [donorName, setDonorName] = useState('');
   const [donorEmail, setDonorEmail] = useState('');
   const [donorPhone, setDonorPhone] = useState('');
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('UPI');
 
-  // Checkout state
+  // Popup Modal state
   const [submitting, setSubmitting] = useState(false);
-  const [successData, setSuccessData] = useState<any>(null);
+  const [showPopup, setShowPopup] = useState(false);
+  const [popupData, setPopupData] = useState<any>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -45,9 +44,6 @@ export default function PublicDonationPage() {
           setMasjid(data.masjid);
           if (data.masjid.categories && data.masjid.categories.length > 0) {
             setCategories(data.masjid.categories);
-          }
-          if (data.masjid.campaigns) {
-            setCampaigns(data.masjid.campaigns);
           }
         } else {
           setUnapprovedError(
@@ -62,8 +58,7 @@ export default function PublicDonationPage() {
       });
   }, [slug]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleCompletePayment = async () => {
     setSubmitting(true);
 
     try {
@@ -85,7 +80,8 @@ export default function PublicDonationPage() {
 
       const data = await res.json();
       if (res.ok) {
-        setSuccessData(data);
+        setPopupData(data);
+        setShowPopup(true);
       } else {
         alert(data.error || 'Unable to complete donation. Please try again.');
       }
@@ -96,109 +92,13 @@ export default function PublicDonationPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#FFF9EC]">
-        <div className="text-center text-slate-500">
-          <i className="fas fa-mosque fa-spin text-3xl text-[#064E3B] mb-3"></i>
-          <p className="text-sm font-semibold">Loading Masjid Public Donation Portal...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (successData) {
-    return (
-      <div className="min-h-screen bg-[#FFF9EC] py-12 px-4 sm:px-6 lg:px-8 font-sans flex flex-col justify-center items-center">
-        <div className="max-w-md w-full bg-white border border-[#D4AF37]/40 shadow-2xl rounded-3xl p-8 text-center space-y-6 animate-in fade-in zoom-in-95 duration-200">
-          <div className="w-16 h-16 bg-emerald-50 text-[#064E3B] border border-[#D4AF37]/50 rounded-2xl flex items-center justify-center text-2xl mx-auto shadow-sm">
-            <i className="fas fa-check-double text-[#D4AF37]"></i>
-          </div>
-
-          <div className="space-y-1">
-            <span className="text-[10px] font-black uppercase tracking-widest text-[#064E3B] bg-[#FFF9EC] px-3 py-1 rounded-full border border-[#D4AF37]/30">
-              JazakAllah Khair
-            </span>
-            <h2 className="text-2xl font-black text-[#102A25]">Contribution Successful</h2>
-            <p className="text-xs text-slate-500">
-              Receipt <strong>{successData.receiptNo}</strong> generated.
-            </p>
-          </div>
-
-          {/* AUTO RECEIPT NOTIFICATION BADGES */}
-          <div className="space-y-2 text-left">
-            {successData.donorEmail && (
-              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl text-xs font-bold text-emerald-900 flex items-center gap-2.5">
-                <i className="fas fa-envelope-circle-check text-emerald-700 text-sm"></i>
-                <div className="min-w-0">
-                  <span className="block font-black text-emerald-950">Email Receipt Sent!</span>
-                  <span className="text-[11px] text-emerald-800 font-medium truncate block">{successData.donorEmail}</span>
-                </div>
-              </div>
-            )}
-
-            {successData.whatsappUrl && (
-              <a
-                href={successData.whatsappUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-3.5 bg-gradient-to-r from-emerald-600 to-[#064E3B] hover:from-emerald-700 hover:to-[#102A25] text-white rounded-2xl text-xs font-extrabold flex items-center justify-between shadow-md transition group"
-              >
-                <div className="flex items-center gap-2.5">
-                  <i className="fab fa-whatsapp text-lg text-[#25D366]"></i>
-                  <div className="text-left">
-                    <span className="block font-black leading-tight">Send WhatsApp Receipt</span>
-                    <span className="text-[10px] text-emerald-200 font-medium">{successData.donorPhone || 'Click to open WhatsApp'}</span>
-                  </div>
-                </div>
-                <i className="fas fa-arrow-up-right-from-square text-xs text-[#F4D06F] group-hover:translate-x-0.5 transition"></i>
-              </a>
-            )}
-          </div>
-
-          <div className="p-4 bg-[#FFF9EC] border border-[#D4AF37]/30 rounded-2xl text-left space-y-2 text-xs">
-            <div className="flex justify-between py-1 border-b border-[#e8dfc8]">
-              <span className="text-slate-500 font-bold">Mosque:</span>
-              <span className="font-extrabold text-[#064E3B]">{masjid.name}</span>
-            </div>
-            <div className="flex justify-between py-1 border-b border-[#e8dfc8]">
-              <span className="text-slate-500 font-bold">Amount:</span>
-              <span className="font-extrabold text-[#064E3B] text-base">₹{Number(successData.donation?.amount || amount).toLocaleString('en-IN')}</span>
-            </div>
-            <div className="flex justify-between py-1 border-b border-[#e8dfc8]">
-              <span className="text-slate-500 font-bold">Donor:</span>
-              <span className="font-extrabold text-slate-800">{successData.donation?.donorName || donorName || 'Devoted Donor'}</span>
-            </div>
-            <div className="flex justify-between py-1 border-b border-[#e8dfc8]">
-              <span className="text-slate-500 font-bold">Category:</span>
-              <span className="font-extrabold text-slate-800">{successData.donation?.category?.name || selectedCat}</span>
-            </div>
-            <div className="flex justify-between py-1">
-              <span className="text-slate-500 font-bold">Payment Mode:</span>
-              <span className="font-extrabold text-emerald-800">{paymentMethod}</span>
-            </div>
-          </div>
-
-          <div className="space-y-2.5 pt-1">
-            <Link
-              href={`/dashboard/receipts/print?id=${successData.receiptNo || 'demo'}&autoPrint=true`}
-              target="_blank"
-              className="w-full py-3 px-4 bg-slate-900 hover:bg-black text-white font-extrabold rounded-2xl text-xs shadow-md transition flex items-center justify-center gap-2"
-            >
-              <i className="fas fa-file-pdf text-[#F4D06F]"></i> Download Official PDF Receipt
-            </Link>
-
-            <button
-              onClick={() => setSuccessData(null)}
-              className="w-full py-3 px-4 bg-white border border-[#D4AF37]/50 hover:bg-[#FFF9EC] text-[#064E3B] font-bold rounded-2xl text-xs transition block cursor-pointer"
-            >
-              Make Another Donation
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const handleClosePopup = () => {
+    setShowPopup(false);
+    setPopupData(null);
+    setDonorName('');
+    setDonorEmail('');
+    setDonorPhone('');
+  };
 
   if (loading) {
     return (
@@ -254,9 +154,8 @@ export default function PublicDonationPage() {
   }
 
   const activePayeeName = masjid.upiPayeeName || masjid.name || 'Mosque Trust';
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(
-    `upi://pay?pa=${encodeURIComponent(masjid.upiId || '')}&pn=${encodeURIComponent(activePayeeName)}&cu=INR`
-  )}`;
+  const upiIntentUrl = `upi://pay?pa=${encodeURIComponent(masjid.upiId || '')}&pn=${encodeURIComponent(activePayeeName)}&am=${amount}&cu=INR`;
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiIntentUrl)}`;
 
   return (
     <div className="min-h-screen bg-[#FFF9EC] py-12 px-4 sm:px-6 lg:px-8 font-sans text-[#1c2e28]">
@@ -280,190 +179,338 @@ export default function PublicDonationPage() {
 
         {/* DONATION CARD */}
         <div className="masjid-card-luxury p-6 sm:p-8 bg-white border border-[#D4AF37]/30 shadow-xl rounded-3xl space-y-6">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* AMOUNT SELECTOR */}
+          {/* AMOUNT SELECTOR */}
+          <div>
+            <label className="block text-xs font-black text-[#064E3B] uppercase tracking-wider mb-2">
+              Select or Enter Contribution Amount (₹)
+            </label>
+            <div className="grid grid-cols-4 gap-2 mb-3">
+              {['500', '1000', '2500', '5000'].map((val) => (
+                <button
+                  key={val}
+                  type="button"
+                  onClick={() => setAmount(val)}
+                  className={`py-2.5 rounded-xl text-xs font-black transition border ${
+                    amount === val
+                      ? 'bg-[#064E3B] text-[#F4D06F] border-[#D4AF37] shadow-xs'
+                      : 'bg-[#FFF9EC] text-slate-700 border-[#e8dfc8] hover:border-[#D4AF37]/60'
+                  }`}
+                >
+                  ₹{val}
+                </button>
+              ))}
+            </div>
+            <input
+              type="number"
+              required
+              min="10"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="Enter custom amount"
+              className="w-full px-4 py-3 bg-[#FFF9EC] border border-[#D4AF37]/40 rounded-2xl text-base font-black text-[#064E3B] outline-none focus:border-[#D4AF37]"
+            />
+          </div>
+
+          {/* CATEGORY SELECTOR */}
+          <div>
+            <label className="block text-xs font-black text-[#064E3B] uppercase tracking-wider mb-2">
+              Fund Allocation
+            </label>
+            <select
+              value={selectedCat}
+              onChange={(e) => setSelectedCat(e.target.value)}
+              className="w-full px-4 py-3 bg-[#FFF9EC] border border-[#D4AF37]/40 rounded-2xl text-xs font-bold text-slate-900 outline-none focus:border-[#D4AF37]"
+            >
+              {categories.map((c) => (
+                <option key={c.id || c.name} value={c.name}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* DONOR CONTACT DETAILS */}
+          <div className="space-y-3 pt-2 border-t border-[#e8dfc8]">
+            <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest block">
+              Donor Information
+            </span>
+
             <div>
-              <label className="block text-xs font-black text-[#064E3B] uppercase tracking-wider mb-2">
-                Select or Enter Contribution Amount (₹)
-              </label>
-              <div className="grid grid-cols-4 gap-2 mb-3">
-                {['500', '1000', '2500', '5000'].map((val) => (
-                  <button
-                    key={val}
-                    type="button"
-                    onClick={() => setAmount(val)}
-                    className={`py-2.5 rounded-xl text-xs font-black transition border ${
-                      amount === val
-                        ? 'bg-[#064E3B] text-[#F4D06F] border-[#D4AF37] shadow-xs'
-                        : 'bg-[#FFF9EC] text-slate-700 border-[#e8dfc8] hover:border-[#D4AF37]/60'
-                    }`}
-                  >
-                    ₹{val}
-                  </button>
-                ))}
-              </div>
               <input
-                type="number"
-                required
-                min="10"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder="Enter custom amount"
-                className="w-full px-4 py-3 bg-[#FFF9EC] border border-[#D4AF37]/40 rounded-2xl text-base font-black text-[#064E3B] outline-none focus:border-[#D4AF37]"
+                type="text"
+                value={donorName}
+                onChange={(e) => setDonorName(e.target.value)}
+                placeholder="Full Name (or leave blank for Anonymous)"
+                className="w-full px-4 py-3 bg-[#FFF9EC] border border-[#D4AF37]/30 rounded-2xl text-xs font-semibold text-slate-900 outline-none focus:border-[#D4AF37]"
               />
             </div>
 
-            {/* CATEGORY SELECTOR */}
-            <div>
-              <label className="block text-xs font-black text-[#064E3B] uppercase tracking-wider mb-2">
-                Fund Allocation
-              </label>
-              <select
-                value={selectedCat}
-                onChange={(e) => setSelectedCat(e.target.value)}
-                className="w-full px-4 py-3 bg-[#FFF9EC] border border-[#D4AF37]/40 rounded-2xl text-xs font-bold text-slate-900 outline-none focus:border-[#D4AF37]"
-              >
-                {categories.map((c) => (
-                  <option key={c.id || c.name} value={c.name}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <input
+                type="email"
+                value={donorEmail}
+                onChange={(e) => setDonorEmail(e.target.value)}
+                placeholder="Email (for auto receipt)"
+                className="w-full px-4 py-3 bg-[#FFF9EC] border border-[#D4AF37]/30 rounded-2xl text-xs font-semibold text-slate-900 outline-none focus:border-[#D4AF37]"
+              />
+              <input
+                type="tel"
+                value={donorPhone}
+                onChange={(e) => setDonorPhone(e.target.value)}
+                placeholder="WhatsApp Mobile"
+                className="w-full px-4 py-3 bg-[#FFF9EC] border border-[#D4AF37]/30 rounded-2xl text-xs font-semibold text-slate-900 outline-none focus:border-[#D4AF37]"
+              />
+            </div>
+          </div>
+
+          {/* PAYMENT CHANNELS */}
+          <div>
+            <label className="block text-xs font-black text-[#064E3B] uppercase tracking-wider mb-2">
+              Payment Channel
+            </label>
+            <div className="grid grid-cols-3 gap-2 mb-3">
+              {['UPI', 'NetBanking', 'Card'].map((pm) => (
+                <button
+                  key={pm}
+                  type="button"
+                  onClick={() => setPaymentMethod(pm)}
+                  className={`py-2.5 rounded-xl text-xs font-black transition border cursor-pointer ${
+                    paymentMethod === pm
+                      ? 'bg-[#064E3B] text-[#F4D06F] border-[#D4AF37] shadow-xs'
+                      : 'bg-[#FFF9EC] text-slate-700 border-[#e8dfc8]'
+                  }`}
+                >
+                  {pm === 'UPI' ? '📱 UPI / QR' : pm === 'NetBanking' ? '🏦 Bank Transfer' : '💳 Debit/Credit'}
+                </button>
+              ))}
             </div>
 
-            {/* DONOR CONTACT DETAILS */}
-            <div className="space-y-3 pt-2 border-t border-[#e8dfc8]">
-              <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest block">
-                Donor Information
-              </span>
-
-              <div>
-                <input
-                  type="text"
-                  value={donorName}
-                  onChange={(e) => setDonorName(e.target.value)}
-                  placeholder="Full Name (or leave blank for Anonymous)"
-                  className="w-full px-4 py-3 bg-[#FFF9EC] border border-[#D4AF37]/30 rounded-2xl text-xs font-semibold text-slate-900 outline-none focus:border-[#D4AF37]"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <input
-                  type="email"
-                  value={donorEmail}
-                  onChange={(e) => setDonorEmail(e.target.value)}
-                  placeholder="Email (for PDF receipt)"
-                  className="w-full px-4 py-3 bg-[#FFF9EC] border border-[#D4AF37]/30 rounded-2xl text-xs font-semibold text-slate-900 outline-none focus:border-[#D4AF37]"
-                />
-                <input
-                  type="tel"
-                  value={donorPhone}
-                  onChange={(e) => setDonorPhone(e.target.value)}
-                  placeholder="WhatsApp Mobile"
-                  className="w-full px-4 py-3 bg-[#FFF9EC] border border-[#D4AF37]/30 rounded-2xl text-xs font-semibold text-slate-900 outline-none focus:border-[#D4AF37]"
-                />
-              </div>
-            </div>
-
-            {/* PAYMENT METHOD */}
-            <div>
-              <label className="block text-xs font-black text-[#064E3B] uppercase tracking-wider mb-2">
-                Payment Channel
-              </label>
-              <div className="grid grid-cols-3 gap-2 mb-3">
-                {['UPI', 'NetBanking', 'Card'].map((pm) => (
-                  <button
-                    key={pm}
-                    type="button"
-                    onClick={() => setPaymentMethod(pm)}
-                    className={`py-2.5 rounded-xl text-xs font-black transition border ${
-                      paymentMethod === pm
-                        ? 'bg-[#064E3B] text-[#F4D06F] border-[#D4AF37] shadow-xs'
-                        : 'bg-[#FFF9EC] text-slate-700 border-[#e8dfc8]'
-                    }`}
-                  >
-                    {pm === 'UPI' ? '📱 UPI / QR' : pm === 'NetBanking' ? '🏦 Bank Transfer' : '💳 Debit/Credit'}
-                  </button>
-                ))}
-              </div>
-
-              {/* DYNAMIC VERIFIED PAYMENT DETAILS BOX */}
-              {paymentMethod === 'UPI' && (
-                <div className="p-4 bg-[#FFF9EC] rounded-2xl border border-[#D4AF37]/40 flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
-                  <div className="w-28 h-28 bg-white p-1.5 rounded-xl border border-[#D4AF37]/50 shadow-sm shrink-0 flex items-center justify-center">
+            {/* DYNAMIC VERIFIED UPI QR CODE & DIRECT ACTION */}
+            {paymentMethod === 'UPI' && (
+              <div className="p-5 bg-[#FFF9EC] rounded-3xl border border-[#D4AF37]/50 space-y-4">
+                <div className="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
+                  {/* QR CODE DISPLAY */}
+                  <div className="w-32 h-32 bg-white p-2 rounded-2xl border border-[#D4AF37]/60 shadow-md shrink-0 flex items-center justify-center group relative">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(
-                        `upi://pay?pa=${encodeURIComponent(masjid.upiId || '')}&pn=${encodeURIComponent(activePayeeName)}&am=${amount}&cu=INR`
-                      )}`}
+                      src={qrCodeUrl}
                       alt="Verified UPI QR"
                       className="w-full h-full object-contain"
                     />
                   </div>
-                  <div className="space-y-1 text-xs">
-                    <div className="text-[10px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md inline-block">
+
+                  <div className="space-y-1.5 text-xs flex-1">
+                    <div className="text-[10px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full inline-block">
                       <i className="fas fa-check-circle"></i> Verified Mosque UPI
                     </div>
-                    <div className="font-mono font-black text-slate-900 text-sm">{masjid.upiId || 'Direct UPI Active'}</div>
-                    <div className="text-[11px] text-slate-600 font-bold">{activePayeeName}</div>
-                    <p className="text-[10px] text-slate-500">Scan via Google Pay, PhonePe, Paytm or BHIM to pay instantly.</p>
+                    <div className="font-mono font-black text-slate-900 text-base">{masjid.upiId || 'Direct UPI Active'}</div>
+                    <div className="text-xs text-slate-700 font-extrabold">{activePayeeName}</div>
+                    <p className="text-[11px] text-slate-500 font-medium leading-tight">
+                      Scan via Google Pay, PhonePe, Paytm or BHIM with exact amount (<strong>₹{Number(amount).toLocaleString('en-IN')}</strong>).
+                    </p>
+                  </div>
+                </div>
+
+                {/* 1-CLICK ACTIONS UPON SCANNING / PAYING */}
+                <div className="pt-3 border-t border-[#e8dfc8] grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <a
+                    href={upiIntentUrl}
+                    className="py-3 px-4 bg-white hover:bg-slate-50 text-[#064E3B] border border-[#D4AF37] font-extrabold rounded-2xl text-xs text-center shadow-xs transition flex items-center justify-center gap-2"
+                  >
+                    <i className="fas fa-mobile-screen-button text-[#D4AF37]"></i> Open in UPI App
+                  </a>
+
+                  <button
+                    type="button"
+                    onClick={handleCompletePayment}
+                    disabled={submitting}
+                    className="py-3 px-4 bg-[#064E3B] hover:bg-[#102A25] text-white font-extrabold rounded-2xl text-xs text-center shadow-md transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                  >
+                    {submitting ? (
+                      <>
+                        <i className="fas fa-circle-notch fa-spin"></i> Confirming...
+                      </>
+                    ) : (
+                      <>
+                        <i className="fas fa-check-double text-[#F4D06F]"></i> Completed Payment
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* BANK TRANSFER DETAILS */}
+            {paymentMethod === 'NetBanking' && (
+              <div className="p-5 bg-[#FFF9EC] rounded-3xl border border-[#D4AF37]/50 space-y-4 text-xs">
+                <div className="text-[10px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full inline-block">
+                  <i className="fas fa-check-circle"></i> Official Mosque Bank Account
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-slate-800">
+                  <div className="p-3 bg-white rounded-xl border border-slate-200">
+                    <span className="text-[10px] text-slate-400 font-bold block uppercase">Bank Name</span>
+                    <span className="font-extrabold text-slate-900">{masjid.bankName || 'State Bank of India'}</span>
+                  </div>
+                  <div className="p-3 bg-white rounded-xl border border-slate-200">
+                    <span className="text-[10px] text-slate-400 font-bold block uppercase">Account No</span>
+                    <span className="font-mono font-extrabold text-slate-900">{masjid.bankAccNo || 'Verified Account'}</span>
+                  </div>
+                  <div className="p-3 bg-white rounded-xl border border-slate-200">
+                    <span className="text-[10px] text-slate-400 font-bold block uppercase">IFSC Code</span>
+                    <span className="font-mono font-extrabold text-slate-900">{masjid.bankIfsc || 'SBIN0000921'}</span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleCompletePayment}
+                  disabled={submitting}
+                  className="w-full py-3.5 px-4 bg-[#064E3B] hover:bg-[#102A25] text-white font-extrabold rounded-2xl text-xs text-center shadow-md transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  {submitting ? (
+                    <>
+                      <i className="fas fa-circle-notch fa-spin"></i> Confirming...
+                    </>
+                  ) : (
+                    <>
+                      <i className="fas fa-check-double text-[#F4D06F]"></i> Completed Bank Transfer
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+
+            {/* DEBIT / CREDIT CARD DETAILS */}
+            {paymentMethod === 'Card' && (
+              <div className="p-5 bg-[#FFF9EC] rounded-3xl border border-[#D4AF37]/50 space-y-4 text-xs text-slate-700">
+                <div className="text-[10px] font-black uppercase tracking-wider text-sky-800 bg-sky-100 px-2.5 py-0.5 rounded-full inline-block">
+                  <i className="fas fa-shield-halved"></i> 256-Bit Encrypted Gateway
+                </div>
+                <p className="text-xs text-slate-600 font-medium">
+                  Direct card processing for international & domestic credit/debit cards with instant verification.
+                </p>
+
+                <button
+                  type="button"
+                  onClick={handleCompletePayment}
+                  disabled={submitting}
+                  className="w-full py-3.5 px-4 bg-[#064E3B] hover:bg-[#102A25] text-white font-extrabold rounded-2xl text-xs text-center shadow-md transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  {submitting ? (
+                    <>
+                      <i className="fas fa-circle-notch fa-spin"></i> Processing...
+                    </>
+                  ) : (
+                    <>
+                      <i className="fas fa-lock text-[#F4D06F]"></i> Pay ₹{Number(amount).toLocaleString('en-IN')} with Card
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* POPUP MODAL: "Thank you for your donation! Your contribution is greatly appreciated." */}
+      {showPopup && popupData && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white border border-[#D4AF37]/50 rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl text-center space-y-6 animate-in fade-in zoom-in-95 duration-200">
+            {/* SUCCESS ICON */}
+            <div className="w-16 h-16 bg-emerald-50 text-[#064E3B] border border-[#D4AF37]/60 rounded-2xl flex items-center justify-center text-3xl mx-auto shadow-md">
+              <i className="fas fa-check-double text-[#D4AF37]"></i>
+            </div>
+
+            {/* THANK YOU HEADER */}
+            <div className="space-y-2">
+              <span className="text-[10px] font-black uppercase tracking-widest text-[#064E3B] bg-[#FFF9EC] px-3 py-1 rounded-full border border-[#D4AF37]/30 inline-block">
+                JazakAllah Khair
+              </span>
+              <h2 className="text-xl sm:text-2xl font-black text-[#102A25] tracking-tight leading-snug">
+                Thank you for your donation! Your contribution is greatly appreciated.
+              </h2>
+              <p className="text-xs text-slate-500 font-medium">
+                Official Receipt <strong>{popupData.receiptNo}</strong> generated.
+              </p>
+            </div>
+
+            {/* AUTO RECEIPT DISPATCH BADGES */}
+            <div className="space-y-2 text-left">
+              {popupData.donorEmail && (
+                <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl text-xs font-bold text-emerald-900 flex items-center gap-2.5">
+                  <i className="fas fa-envelope-circle-check text-emerald-700 text-sm"></i>
+                  <div className="min-w-0">
+                    <span className="block font-black text-emerald-950">Email Receipt Sent!</span>
+                    <span className="text-[11px] text-emerald-800 font-medium truncate block">{popupData.donorEmail}</span>
                   </div>
                 </div>
               )}
 
-              {paymentMethod === 'NetBanking' && (
-                <div className="p-4 bg-[#FFF9EC] rounded-2xl border border-[#D4AF37]/40 space-y-2 text-xs">
-                  <div className="text-[10px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md inline-block">
-                    <i className="fas fa-check-circle"></i> Official Mosque Bank Account
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 text-slate-800">
-                    <div>
-                      <span className="text-[10px] text-slate-500 font-bold block uppercase">Bank Name</span>
-                      <span className="font-black text-slate-900">{masjid.bankName || 'State Bank of India'}</span>
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-slate-500 font-bold block uppercase">Account No</span>
-                      <span className="font-mono font-black text-slate-900">{masjid.bankAccNo || 'Verified Account'}</span>
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-slate-500 font-bold block uppercase">IFSC Code</span>
-                      <span className="font-mono font-black text-slate-900">{masjid.bankIfsc || 'SBIN0000921'}</span>
+              {popupData.whatsappUrl && (
+                <a
+                  href={popupData.whatsappUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-3.5 bg-gradient-to-r from-emerald-600 to-[#064E3B] hover:from-emerald-700 hover:to-[#102A25] text-white rounded-2xl text-xs font-extrabold flex items-center justify-between shadow-md transition group"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <i className="fab fa-whatsapp text-lg text-[#25D366]"></i>
+                    <div className="text-left">
+                      <span className="block font-black leading-tight">Send WhatsApp Receipt</span>
+                      <span className="text-[10px] text-emerald-200 font-medium">{popupData.donorPhone || 'Click to open WhatsApp'}</span>
                     </div>
                   </div>
-                </div>
-              )}
-
-              {paymentMethod === 'Card' && (
-                <div className="p-4 bg-[#FFF9EC] rounded-2xl border border-[#D4AF37]/40 space-y-1 text-xs text-slate-700">
-                  <div className="text-[10px] font-black uppercase tracking-wider text-sky-800 bg-sky-100 px-2 py-0.5 rounded-md inline-block">
-                    <i className="fas fa-shield-halved"></i> 256-Bit Encrypted Razorpay Checkout
-                  </div>
-                  <p className="text-[11px] text-slate-600">
-                    Secure credit & debit cards processing powered by official 128/256-bit encrypted gateway.
-                  </p>
-                </div>
+                  <i className="fas fa-arrow-up-right-from-square text-xs text-[#F4D06F] group-hover:translate-x-0.5 transition"></i>
+                </a>
               )}
             </div>
 
-            {/* SUBMIT BUTTON */}
-            <button
-              type="submit"
-              disabled={submitting}
-              className="w-full py-4 bg-[#064E3B] hover:bg-[#102A25] text-white border border-[#D4AF37]/50 font-black rounded-2xl text-sm shadow-xl shadow-[#064E3B]/20 transition flex items-center justify-center gap-2"
-            >
-              {submitting ? (
-                <>
-                  <i className="fas fa-circle-notch fa-spin"></i> Processing Contribution...
-                </>
-              ) : (
-                <>
-                  <i className="fas fa-heart text-[#F4D06F]"></i> Donate ₹{Number(amount).toLocaleString('en-IN')} Now
-                </>
-              )}
-            </button>
-          </form>
+            {/* SUMMARY CARD */}
+            <div className="p-4 bg-[#FFF9EC] border border-[#D4AF37]/30 rounded-2xl text-left space-y-2 text-xs">
+              <div className="flex justify-between py-1 border-b border-[#e8dfc8]">
+                <span className="text-slate-500 font-bold">Mosque:</span>
+                <span className="font-extrabold text-[#064E3B]">{masjid.name}</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-[#e8dfc8]">
+                <span className="text-slate-500 font-bold">Amount:</span>
+                <span className="font-extrabold text-[#064E3B] text-base">₹{Number(popupData.donation?.amount || amount).toLocaleString('en-IN')}</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-[#e8dfc8]">
+                <span className="text-slate-500 font-bold">Donor:</span>
+                <span className="font-extrabold text-slate-800">{popupData.donation?.donorName || donorName || 'Devoted Donor'}</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-[#e8dfc8]">
+                <span className="text-slate-500 font-bold">Category:</span>
+                <span className="font-extrabold text-slate-800">{popupData.donation?.category?.name || selectedCat}</span>
+              </div>
+              <div className="flex justify-between py-1">
+                <span className="text-slate-500 font-bold">Payment Mode:</span>
+                <span className="font-extrabold text-emerald-800">{paymentMethod}</span>
+              </div>
+            </div>
+
+            {/* ACTION BUTTONS: PDF DOWNLOAD & DONE */}
+            <div className="space-y-2.5 pt-1">
+              <Link
+                href={`/dashboard/receipts/print?id=${popupData.receiptNo || 'demo'}&autoPrint=true`}
+                target="_blank"
+                className="w-full py-3 px-4 bg-slate-900 hover:bg-black text-white font-extrabold rounded-2xl text-xs shadow-md transition flex items-center justify-center gap-2"
+              >
+                <i className="fas fa-file-pdf text-[#F4D06F]"></i> Download Official PDF Receipt
+              </Link>
+
+              {/* DONE BUTTON */}
+              <button
+                type="button"
+                onClick={handleClosePopup}
+                className="w-full py-3.5 px-4 bg-[#064E3B] hover:bg-[#102A25] text-[#F4D06F] border border-[#D4AF37] font-black rounded-2xl text-xs shadow-md transition block cursor-pointer"
+              >
+                ✓ Done
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
