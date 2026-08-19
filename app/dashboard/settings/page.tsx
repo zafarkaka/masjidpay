@@ -20,6 +20,7 @@ export default function SettingsPage() {
     bankAccNo: '',
     bankIfsc: '',
     upiId: '',
+    upiPayeeName: '',
     financialYear: '2026-2027',
     communityAccessCode: '7860',
   });
@@ -43,6 +44,7 @@ export default function SettingsPage() {
             bankAccNo: data.masjid.bankAccNo || data.gateway?.bankAccNo || '',
             bankIfsc: data.masjid.bankIfsc || data.gateway?.bankIfsc || '',
             upiId: data.masjid.upiId || data.gateway?.upiId || '',
+            upiPayeeName: data.gateway?.upiPayeeName || data.masjid.name || '',
             financialYear: data.masjid.financialYear || '2026-2027',
             communityAccessCode: data.masjid.communityAccessCode || '7860',
           });
@@ -291,10 +293,21 @@ export default function SettingsPage() {
               <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">Primary UPI ID (VPA)</label>
               <input
                 type="text"
-                placeholder="e.g. jamamasjid@sbi"
+                placeholder="e.g. jamamasjid@sbi or 9894977003@okaxis"
                 value={form.upiId}
                 onChange={(e) => setForm({ ...form, upiId: e.target.value })}
                 className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white font-bold text-emerald-900 transition"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">UPI Payee / Beneficiary Name</label>
+              <input
+                type="text"
+                placeholder="e.g. Mosque Bank Registered Name"
+                value={form.upiPayeeName}
+                onChange={(e) => setForm({ ...form, upiPayeeName: e.target.value })}
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white font-bold text-slate-900 transition"
               />
             </div>
 

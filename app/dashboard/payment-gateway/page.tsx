@@ -17,6 +17,8 @@ export default function PaymentGatewaySettingsPage() {
 
   const [enableUpi, setEnableUpi] = useState(true);
   const [upiId, setUpiId] = useState('jama.masjid@upi');
+  const [upiPayeeName, setUpiPayeeName] = useState('');
+  const [masjidName, setMasjidName] = useState('');
   const [bankName, setBankName] = useState('State Bank of India');
   const [bankAccNo, setBankAccNo] = useState('38920194821');
   const [bankIfsc, setBankIfsc] = useState('SBIN0001234');
@@ -25,6 +27,9 @@ export default function PaymentGatewaySettingsPage() {
     fetch('/api/masjid/settings')
       .then((res) => res.json())
       .then((data) => {
+        if (data.masjid) {
+          setMasjidName(data.masjid.name || '');
+        }
         if (data.gateway) {
           setEnableRazorpay(data.gateway.enableRazorpay);
           setRazorpayKeyId(data.gateway.razorpayKeyId || '');
@@ -32,6 +37,7 @@ export default function PaymentGatewaySettingsPage() {
           setRazorpayWebhookSecret(data.gateway.razorpayWebhookSecret || '');
           setEnableUpi(data.gateway.enableUpi);
           setUpiId(data.gateway.upiId || 'jama.masjid@upi');
+          setUpiPayeeName(data.gateway.upiPayeeName || data.masjid?.name || '');
           setBankName(data.gateway.bankName || 'State Bank of India');
           setBankAccNo(data.gateway.bankAccNo || '38920194821');
           setBankIfsc(data.gateway.bankIfsc || 'SBIN0001234');
@@ -58,6 +64,7 @@ export default function PaymentGatewaySettingsPage() {
           razorpayWebhookSecret,
           enableUpi,
           upiId,
+          upiPayeeName,
           bankName,
           bankAccNo,
           bankIfsc,
@@ -77,8 +84,9 @@ export default function PaymentGatewaySettingsPage() {
     }
   };
 
+  const activePayeeName = upiPayeeName.trim() || masjidName || 'Mosque Trust';
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
-    `upi://pay?pa=${upiId}&pn=Jama%20Masjid%20Trust&cu=INR`
+    `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(activePayeeName)}&cu=INR`
   )}`;
 
   return (
@@ -219,18 +227,33 @@ export default function PaymentGatewaySettingsPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="md:col-span-2 space-y-4">
-                <div>
-                  <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
-                    MOSQUE UPI VPA ID <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={upiId}
-                    onChange={(e) => setUpiId(e.target.value)}
-                    placeholder="e.g. jama.masjid@upi"
-                    className="w-full px-4 py-3 bg-slate-50/70 border border-slate-200 rounded-2xl text-xs font-mono font-bold text-slate-900 outline-none focus:border-emerald-700 focus:bg-white transition"
-                  />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
+                      MOSQUE UPI VPA ID <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={upiId}
+                      onChange={(e) => setUpiId(e.target.value)}
+                      placeholder="e.g. yourname@upi or 9894977003@okaxis"
+                      className="w-full px-4 py-3 bg-slate-50/70 border border-slate-200 rounded-2xl text-xs font-mono font-bold text-slate-900 outline-none focus:border-emerald-700 focus:bg-white transition"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
+                      UPI PAYEE / DISPLAY NAME <span className="text-slate-400 font-normal">(AS IN BANK / UPI APP)</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={upiPayeeName}
+                      onChange={(e) => setUpiPayeeName(e.target.value)}
+                      placeholder={masjidName || 'e.g. Your Registered Mosque / Trust Name'}
+                      className="w-full px-4 py-3 bg-slate-50/70 border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 outline-none focus:border-emerald-700 focus:bg-white transition"
+                    />
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -284,7 +307,9 @@ export default function PaymentGatewaySettingsPage() {
                 </div>
                 <div className="space-y-0.5">
                   <span className="text-xs font-mono font-extrabold text-emerald-800 block">{upiId}</span>
-                  <span className="text-[11px] text-slate-500 block font-medium">Jama Masjid Trust</span>
+                  <span className="text-[11px] text-slate-600 block font-bold truncate max-w-[180px]">
+                    {activePayeeName}
+                  </span>
                 </div>
               </div>
             </div>
