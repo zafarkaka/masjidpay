@@ -228,6 +228,17 @@ export default function SettingsPage() {
               />
             </div>
 
+            <div>
+              <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">Current Financial Year</label>
+              <input
+                type="text"
+                value={form.financialYear}
+                onChange={(e) => setForm({ ...form, financialYear: e.target.value })}
+                placeholder="2026-2027"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white font-bold transition"
+              />
+            </div>
+
             {/* VIEWER SECRET ACCESS CODE BOX */}
             <div className="sm:col-span-2 p-4 bg-emerald-50/70 border border-emerald-200 rounded-2xl space-y-2">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -259,98 +270,13 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* 2. BANK & PAYMENT CONFIGURATION */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-4">
-          <h2 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider border-b border-slate-100 pb-3 flex items-center gap-2">
-            <i className="fas fa-university text-emerald-700 text-sm"></i> Bank & UPI Payment Configuration
-            {!isSuperAdmin && (
-              <span className="ml-auto text-[10px] font-bold text-emerald-800 bg-emerald-100 border border-emerald-300 px-2 py-0.5 rounded-full flex items-center gap-1">
-                <i className="fas fa-lock"></i> Super Admin Verified
-              </span>
-            )}
-          </h2>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">Bank Name</label>
-              <input
-                type="text"
-                disabled={!isSuperAdmin}
-                placeholder="e.g. State Bank of India"
-                value={form.bankName}
-                onChange={(e) => setForm({ ...form, bankName: e.target.value })}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition disabled:bg-slate-100 disabled:cursor-not-allowed"
-              />
-            </div>
-
-            <div>
-              <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">Account Number</label>
-              <input
-                type="text"
-                disabled={!isSuperAdmin}
-                placeholder="e.g. 30492817405"
-                value={form.bankAccNo}
-                onChange={(e) => setForm({ ...form, bankAccNo: e.target.value })}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white font-mono transition disabled:bg-slate-100 disabled:cursor-not-allowed"
-              />
-            </div>
-
-            <div>
-              <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">IFSC Code</label>
-              <input
-                type="text"
-                disabled={!isSuperAdmin}
-                placeholder="e.g. SBIN0000921"
-                value={form.bankIfsc}
-                onChange={(e) => setForm({ ...form, bankIfsc: e.target.value })}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white font-mono uppercase transition disabled:bg-slate-100 disabled:cursor-not-allowed"
-              />
-            </div>
-
-            <div>
-              <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">Primary UPI ID (VPA)</label>
-              <input
-                type="text"
-                disabled={!isSuperAdmin}
-                placeholder="e.g. jamamasjid@sbi or 9894977003@okaxis"
-                value={form.upiId}
-                onChange={(e) => setForm({ ...form, upiId: e.target.value })}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white font-bold text-emerald-900 transition disabled:bg-slate-100 disabled:cursor-not-allowed"
-              />
-            </div>
-
-            <div>
-              <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">UPI Payee / Beneficiary Name</label>
-              <input
-                type="text"
-                disabled={!isSuperAdmin}
-                placeholder="e.g. Mosque Bank Registered Name"
-                value={form.upiPayeeName}
-                onChange={(e) => setForm({ ...form, upiPayeeName: e.target.value })}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white font-bold text-slate-900 transition disabled:bg-slate-100 disabled:cursor-not-allowed"
-              />
-            </div>
-
-            <div>
-              <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">Current Financial Year</label>
-              <input
-                type="text"
-                value={form.financialYear}
-                onChange={(e) => setForm({ ...form, financialYear: e.target.value })}
-                placeholder="2026-2027"
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white font-bold transition"
-              />
-            </div>
-          </div>
-        </div>
-
         <div className="flex justify-end">
           <button
             type="submit"
             disabled={saving}
             className="px-6 py-2.5 bg-emerald-800 hover:bg-emerald-900 text-white font-bold rounded-xl text-xs shadow-xs transition disabled:opacity-50 flex items-center gap-2 cursor-pointer"
           >
-            <i className="fas fa-save text-emerald-300"></i> {saving ? 'Saving Changes...' : 'Save All Settings'}
+            <i className="fas fa-save text-emerald-300"></i> {saving ? 'Saving Changes...' : 'Save Mosque Settings'}
           </button>
         </div>
       </form>
