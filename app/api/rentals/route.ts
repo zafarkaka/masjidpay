@@ -25,11 +25,13 @@ export async function GET(req: NextRequest) {
 
     let shops: any[] = [];
     let payments: any[] = [];
+    let settings: any[] = [];
 
     try {
-      [shops, payments] = await Promise.all([
+      [shops, payments, settings] = await Promise.all([
         prisma.rentalShop.findMany({ where: { masjidId: masjid.id }, orderBy: { createdAt: 'desc' } }).catch(() => []),
         prisma.rentalPayment.findMany({ where: { masjidId: masjid.id }, orderBy: { paymentDate: 'desc' } }).catch(() => []),
+        prisma.setting.findMany({ where: { masjidId: masjid.id, key: { startsWith: 'rental_meta_' } } }).catch(() => []),
       ]);
     } catch (dbErr) {
       console.warn('Prisma query warning in rentals GET:', dbErr);
@@ -45,8 +47,27 @@ export async function GET(req: NextRequest) {
       if (sbPayments) payments = sbPayments;
     }
 
+    // Attach metadata (photos, idCards, revisions) to shops
+    const metaMap: Record<string, any> = {};
+    settings.forEach((s) => {
+      try {
+        const shopId = s.key.replace(/^rental_meta_/, '');
+        metaMap[shopId] = JSON.parse(s.value);
+      } catch (e) {}
+    });
+
+    const enrichedShops = (shops || []).map((shop) => {
+      const meta = metaMap[shop.id] || {};
+      return {
+        ...shop,
+        photos: meta.photos || [],
+        idCards: meta.idCards || [],
+        revisions: meta.revisions || [],
+      };
+    });
+
     return NextResponse.json({
-      shops: shops || [],
+      shops: enrichedShops,
       payments: payments || [],
       masjidName: masjid.name,
       masjidSlug: masjid.slug,
@@ -141,6 +162,21 @@ export async function POST(req: NextRequest) {
         });
       }
 
+      // Save metadata (photos, idCards, revisions) if provided
+      if (body.photos || body.idCards || body.revisions) {
+        const metaKey = `rental_meta_${shop.id}`;
+        const metaVal = JSON.stringify({
+          photos: body.photos || [],
+          idCards: body.idCards || [],
+          revisions: body.revisions || [],
+        });
+        await prisma.setting.upsert({
+          where: { masjidId_key: { masjidId: masjid.id, key: metaKey } },
+          create: { masjidId: masjid.id, key: metaKey, value: metaVal },
+          update: { value: metaVal },
+        }).catch(() => {});
+      }
+
       return NextResponse.json({ success: true, shop });
     }
 
@@ -165,7 +201,95 @@ export async function POST(req: NextRequest) {
         },
       });
 
+      // Save metadata (photos, idCards, revisions)
+      if (body.photos !== undefined || body.idCards !== undefined || body.revisions !== undefined) {
+        const metaKey = `rental_meta_${shopId}`;
+        const existingSetting = await prisma.setting.findUnique({
+          where: { masjidId_key: { masjidId: masjid.id, key: metaKey } },
+        }).catch(() => null);
+
+        let currentMeta: any = {};
+        if (existingSetting?.value) {
+          try {
+            currentMeta = JSON.parse(existingSetting.value);
+          } catch (e) {}
+        }
+
+        const newMeta = {
+          photos: body.photos !== undefined ? body.photos : (currentMeta.photos || []),
+          idCards: body.idCards !== undefined ? body.idCards : (currentMeta.idCards || []),
+          revisions: body.revisions !== undefined ? body.revisions : (currentMeta.revisions || []),
+        };
+
+        await prisma.setting.upsert({
+          where: { masjidId_key: { masjidId: masjid.id, key: metaKey } },
+          create: { masjidId: masjid.id, key: metaKey, value: JSON.stringify(newMeta) },
+          update: { value: JSON.stringify(newMeta) },
+        }).catch(() => {});
+      }
+
       return NextResponse.json({ success: true, shop: updated });
+    }
+
+    // 2B. REVISE RENT / APPLY RATE CHANGE
+    if (action === 'REVISE_RENT' || action === 'APPLY_RATE_CHANGE') {
+      const existing = await prisma.rentalShop.findUnique({ where: { id: shopId } });
+      if (!existing) {
+        return NextResponse.json({ error: 'Rental unit not found' }, { status: 404 });
+      }
+
+      const newRentAmount = Number(body.newRent || monthlyRent || 0);
+      const effectiveMonthStr = body.effectiveMonth || 'August 2026';
+      const oldRentAmount = Number(existing.monthlyRent || 0);
+
+      // Update shop rent
+      const updated = await prisma.rentalShop.update({
+        where: { id: shopId },
+        data: {
+          monthlyRent: newRentAmount,
+        },
+      });
+
+      // Append to revisions history in Setting
+      const metaKey = `rental_meta_${shopId}`;
+      const existingSetting = await prisma.setting.findUnique({
+        where: { masjidId_key: { masjidId: masjid.id, key: metaKey } },
+      }).catch(() => null);
+
+      let currentMeta: any = { photos: [], idCards: [], revisions: [] };
+      if (existingSetting?.value) {
+        try {
+          currentMeta = JSON.parse(existingSetting.value);
+        } catch (e) {}
+      }
+
+      const revisionEntry = {
+        effectiveMonth: effectiveMonthStr,
+        oldRent: oldRentAmount,
+        newRent: newRentAmount,
+        date: new Date().toISOString(),
+        notes: body.notes || `Rate revised from ₹${oldRentAmount} to ₹${newRentAmount}`,
+      };
+
+      const updatedRevisions = [revisionEntry, ...(currentMeta.revisions || [])];
+
+      await prisma.setting.upsert({
+        where: { masjidId_key: { masjidId: masjid.id, key: metaKey } },
+        create: {
+          masjidId: masjid.id,
+          key: metaKey,
+          value: JSON.stringify({ ...currentMeta, revisions: updatedRevisions }),
+        },
+        update: {
+          value: JSON.stringify({ ...currentMeta, revisions: updatedRevisions }),
+        },
+      }).catch(() => {});
+
+      return NextResponse.json({
+        success: true,
+        shop: updated,
+        revisions: updatedRevisions,
+      });
     }
 
     // 3. END CURRENT TENANCY & PROCESS SECURITY DEPOSIT SETTLEMENT

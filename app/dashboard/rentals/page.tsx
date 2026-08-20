@@ -26,6 +26,12 @@ export default function RentalsPage() {
   const [selectedVoucher, setSelectedVoucher] = useState<any>(null);
   const [selectedShop, setSelectedShop] = useState<any>(null);
 
+  // Tenant Documents & Photos
+  const [tenantPhotos, setTenantPhotos] = useState<string[]>([]);
+  const [tenantIdCards, setTenantIdCards] = useState<string[]>([]);
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const [lightboxZoom, setLightboxZoom] = useState<number>(1);
+
   // Form State - Add / Edit Property
   const [unitName, setUnitName] = useState('MANDINA MEDICAL');
   const [unitType, setUnitType] = useState('Shop');
@@ -39,9 +45,12 @@ export default function RentalsPage() {
   const [tenantPhone, setTenantPhone] = useState('');
   const [internalNotes, setInternalNotes] = useState('');
 
-  // Rent Revisions
+  // Rent Revisions & Rate Updates
   const [revisionMonth, setRevisionMonth] = useState('August 2026');
   const [revisionRent, setRevisionRent] = useState('');
+  const [rateRevisions, setRateRevisions] = useState<any[]>([]);
+  const [revisingRate, setRevisingRate] = useState(false);
+  const [rateSuccessMsg, setRateSuccessMsg] = useState('');
 
   // Form State - Collect Rent
   const [payAmount, setPayAmount] = useState('5000');
@@ -83,6 +92,36 @@ export default function RentalsPage() {
     loadData();
   }, []);
 
+  // Handle Photo Uploads
+  const handleAddPhotos = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+    Array.from(files).forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (reader.result) {
+          setTenantPhotos((prev) => [...prev, String(reader.result)]);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  // Handle ID Card Uploads
+  const handleAddIdCards = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+    Array.from(files).forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (reader.result) {
+          setTenantIdCards((prev) => [...prev, String(reader.result)]);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
   // OPEN EDIT PROPERTY MODAL (Matching screenshot)
   const handleOpenEdit = (shop: any) => {
     setSelectedShop(shop);
@@ -97,9 +136,51 @@ export default function RentalsPage() {
     setTenantName(shop.tenantName?.replace(/^Vacant \(Former: (.*)\)$/, '$1') || '');
     setTenantPhone(shop.tenantPhone || '');
     setInternalNotes(shop.internalNotes || '');
+    setTenantPhotos(shop.photos || []);
+    setTenantIdCards(shop.idCards || []);
+    setRateRevisions(shop.revisions || []);
+    setRevisionMonth('August 2026');
     setRevisionRent('');
+    setRateSuccessMsg('');
     setErrorMsg('');
     setShowEditModal(true);
+  };
+
+  // APPLY RENT REVISION / RATE CHANGE
+  const handleApplyRateChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedShop || !revisionRent) return;
+    setRevisingRate(true);
+    setRateSuccessMsg('');
+    setErrorMsg('');
+
+    try {
+      const res = await fetch('/api/rentals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'REVISE_RENT',
+          shopId: selectedShop.id,
+          newRent: Number(revisionRent),
+          effectiveMonth: revisionMonth,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setMonthlyRent(revisionRent);
+        setRateRevisions(data.revisions || []);
+        setRateSuccessMsg(`✓ Rent rate updated to ₹${Number(revisionRent).toLocaleString('en-IN')}/mo effective ${revisionMonth}`);
+        setRevisionRent('');
+        loadData();
+      } else {
+        setErrorMsg(data.error || 'Failed to apply rent revision.');
+      }
+    } catch (err: any) {
+      setErrorMsg(err.message || 'An error occurred while revising rate.');
+    } finally {
+      setRevisingRate(false);
+    }
   };
 
   // SAVE PROPERTY (ADD OR EDIT)
@@ -128,6 +209,9 @@ export default function RentalsPage() {
           tenantPhone,
           internalNotes,
           paymentMethod,
+          photos: tenantPhotos,
+          idCards: tenantIdCards,
+          revisions: rateRevisions,
         }),
       });
 
@@ -146,6 +230,8 @@ export default function RentalsPage() {
       setSubmitting(false);
     }
   };
+
+
 
   // COLLECT RENT
   const handleCollectRent = async (e: React.FormEvent) => {
@@ -1182,26 +1268,320 @@ export default function RentalsPage() {
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-3 border-t">
+              {/* TENANT PHOTOS (MATCHING SCREENSHOT media_1787203614292.png) */}
+              <div className="p-4 bg-[#FAFAF8] border border-amber-100/90 rounded-2xl space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <span className="text-xs font-black text-slate-900 uppercase tracking-wider block">
+                      TENANT PHOTOS <span className="text-slate-400 font-medium lowercase">(optional, multiple)</span>
+                    </span>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      Upload photos of the tenant. Click thumbnail to view in full screen with zoom.
+                    </p>
+                  </div>
+
+                  <label className="px-3.5 py-1.5 bg-[#0F3D26] hover:bg-emerald-950 text-white font-extrabold text-xs rounded-xl shadow-xs transition flex items-center gap-1.5 cursor-pointer shrink-0">
+                    <i className="fas fa-camera text-[#F4D06F]"></i> Add Photos
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handleAddPhotos}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+
+                {tenantPhotos.length === 0 ? (
+                  <p className="text-xs text-slate-400 italic py-1">
+                    No tenant photos uploaded yet.
+                  </p>
+                ) : (
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5 pt-1">
+                    {tenantPhotos.map((photo, idx) => (
+                      <div
+                        key={idx}
+                        className="relative group rounded-xl overflow-hidden border border-slate-200 aspect-square bg-slate-100 cursor-pointer shadow-2xs"
+                        onClick={() => {
+                          setLightboxImage(photo);
+                          setLightboxZoom(1);
+                        }}
+                      >
+                        <img
+                          src={photo}
+                          alt={`Tenant Photo ${idx + 1}`}
+                          className="w-full h-full object-cover group-hover:scale-105 transition duration-200"
+                        />
+                        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white text-xs">
+                          <i className="fas fa-magnifying-glass-plus text-base"></i>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setTenantPhotos((prev) => prev.filter((_, i) => i !== idx));
+                          }}
+                          className="absolute top-1 right-1 w-5 h-5 bg-rose-600 hover:bg-rose-700 text-white rounded-full flex items-center justify-center text-[10px] shadow cursor-pointer"
+                          title="Remove Photo"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* TENANT ID CARDS / DOCUMENTS (MATCHING SCREENSHOT media_1787203614292.png) */}
+              <div className="p-4 bg-[#FAFAF8] border border-amber-100/90 rounded-2xl space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <span className="text-xs font-black text-slate-900 uppercase tracking-wider block">
+                      TENANT ID CARDS / DOCUMENTS <span className="text-slate-400 font-medium lowercase">(optional, multiple)</span>
+                    </span>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      Upload ID proof (Aadhaar, Passport, Driving License) with zoom support.
+                    </p>
+                  </div>
+
+                  <label className="px-3.5 py-1.5 bg-[#0F3D26] hover:bg-emerald-950 text-white font-extrabold text-xs rounded-xl shadow-xs transition flex items-center gap-1.5 cursor-pointer shrink-0">
+                    <i className="fas fa-id-card text-[#F4D06F]"></i> Add ID Cards
+                    <input
+                      type="file"
+                      accept="image/*,.pdf"
+                      multiple
+                      onChange={handleAddIdCards}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+
+                {tenantIdCards.length === 0 ? (
+                  <p className="text-xs text-slate-400 italic py-1">
+                    No ID card scans uploaded yet.
+                  </p>
+                ) : (
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5 pt-1">
+                    {tenantIdCards.map((doc, idx) => (
+                      <div
+                        key={idx}
+                        className="relative group rounded-xl overflow-hidden border border-slate-200 aspect-square bg-slate-100 cursor-pointer shadow-2xs"
+                        onClick={() => {
+                          setLightboxImage(doc);
+                          setLightboxZoom(1);
+                        }}
+                      >
+                        <img
+                          src={doc}
+                          alt={`ID Card ${idx + 1}`}
+                          className="w-full h-full object-cover group-hover:scale-105 transition duration-200"
+                        />
+                        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white text-xs">
+                          <i className="fas fa-magnifying-glass-plus text-base"></i>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setTenantIdCards((prev) => prev.filter((_, i) => i !== idx));
+                          }}
+                          className="absolute top-1 right-1 w-5 h-5 bg-rose-600 hover:bg-rose-700 text-white rounded-full flex items-center justify-center text-[10px] shadow cursor-pointer"
+                          title="Remove ID Card"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* SAVE / CANCEL BUTTONS (MATCHING SCREENSHOT) */}
+              <div className="flex justify-end gap-3 pt-3 border-t border-slate-200">
                 <button
                   type="button"
                   onClick={() => {
                     setShowEditModal(false);
                     setShowAddModal(false);
                   }}
-                  className="px-4 py-2.5 bg-slate-100 text-xs font-bold rounded-xl text-slate-700 hover:bg-slate-200 cursor-pointer"
+                  className="px-5 py-2.5 bg-white border border-amber-200/90 text-xs font-extrabold rounded-xl text-slate-700 hover:bg-slate-50 cursor-pointer transition shadow-2xs"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-6 py-2.5 bg-[#0F3D26] hover:bg-emerald-950 text-white rounded-xl text-xs font-extrabold shadow-md transition disabled:opacity-50 cursor-pointer"
+                  className="px-6 py-2.5 bg-[#0F3D26] hover:bg-emerald-950 text-white rounded-xl text-xs font-black shadow-md transition disabled:opacity-50 cursor-pointer"
                 >
                   {submitting ? 'Saving...' : 'Save Property'}
                 </button>
               </div>
             </form>
+
+            {/* RENT REVISIONS & RATE UPDATES (MATCHING SCREENSHOT media_1787203614292.png) */}
+            {selectedShop && (
+              <div className="pt-5 border-t-2 border-slate-100 space-y-4">
+                <div>
+                  <h4 className="text-base font-extrabold text-slate-900 tracking-tight">
+                    Rent Revisions & Rate Updates
+                  </h4>
+                </div>
+
+                {rateSuccessMsg && (
+                  <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs font-bold text-emerald-900 flex items-center gap-2">
+                    <i className="fas fa-circle-check text-emerald-700"></i> {rateSuccessMsg}
+                  </div>
+                )}
+
+                {/* RATE REVISION INPUT BOX */}
+                <div className="p-4 bg-[#FAFAF8] border border-amber-100/90 rounded-2xl">
+                  <form onSubmit={handleApplyRateChange} className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
+                    <div className="sm:col-span-5">
+                      <label className="block text-[11px] font-extrabold text-slate-700 mb-1">
+                        Effective Month
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          required
+                          value={revisionMonth}
+                          onChange={(e) => setRevisionMonth(e.target.value)}
+                          placeholder="August 2026"
+                          className="w-full pl-3.5 pr-8 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-extrabold text-slate-900 outline-none focus:border-emerald-700"
+                        />
+                        <i className="fas fa-calendar-days absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none"></i>
+                      </div>
+                    </div>
+
+                    <div className="sm:col-span-4">
+                      <label className="block text-[11px] font-extrabold text-slate-700 mb-1">
+                        New Rent (IN ₹)
+                      </label>
+                      <input
+                        type="number"
+                        required
+                        min="1"
+                        value={revisionRent}
+                        onChange={(e) => setRevisionRent(e.target.value)}
+                        placeholder="e.g. 5500"
+                        className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-extrabold text-slate-900 outline-none focus:border-emerald-700"
+                      />
+                    </div>
+
+                    <div className="sm:col-span-3">
+                      <button
+                        type="submit"
+                        disabled={revisingRate || !revisionRent}
+                        className="w-full py-2.5 bg-[#0F3D26] hover:bg-emerald-950 text-white font-extrabold text-xs rounded-xl shadow-xs transition disabled:opacity-50 cursor-pointer flex items-center justify-center gap-1.5"
+                      >
+                        {revisingRate ? (
+                          <>
+                            <i className="fas fa-circle-notch fa-spin text-xs"></i> Updating...
+                          </>
+                        ) : (
+                          'Apply Rate Change'
+                        )}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+
+                {/* RATE ADJUSTMENT HISTORY */}
+                <div className="space-y-2 pt-1">
+                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-600 block">
+                    RATE ADJUSTMENT HISTORY
+                  </span>
+
+                  {rateRevisions.length === 0 ? (
+                    <p className="text-xs text-slate-400 italic">
+                      No rate changes have been logged for this property.
+                    </p>
+                  ) : (
+                    <div className="space-y-2">
+                      {rateRevisions.map((rev, idx) => (
+                        <div
+                          key={idx}
+                          className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between text-xs"
+                        >
+                          <div>
+                            <span className="font-extrabold text-slate-900 block">
+                              {rev.effectiveMonth}: IN ₹{Number(rev.newRent || 0).toLocaleString('en-IN')}/mo
+                            </span>
+                            <span className="text-[10px] text-slate-400 font-medium">
+                              Previous Rate: ₹{Number(rev.oldRent || 0).toLocaleString('en-IN')} • Logged on{' '}
+                              {new Date(rev.date).toLocaleDateString('en-IN', {
+                                day: '2-digit',
+                                month: 'short',
+                                year: 'numeric',
+                              })}
+                            </span>
+                          </div>
+
+                          <span className="px-2.5 py-1 bg-emerald-100 text-emerald-900 border border-emerald-300 rounded-lg text-[10px] font-black uppercase">
+                            Updated Rate
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* FULLSCREEN LIGHTBOX WITH ZOOM CONTROLS */}
+      {lightboxImage && (
+        <div className="fixed inset-0 z-70 bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="relative max-w-4xl max-h-[90vh] flex flex-col items-center">
+            {/* Top Toolbar */}
+            <div className="flex items-center gap-3 bg-slate-900/90 text-white px-4 py-2 rounded-full border border-slate-700 mb-3 shadow-lg">
+              <button
+                type="button"
+                onClick={() => setLightboxZoom((z) => Math.max(0.5, z - 0.25))}
+                className="hover:text-emerald-400 font-extrabold text-sm px-2 cursor-pointer"
+                title="Zoom Out"
+              >
+                <i className="fas fa-magnifying-glass-minus"></i>
+              </button>
+              <span className="text-xs font-mono font-bold text-slate-300">
+                {Math.round(lightboxZoom * 100)}%
+              </span>
+              <button
+                type="button"
+                onClick={() => setLightboxZoom((z) => Math.min(3, z + 0.25))}
+                className="hover:text-emerald-400 font-extrabold text-sm px-2 cursor-pointer"
+                title="Zoom In"
+              >
+                <i className="fas fa-magnifying-glass-plus"></i>
+              </button>
+              <button
+                type="button"
+                onClick={() => setLightboxZoom(1)}
+                className="text-[11px] hover:text-emerald-400 font-bold px-2 cursor-pointer border-l border-slate-700"
+              >
+                Reset
+              </button>
+              <button
+                type="button"
+                onClick={() => setLightboxImage(null)}
+                className="hover:text-rose-400 font-extrabold text-sm px-2 cursor-pointer border-l border-slate-700"
+                title="Close"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Zoomable Image Container */}
+            <div className="overflow-auto max-h-[80vh] max-w-full rounded-2xl border border-slate-700 bg-black flex items-center justify-center p-2">
+              <img
+                src={lightboxImage}
+                alt="Enlarged Document"
+                style={{ transform: `scale(${lightboxZoom})`, transformOrigin: 'center center' }}
+                className="max-h-[75vh] object-contain transition-transform duration-150"
+              />
+            </div>
           </div>
         </div>
       )}
