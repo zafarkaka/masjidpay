@@ -5,16 +5,6 @@ import Link from 'next/link';
 
 export default function HomePage() {
   const [activeCategory, setActiveCategory] = useState('ALL');
-  const [activeNav, setActiveNav] = useState('home');
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  const navItems = [
-    { id: 'home', label: 'Home', href: '#' },
-    { id: 'about', label: 'About Us', href: '#about' },
-    { id: 'faq', label: 'FAQ', href: '#faq' },
-    { id: 'blog', label: 'Blog', href: '#blog' },
-    { id: 'contact', label: 'Contact Us', href: '#contact' },
-  ];
 
   const categories = [
     { id: 'ALL', label: 'All Capabilities', icon: 'fa-mosque' },
@@ -105,7 +95,7 @@ export default function HomePage() {
       <header className="sticky top-0 z-50 backdrop-blur-md bg-[#FFF9EC]/95 border-b border-[#D4AF37]/25 shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
           {/* LOGO WITH ROYAL CRESCENT & GOLD ACCENT */}
-          <Link href="/" onClick={() => setActiveNav('home')} className="flex items-center gap-3 group shrink-0">
+          <Link href="/" className="flex items-center gap-3 group shrink-0">
             <div className="w-10 h-10 rounded-2xl bg-[#064E3B] border border-[#D4AF37]/60 text-[#F4D06F] flex items-center justify-center shadow-md shadow-[#064E3B]/20 transition transform group-hover:scale-105">
               <i className="fas fa-mosque text-lg"></i>
             </div>
@@ -122,28 +112,7 @@ export default function HomePage() {
             </div>
           </Link>
 
-          {/* WEBSITE NAVIGATION MENU (EXACTLY MATCHING USER SCREENSHOT) */}
-          <nav className="hidden lg:flex items-center gap-1 bg-white/80 backdrop-blur-xs border border-[#D4AF37]/30 px-3 py-1.5 rounded-full shadow-2xs">
-            {navItems.map((item) => {
-              const isActive = activeNav === item.id;
-              return (
-                <a
-                  key={item.id}
-                  href={item.href}
-                  onClick={() => setActiveNav(item.id)}
-                  className={`px-4 py-1.5 rounded-full text-xs font-bold transition ${
-                    isActive
-                      ? 'bg-[#EBF7F2] text-[#064E3B] font-extrabold shadow-2xs'
-                      : 'text-slate-600 hover:text-[#064E3B] hover:bg-slate-50'
-                  }`}
-                >
-                  {item.label}
-                </a>
-              );
-            })}
-          </nav>
-
-          {/* ACTION BUTTONS & MOBILE MENU TOGGLE */}
+          {/* ACTION BUTTONS */}
           <div className="flex items-center gap-2 sm:gap-3">
             <Link
               href="/login"
@@ -158,44 +127,8 @@ export default function HomePage() {
               <span>Register</span>
               <i className="fas fa-arrow-right text-[10px] text-[#F4D06F] hidden sm:inline"></i>
             </Link>
-
-            {/* MOBILE HAMBURGER BUTTON */}
-            <button
-              type="button"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 text-slate-700 hover:text-emerald-800 rounded-xl hover:bg-slate-100 transition text-base"
-              aria-label="Toggle menu"
-            >
-              <i className={`fas ${mobileMenuOpen ? 'fa-times' : 'fa-bars'}`}></i>
-            </button>
           </div>
         </div>
-
-        {/* MOBILE DROPDOWN MENU */}
-        {mobileMenuOpen && (
-          <div className="lg:hidden bg-white/95 border-b border-[#D4AF37]/30 px-4 py-3 space-y-1 backdrop-blur-md animate-in slide-in-from-top duration-200">
-            {navItems.map((item) => {
-              const isActive = activeNav === item.id;
-              return (
-                <a
-                  key={item.id}
-                  href={item.href}
-                  onClick={() => {
-                    setActiveNav(item.id);
-                    setMobileMenuOpen(false);
-                  }}
-                  className={`block px-3 py-2 rounded-xl text-xs font-bold transition ${
-                    isActive
-                      ? 'bg-[#EBF7F2] text-[#064E3B] font-extrabold'
-                      : 'text-slate-600 hover:bg-slate-50'
-                  }`}
-                >
-                  {item.label}
-                </a>
-              );
-            })}
-          </div>
-        )}
       </header>
 
       {/* 2. HERO SECTION WITH LARGE MASJID SUNSET PHOTOGRAPH & EMERALD OVERLAY */}

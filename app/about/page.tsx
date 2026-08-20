@@ -85,12 +85,6 @@ export default function AboutPage() {
             </div>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-8 text-xs font-bold text-slate-700">
-            <Link href="/" className="hover:text-[#064E3B] transition">Home</Link>
-            <Link href="/about" className="text-[#064E3B] font-black border-b-2 border-[#064E3B] pb-1">About Us</Link>
-            <Link href="/#faq" className="hover:text-[#064E3B] transition">FAQ</Link>
-            <Link href="/#contact" className="hover:text-[#064E3B] transition">Contact Us</Link>
-          </nav>
 
           <div className="flex items-center gap-3">
             <Link
