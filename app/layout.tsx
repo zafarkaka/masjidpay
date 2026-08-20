@@ -3,9 +3,64 @@ import type { Metadata, Viewport } from 'next';
 import PwaInstallPrompt from '@/components/PwaInstallPrompt';
 import { LanguageProvider } from '@/context/LanguageContext';
 
+const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://masjidpay.in';
+
 export const metadata: Metadata = {
-  title: 'MasjidPay · Masjid Financial Management SaaS Engine',
-  description: 'Multi-tenant financial management SaaS for masjids. Track member collections, donations, expenses, staff payroll, PDF reports, and WhatsApp receipts.',
+  metadataBase: new URL(baseUrl),
+  title: {
+    default: 'MasjidPay · Masjid Financial Management SaaS Engine',
+    template: '%s | MasjidPay',
+  },
+  description: 'Multi-tenant financial management SaaS for masjids. Track member collections, donations, expenses, staff payroll, PDF reports, and WhatsApp receipts with transparency and amanah.',
+  keywords: [
+    'Masjid Management Software',
+    'Mosque Finance SaaS',
+    'MasjidPay',
+    'Islamic Accounting',
+    'Zakat and Sadaqah Ledger',
+    'Mosque Donation Software',
+    'WhatsApp Mosque Receipt',
+    'Masjid Payroll Management',
+  ],
+  authors: [{ name: 'MasjidPay Team' }],
+  creator: 'MasjidPay',
+  publisher: 'MasjidPay',
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    url: baseUrl,
+    siteName: 'MasjidPay',
+    title: 'MasjidPay · Building Trust. Strengthening Communities.',
+    description: 'A digital platform designed to help mosques manage finances with simplicity, transparency, and amanah.',
+    images: [
+      {
+        url: '/images/masjid_hero_sunset.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'MasjidPay - Modern Islamic Financial SaaS',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'MasjidPay · Modern Islamic Financial Management',
+    description: 'Empowering mosques with simple, trustworthy financial technology rooted in Islamic values.',
+    images: ['/images/masjid_hero_sunset.jpg'],
+  },
+  verification: {
+    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || '',
+  },
   manifest: '/manifest.json',
   icons: {
     icon: 'https://img.icons8.com/color/96/mosque.png',
