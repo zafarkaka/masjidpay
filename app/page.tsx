@@ -551,49 +551,189 @@ export default function HomePage() {
       </section>
 
       {/* 7.5 ABOUT US SECTION (#about) */}
-      <section id="about" className="py-16 lg:py-24 bg-white border-y border-[#D4AF37]/30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-          <div className="text-center max-w-3xl mx-auto space-y-2">
-            <span className="text-xs font-black uppercase tracking-widest text-[#0F766E] block">
-              About MasjidPay
-            </span>
-            <h2 className="text-3xl sm:text-4xl font-black text-[#102A25] tracking-tight">
-              Empowering Mosques with Modern Islamic Financial Technology
+      <section id="about" className="py-16 lg:py-24 bg-white border-y border-[#D4AF37]/30 space-y-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
+          {/* HERO BANNER & TAGLINE */}
+          <div className="text-center max-w-4xl mx-auto space-y-4">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#EBF7F2] border border-[#2D8A68]/30 text-[#0F5A3E] text-xs font-black tracking-wider uppercase">
+              <span>✦</span>
+              <span>About MasjidPay</span>
+            </div>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#102A25] tracking-tight leading-[1.15]">
+              Building Trust. <span className="text-[#0B6B4C]">Strengthening Communities.</span>
             </h2>
-            <p className="text-xs sm:text-sm text-slate-600 font-medium">
-              Built upon the values of Amanah (trust) and Shifafiyyah (transparency), MasjidPay transforms paper bookkeeping into a secure, multi-tenant digital operating system.
+            <p className="text-sm sm:text-base text-slate-700 font-semibold max-w-3xl mx-auto leading-relaxed">
+              MasjidPay is a digital platform designed to help mosques manage their finances with simplicity, transparency, and amanah.
+            </p>
+            <p className="text-xs sm:text-sm text-slate-600 font-medium max-w-3xl mx-auto leading-relaxed italic">
+              We believe that when mosque finances are organized and transparent, communities become stronger, leaders can serve more effectively, and donors can give with greater confidence.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="p-6 bg-[#FFF9EC] border border-[#D4AF37]/30 rounded-3xl space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-[#064E3B] text-[#F4D06F] flex items-center justify-center font-bold text-base">
-                <i className="fas fa-hand-holding-heart"></i>
+          {/* STORY & PURPOSE CARDS */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="p-8 bg-[#FFF9EC] border border-[#D4AF37]/40 rounded-3xl space-y-4 shadow-xs">
+              <div className="w-12 h-12 rounded-2xl bg-[#064E3B] text-[#F4D06F] flex items-center justify-center font-bold text-lg">
+                <i className="fas fa-book-open-reader"></i>
               </div>
-              <h3 className="text-base font-extrabold text-slate-900">Amanah & Integrity</h3>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                Segregated fund ledgers prevent mixing of Zakat, general donations, and construction pools, adhering strictly to Islamic principles.
+              <h3 className="text-xl font-black text-[#102A25]">Our Story</h3>
+              <p className="text-xs sm:text-sm text-slate-700 leading-relaxed font-semibold">
+                Every masjid carries an important responsibility.
+              </p>
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                From collecting sadaqah and zakat to managing daily expenses, community programs, staff, projects, and charitable initiatives, mosque teams handle financial responsibilities that directly impact the lives of people in their communities.
+              </p>
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                Yet many mosques still rely on spreadsheets, paperwork, and disconnected systems.
+              </p>
+              <p className="text-xs sm:text-sm font-extrabold text-[#0B6B4C]">
+                MasjidPay was created to change that — combining modern technology with timeless Islamic values.
               </p>
             </div>
 
-            <div className="p-6 bg-[#FFF9EC] border border-[#D4AF37]/30 rounded-3xl space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-[#064E3B] text-[#F4D06F] flex items-center justify-center font-bold text-base">
-                <i className="fas fa-bolt"></i>
+            <div className="p-8 bg-[#FFF9EC] border border-[#D4AF37]/40 rounded-3xl space-y-4 shadow-xs">
+              <div className="w-12 h-12 rounded-2xl bg-[#064E3B] text-[#F4D06F] flex items-center justify-center font-bold text-lg">
+                <i className="fas fa-shield-halved"></i>
               </div>
-              <h3 className="text-base font-extrabold text-slate-900">Speed & Automation</h3>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                Automate monthly member collection tracking, instant WhatsApp receipts, and one-click PDF statements for committee meetings.
+              <h3 className="text-xl font-black text-[#102A25]">Our Purpose</h3>
+              <p className="text-xs sm:text-sm text-slate-700 leading-relaxed font-semibold">
+                Our purpose is not simply to digitize mosque finances.
+              </p>
+              <div className="p-4 bg-[#EBF7F2] border-l-4 border-[#0B6B4C] rounded-r-2xl">
+                <p className="font-black text-sm sm:text-base text-[#0F5A3E]">
+                  It is to help mosques protect their amanah.
+                </p>
+              </div>
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                Every donation represents someone&apos;s trust. Every expense carries a responsibility. Every financial decision should be made with integrity and accountability.
+              </p>
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                MasjidPay provides the tools to help organizations manage these responsibilities with greater confidence and clarity.
+              </p>
+            </div>
+          </div>
+
+          {/* WHAT WE BELIEVE (4 PILLARS) */}
+          <div className="space-y-6">
+            <div className="text-center space-y-1">
+              <span className="text-xs font-black uppercase tracking-widest text-[#0F766E] block">
+                Foundational Beliefs
+              </span>
+              <h3 className="text-2xl sm:text-3xl font-black text-[#102A25]">What We Believe</h3>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              <div className="p-6 bg-white border border-[#D4AF37]/30 rounded-3xl space-y-2.5 shadow-xs hover:border-[#064E3B] transition">
+                <div className="w-10 h-10 rounded-xl bg-[#064E3B] text-[#F4D06F] flex items-center justify-center text-base">
+                  <i className="fas fa-shield-halved"></i>
+                </div>
+                <h4 className="text-sm font-black text-[#102A25]">Amanah Comes First</h4>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  The wealth entrusted to a masjid is an amanah. We believe it should be managed responsibly, carefully, and with accountability.
+                </p>
+              </div>
+
+              <div className="p-6 bg-white border border-[#D4AF37]/30 rounded-3xl space-y-2.5 shadow-xs hover:border-[#064E3B] transition">
+                <div className="w-10 h-10 rounded-xl bg-[#064E3B] text-[#F4D06F] flex items-center justify-center text-base">
+                  <i className="fas fa-handshake"></i>
+                </div>
+                <h4 className="text-sm font-black text-[#102A25]">Transparency Builds Trust</h4>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  A healthy mosque community is built on trust. Clear records and understandable reporting help strengthen relationships.
+                </p>
+              </div>
+
+              <div className="p-6 bg-white border border-[#D4AF37]/30 rounded-3xl space-y-2.5 shadow-xs hover:border-[#064E3B] transition">
+                <div className="w-10 h-10 rounded-xl bg-[#064E3B] text-[#F4D06F] flex items-center justify-center text-base">
+                  <i className="fas fa-microchip"></i>
+                </div>
+                <h4 className="text-sm font-black text-[#102A25]">Technology Should Serve People</h4>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Technology should reduce complexity, not create more of it. Simple tools allow teams to focus on serving.
+                </p>
+              </div>
+
+              <div className="p-6 bg-white border border-[#D4AF37]/30 rounded-3xl space-y-2.5 shadow-xs hover:border-[#064E3B] transition">
+                <div className="w-10 h-10 rounded-xl bg-[#064E3B] text-[#F4D06F] flex items-center justify-center text-base">
+                  <i className="fas fa-users"></i>
+                </div>
+                <h4 className="text-sm font-black text-[#102A25]">The Ummah Comes Together</h4>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  A masjid is a place where people worship, learn, give, connect, and serve. Our work is to help strengthen that community.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* MISSION & VISION */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="p-8 bg-gradient-to-br from-[#064E3B] to-[#0A3023] rounded-3xl text-white space-y-4 shadow-lg border border-[#D4AF37]/40">
+              <h3 className="text-xl sm:text-2xl font-black text-[#F4D06F]">Our Mission</h3>
+              <p className="text-xs sm:text-sm text-emerald-100 font-semibold leading-relaxed">
+                To empower mosques with simple, trustworthy financial technology rooted in Islamic values.
+              </p>
+              <p className="text-xs sm:text-sm text-emerald-200/80 leading-relaxed">
+                We want mosque leaders and volunteers to spend less time managing administrative tasks and more time creating meaningful impact in their communities.
               </p>
             </div>
 
-            <div className="p-6 bg-[#FFF9EC] border border-[#D4AF37]/30 rounded-3xl space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-[#064E3B] text-[#F4D06F] flex items-center justify-center font-bold text-base">
-                <i className="fas fa-lock"></i>
-              </div>
-              <h3 className="text-base font-extrabold text-slate-900">Enterprise Security</h3>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                Multi-tenant cloud architecture, encrypted database backups, and granular role permissions keep your mosque records safe and private.
+            <div className="p-8 bg-[#FFF9EC] border-2 border-[#D4AF37]/50 rounded-3xl text-[#102A25] space-y-4 shadow-xs">
+              <h3 className="text-xl sm:text-2xl font-black text-[#102A25]">Our Vision</h3>
+              <p className="text-xs sm:text-sm text-slate-700 leading-relaxed">
+                We envision a future where every mosque — regardless of its size — can manage its finances with clarity, accountability, and professionalism.
               </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-semibold text-[#0B6B4C]">
+                <div>✓ Donors give with confidence</div>
+                <div>✓ Leaders make informed decisions</div>
+                <div>✓ Volunteers have time to serve</div>
+                <div>✓ Transparency becomes natural</div>
+              </div>
+            </div>
+          </div>
+
+          {/* OUR VALUES (6 ISLAMIC PILLARS) */}
+          <div className="space-y-6">
+            <div className="text-center space-y-1">
+              <span className="text-xs font-black uppercase tracking-widest text-[#0F766E] block">
+                Guiding Virtues
+              </span>
+              <h3 className="text-2xl sm:text-3xl font-black text-[#102A25]">Our Values</h3>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
+              {[
+                { name: 'Amanah', sub: 'Trust', desc: 'We honor the trust placed in us.' },
+                { name: 'Sidq', sub: 'Truthfulness', desc: 'We value honesty and truthfulness.' },
+                { name: 'Ihsan', sub: 'Excellence', desc: 'We strive for excellence in all we build.' },
+                { name: 'Adl', sub: 'Justice', desc: 'We believe in fairness and accountability.' },
+                { name: 'Khidmah', sub: 'Service', desc: 'We exist to serve mosques and communities.' },
+                { name: 'Ummah', sub: 'Community', desc: 'We build for the wider Muslim community.' },
+              ].map((v, idx) => (
+                <div key={idx} className="p-4 bg-white border border-[#D4AF37]/35 rounded-2xl text-center space-y-1">
+                  <span className="text-sm font-black text-[#102A25] block">{v.name}</span>
+                  <span className="text-[9px] font-extrabold uppercase tracking-wider text-[#0F766E] block">{v.sub}</span>
+                  <p className="text-[10px] text-slate-500 leading-tight pt-1">{v.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* QURAN AYAH & CLOSING */}
+          <div className="p-8 sm:p-10 bg-gradient-to-r from-[#064E3B] via-[#0B5A3E] to-[#064E3B] text-white rounded-3xl border border-[#D4AF37]/50 text-center space-y-4 shadow-xl">
+            <div className="text-sm sm:text-base font-serif italic text-[#FFF9EC] max-w-2xl mx-auto leading-relaxed">
+              &ldquo;And whoever is mindful of Allah, He will make a way out for them and provide for them from where they do not expect.&rdquo;
+            </div>
+            <span className="text-xs font-extrabold text-[#F4D06F] uppercase tracking-widest block">
+              — Qur&apos;an 65:2–3
+            </span>
+            <div className="pt-2">
+              <Link
+                href="/about"
+                className="inline-flex items-center gap-2 text-xs font-black text-white hover:text-[#F4D06F] underline underline-offset-4"
+              >
+                <span>Read Full About Us Story & Manifesto</span>
+                <i className="fas fa-arrow-right text-[10px]"></i>
+              </Link>
             </div>
           </div>
         </div>
