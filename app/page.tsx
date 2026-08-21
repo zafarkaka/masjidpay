@@ -107,7 +107,7 @@ export default function HomePage() {
                 <span className="text-[#D4AF37] text-base font-black leading-none">✦</span>
               </div>
               <span className="text-[9px] font-extrabold uppercase tracking-widest text-[#0F766E] block -mt-0.5">
-                Financial SaaS Engine
+                Masjid Finance, Simplified
               </span>
             </div>
           </Link>

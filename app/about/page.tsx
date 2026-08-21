@@ -80,7 +80,7 @@ export default function AboutPage() {
                 <span className="text-[#D4AF37] text-base font-black leading-none">✦</span>
               </div>
               <span className="text-[9px] font-extrabold uppercase tracking-widest text-[#0F766E] block -mt-0.5">
-                Modern Islamic Finance
+                Masjid Finance, Simplified
               </span>
             </div>
           </Link>
