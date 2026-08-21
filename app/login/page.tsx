@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -252,13 +253,16 @@ export default function LoginPage() {
     <div className="min-h-screen flex flex-col justify-center bg-[#FCFBF7] py-4 sm:py-8 px-3 sm:px-6 lg:px-8 font-sans text-slate-800">
       <div className="w-full max-w-sm sm:max-w-md mx-auto">
         {/* HEADER BRANDING */}
-        <div className="text-left mb-3 sm:mb-4">
-          <h1 className="text-xl sm:text-2xl font-serif font-bold text-slate-900 tracking-tight">
-            {step === 1 ? 'Login to your mosque' : 'Security PIN Verification'}
-          </h1>
-          <p className="text-[11px] sm:text-xs text-slate-500 font-medium mt-0.5">
-            {step === 1 ? 'Access your financial control center' : `Organization: ${pinMasjidName}`}
-          </p>
+        <div className="flex items-center justify-between mb-3 sm:mb-4">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-serif font-bold text-slate-900 tracking-tight">
+              {step === 1 ? 'Login to your mosque' : 'Security PIN Verification'}
+            </h1>
+            <p className="text-[11px] sm:text-xs text-slate-500 font-medium mt-0.5">
+              {step === 1 ? 'Access your financial control center' : `Organization: ${pinMasjidName}`}
+            </p>
+          </div>
+          <LanguageSwitcher />
         </div>
 
         {/* TOP PILL SWITCHER: LOGIN / REGISTER MOSQUE */}

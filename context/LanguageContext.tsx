@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
-export type SupportedLanguage = 'en' | 'ur' | 'ta' | 'hi' | 'ar';
+export type SupportedLanguage = 'en' | 'ta' | 'hi' | 'ml' | 'ur' | 'ar';
 
 export interface LanguageOption {
   code: SupportedLanguage;
@@ -13,10 +13,11 @@ export interface LanguageOption {
 }
 
 export const SUPPORTED_LANGUAGES: LanguageOption[] = [
-  { code: 'en', label: 'English (US)', nativeLabel: 'English', dir: 'ltr' },
-  { code: 'ur', label: 'Urdu', nativeLabel: 'اردو', dir: 'rtl' },
+  { code: 'en', label: 'English', nativeLabel: 'English', dir: 'ltr' },
   { code: 'ta', label: 'Tamil', nativeLabel: 'தமிழ்', dir: 'ltr' },
   { code: 'hi', label: 'Hindi', nativeLabel: 'हिन्दी', dir: 'ltr' },
+  { code: 'ml', label: 'Malayalam', nativeLabel: 'മലയാളം', dir: 'ltr' },
+  { code: 'ur', label: 'Urdu', nativeLabel: 'اردو', dir: 'rtl' },
   { code: 'ar', label: 'Arabic', nativeLabel: 'العربية', dir: 'rtl' },
 ];
 
@@ -56,7 +57,7 @@ export const LanguageProvider = ({ children }: { children: React.ReactNode }) =>
   useEffect(() => {
     // Read saved language from localStorage or cookie
     const saved = (localStorage.getItem('masjidpay_lang') as SupportedLanguage) || 'en';
-    if (saved && ['en', 'ur', 'ta', 'hi', 'ar'].includes(saved)) {
+    if (saved && ['en', 'ta', 'hi', 'ml', 'ur', 'ar'].includes(saved)) {
       setLanguageState(saved);
       setGoogleTransCookie(saved);
     }

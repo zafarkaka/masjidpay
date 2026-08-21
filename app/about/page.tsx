@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 export default function AboutPage() {
   const beliefs = [
@@ -87,6 +88,7 @@ export default function AboutPage() {
 
 
           <div className="flex items-center gap-3">
+            <LanguageSwitcher />
             <Link
               href="/login"
               className="px-4 py-2 text-xs font-black text-slate-700 hover:text-[#064E3B] transition"

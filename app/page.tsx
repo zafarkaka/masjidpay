@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 export default function HomePage() {
   const [activeCategory, setActiveCategory] = useState('ALL');
@@ -112,8 +113,10 @@ export default function HomePage() {
             </div>
           </Link>
 
-          {/* ACTION BUTTONS */}
+          {/* ACTION BUTTONS & LANGUAGE SWITCHER */}
           <div className="flex items-center gap-2 sm:gap-3">
+            <LanguageSwitcher />
+
             <Link
               href="/login"
               className="text-xs font-extrabold text-[#102A25] hover:text-[#064E3B] px-3.5 py-2 rounded-xl hover:bg-[#D4AF37]/10 transition"

@@ -128,7 +128,7 @@ export default function RootLayout({
                   new window.google.translate.TranslateElement(
                     {
                       pageLanguage: 'en',
-                      includedLanguages: 'en,ur,ta,hi,ar',
+                      includedLanguages: 'en,ta,hi,ml,ur,ar',
                       autoDisplay: false,
                       layout: window.google.translate.TranslateElement.InlineLayout.SIMPLE
                     },
