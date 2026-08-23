@@ -59,7 +59,7 @@ export const metadata: Metadata = {
     images: ['/images/masjid_hero_sunset.jpg'],
   },
   verification: {
-    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || '',
+    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || 'googleb74e93733a7ea848',
   },
   manifest: '/manifest.json',
   icons: {
