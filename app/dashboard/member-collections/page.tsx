@@ -2,6 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import {
+  extractPaidMonths,
+  getAllPaidMonthsForMember,
+  getPendingMonthsUpToCurrent,
+  MONTH_NAMES,
+  generateMonthList,
+} from '@/lib/memberMonths';
 
 export default function AllCollectionsPage() {
   const [collections, setCollections] = useState<any[]>([]);
@@ -93,38 +100,31 @@ export default function AllCollectionsPage() {
     const memberMonthlyRate = Number(member.monthlyAmount || 100);
     setBaseMonthlyRate(memberMonthlyRate);
 
-    const memberPaidMonths: string[] = [];
-    allCols.forEach((c) => {
-      if (
-        (member.phone && c.memberPhone && c.memberPhone.replace(/[^0-9]/g, '') === member.phone.replace(/[^0-9]/g, '')) ||
-        (member.name && c.memberName?.toLowerCase().trim() === member.name?.toLowerCase().trim())
-      ) {
-        if (c.forMonths) {
-          AVAILABLE_MONTHS.forEach((m) => {
-            if (c.forMonths.includes(m)) {
-              memberPaidMonths.push(m);
-            }
-          });
-        }
-      }
+    // Filter collections belonging to this member
+    const memberCols = allCols.filter((c) => {
+      const phoneMatch = member.phone && c.memberPhone && c.memberPhone.replace(/[^0-9]/g, '') === member.phone.replace(/[^0-9]/g, '');
+      const nameMatch = member.name && c.memberName?.toLowerCase().trim() === member.name?.toLowerCase().trim();
+      const idMatch = c.memberId && c.memberId === member.id;
+      return idMatch || phoneMatch || nameMatch;
     });
 
-    const curMonthIdx = new Date().getMonth();
-    const monthsUpToCurrent = MONTH_NAMES.slice(0, curMonthIdx + 1).map((m) => `${m} ${CURRENT_YEAR}`);
-    const unPaidMonths = monthsUpToCurrent.filter((m) => !memberPaidMonths.includes(m));
-    setPendingMonthsDetected(unPaidMonths);
+    const { pendingMonths, isFullyPaid, currentMonthStr } = getPendingMonthsUpToCurrent(member, memberCols);
+    setPendingMonthsDetected(pendingMonths);
 
-    if (unPaidMonths.length > 0) {
-      setSelectedMonthsList(unPaidMonths);
-      setAmount(String(unPaidMonths.length * memberMonthlyRate));
-      setForMonths(unPaidMonths.length === 1 ? unPaidMonths[0] : `${unPaidMonths.join(', ')} (${unPaidMonths.length} Months Pending)`);
-      setBulkPresetCount(unPaidMonths.length);
+    if (pendingMonths.length > 0) {
+      setSelectedMonthsList(pendingMonths);
+      setAmount(String(pendingMonths.length * memberMonthlyRate));
+      setForMonths(
+        pendingMonths.length === 1
+          ? pendingMonths[0]
+          : `${pendingMonths.join(', ')} (${pendingMonths.length} Months Pending)`
+      );
+      setBulkPresetCount(pendingMonths.length);
     } else {
-      const currentMonthStr = `${MONTH_NAMES[curMonthIdx]} ${CURRENT_YEAR}`;
-      setSelectedMonthsList([currentMonthStr]);
-      setAmount(String(memberMonthlyRate));
-      setForMonths(currentMonthStr);
-      setBulkPresetCount(1);
+      setSelectedMonthsList([]);
+      setAmount('0');
+      setForMonths('');
+      setBulkPresetCount(null);
     }
   };
 
@@ -135,7 +135,9 @@ export default function AllCollectionsPage() {
     } else {
       updated = [...selectedMonthsList, mStr];
     }
-    updated.sort((a, b) => AVAILABLE_MONTHS.indexOf(a) - AVAILABLE_MONTHS.indexOf(b));
+    // Filter to only allowed pending months
+    updated = updated.filter((m) => pendingMonthsDetected.includes(m));
+    updated.sort((a, b) => pendingMonthsDetected.indexOf(a) - pendingMonthsDetected.indexOf(b));
     setSelectedMonthsList(updated);
 
     const count = updated.length;
@@ -150,29 +152,26 @@ export default function AllCollectionsPage() {
       setForMonths(updated[0]);
       setBulkPresetCount(1);
     } else {
-      setForMonths(`${updated.join(', ')} (${count} Months Bulk)`);
+      setForMonths(`${updated.join(', ')} (${count} Months Pending)`);
       setBulkPresetCount(count);
     }
   };
 
   const handleApplyPresetCount = (count: number) => {
-    setBulkPresetCount(count);
-    const curIdx = new Date().getMonth();
-    const startIdx = pendingMonthsDetected.length > 0 ? AVAILABLE_MONTHS.indexOf(pendingMonthsDetected[0]) : curIdx;
-    const safeStart = startIdx >= 0 ? startIdx : curIdx;
-    const newMonths = AVAILABLE_MONTHS.slice(safeStart, safeStart + count);
+    if (pendingMonthsDetected.length === 0) return;
+    const cappedCount = Math.min(count, pendingMonthsDetected.length);
+    setBulkPresetCount(cappedCount);
+    const newMonths = pendingMonthsDetected.slice(0, cappedCount);
 
     setSelectedMonthsList(newMonths);
     const rate = baseMonthlyRate || 100;
-    const newAmt = count * rate;
+    const newAmt = cappedCount * rate;
     setAmount(String(newAmt));
 
-    if (count === 1) {
-      setForMonths(newMonths[0] || `${MONTH_NAMES[curIdx]} ${CURRENT_YEAR}`);
-    } else if (count === 12) {
-      setForMonths(`${newMonths[0]} - ${newMonths[newMonths.length - 1]} (1 Year Full Bulk)`);
+    if (cappedCount === 1) {
+      setForMonths(newMonths[0]);
     } else {
-      setForMonths(`${newMonths[0]} - ${newMonths[newMonths.length - 1]} (${count} Months Bulk)`);
+      setForMonths(`${newMonths.join(', ')} (${cappedCount} Months Pending)`);
     }
   };
 
@@ -183,7 +182,9 @@ export default function AllCollectionsPage() {
     const rate = baseMonthlyRate || 100;
     const newAmt = count * rate;
     setAmount(String(newAmt));
-    setForMonths(`${pendingMonthsDetected.join(', ')} (${count} Months Pending Cleared)`);
+    setForMonths(
+      count === 1 ? pendingMonthsDetected[0] : `${pendingMonthsDetected.join(', ')} (${count} Months Pending Cleared)`
+    );
     setBulkPresetCount(count);
   };
 
@@ -1048,196 +1049,205 @@ JazakAllah Khair!
                       </span>
                     ) : (
                       <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md">
-                        ✓ All Previous Months Paid
+                        ✓ Fully Paid Up to Current Month
                       </span>
                     )}
                   </div>
 
-                  {/* 2-CARD LIVE STATUS: PAYING NOW VS REST OF BALANCE */}
-                  <div className="grid grid-cols-2 gap-2">
-                    {/* PAYING NOW */}
-                    <div className="p-2.5 bg-emerald-50 border border-emerald-300 rounded-xl">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[9.5px] uppercase font-extrabold text-emerald-800">Paying Now</span>
-                        <span className="text-[9.5px] font-bold text-emerald-700">
-                          {selectedMonthsList.length} Month{selectedMonthsList.length > 1 ? 's' : ''}
-                        </span>
+                  {pendingMonthsDetected.length === 0 ? (
+                    <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-center space-y-0.5">
+                      <div className="text-xs font-black text-emerald-900 flex items-center justify-center gap-1.5">
+                        <i className="fas fa-circle-check text-emerald-600"></i> No Pending Dues
                       </div>
-                      <span className="text-sm font-black text-emerald-950 font-mono block mt-0.5">
-                        IN ₹{Number(amount || 0).toLocaleString('en-IN')}
-                      </span>
+                      <p className="text-[10.5px] text-emerald-700 font-medium">
+                        This member has paid all monthly fees up to current month. No extra or duplicate payment accepted.
+                      </p>
                     </div>
-
-                    {/* REST OF BALANCE */}
-                    {(() => {
-                      const remainingPendingMonths = pendingMonthsDetected.filter((m) => !selectedMonthsList.includes(m));
-                      const remainingBalAmt = remainingPendingMonths.length * (baseMonthlyRate || 100);
-                      const hasRemaining = remainingPendingMonths.length > 0;
-
-                      return (
-                        <div
-                          className={`p-2.5 rounded-xl border transition ${
-                            hasRemaining
-                              ? 'bg-amber-50/90 border-amber-300'
-                              : 'bg-emerald-100/70 border-emerald-300'
-                          }`}
-                        >
+                  ) : (
+                    <>
+                      {/* 2-CARD LIVE STATUS: PAYING NOW VS REST OF BALANCE */}
+                      <div className="grid grid-cols-2 gap-2">
+                        {/* PAYING NOW */}
+                        <div className="p-2.5 bg-emerald-50 border border-emerald-300 rounded-xl">
                           <div className="flex items-center justify-between">
-                            <span
-                              className={`text-[9.5px] uppercase font-extrabold ${
-                                hasRemaining ? 'text-amber-900' : 'text-emerald-900'
-                              }`}
-                            >
-                              Rest of Balance
-                            </span>
-                            <span
-                              className={`text-[9.5px] font-bold ${
-                                hasRemaining ? 'text-amber-700' : 'text-emerald-700'
-                              }`}
-                            >
-                              {hasRemaining ? `${remainingPendingMonths.length} Mo Due` : 'Cleared'}
+                            <span className="text-[9.5px] uppercase font-extrabold text-emerald-800">Paying Now</span>
+                            <span className="text-[9.5px] font-bold text-emerald-700">
+                              {selectedMonthsList.length} Month{selectedMonthsList.length > 1 ? 's' : ''}
                             </span>
                           </div>
-                          <span
-                            className={`text-sm font-black font-mono block mt-0.5 ${
-                              hasRemaining ? 'text-amber-950' : 'text-emerald-950'
-                            }`}
-                          >
-                            {hasRemaining ? `IN ₹${remainingBalAmt.toLocaleString('en-IN')}` : '₹0 Due ✓'}
+                          <span className="text-sm font-black text-emerald-950 font-mono block mt-0.5">
+                            IN ₹{Number(amount || 0).toLocaleString('en-IN')}
                           </span>
                         </div>
-                      );
-                    })()}
-                  </div>
 
-                  {/* SHOW REST OF BALANCE UNPAID MONTHS LIST */}
-                  {(() => {
-                    const remainingPendingMonths = pendingMonthsDetected.filter((m) => !selectedMonthsList.includes(m));
-                    if (remainingPendingMonths.length === 0) return null;
+                        {/* REST OF BALANCE */}
+                        {(() => {
+                          const remainingPendingMonths = pendingMonthsDetected.filter((m) => !selectedMonthsList.includes(m));
+                          const remainingBalAmt = remainingPendingMonths.length * (baseMonthlyRate || 100);
+                          const hasRemaining = remainingPendingMonths.length > 0;
 
-                    return (
-                      <div className="pt-0.5 space-y-1">
-                        <div className="flex items-center justify-between text-[10px] text-amber-900 font-bold">
-                          <span>Rest of unpaid months remaining:</span>
-                          <span className="font-mono">{remainingPendingMonths.length} Months</span>
-                        </div>
-                        <div className="flex flex-wrap gap-1 max-h-16 overflow-y-auto">
-                          {remainingPendingMonths.map((m) => (
-                            <span
-                              key={m}
-                              className="px-1.5 py-0.5 bg-white border border-amber-300/80 text-amber-900 rounded text-[9.5px] font-bold font-mono"
+                          return (
+                            <div
+                              className={`p-2.5 rounded-xl border transition ${
+                                hasRemaining
+                                  ? 'bg-amber-50/90 border-amber-300'
+                                  : 'bg-emerald-100/70 border-emerald-300'
+                              }`}
                             >
-                              {m}
-                            </span>
-                          ))}
-                        </div>
+                              <div className="flex items-center justify-between">
+                                <span
+                                  className={`text-[9.5px] uppercase font-extrabold ${
+                                    hasRemaining ? 'text-amber-900' : 'text-emerald-900'
+                                  }`}
+                                >
+                                  Rest of Balance
+                                </span>
+                                <span
+                                  className={`text-[9.5px] font-bold ${
+                                    hasRemaining ? 'text-amber-700' : 'text-emerald-700'
+                                  }`}
+                                >
+                                  {hasRemaining ? `${remainingPendingMonths.length} Mo Due` : 'Cleared'}
+                                </span>
+                              </div>
+                              <span
+                                className={`text-sm font-black font-mono block mt-0.5 ${
+                                  hasRemaining ? 'text-amber-950' : 'text-emerald-950'
+                                }`}
+                              >
+                                {hasRemaining ? `IN ₹${remainingBalAmt.toLocaleString('en-IN')}` : '₹0 Due ✓'}
+                              </span>
+                            </div>
+                          );
+                        })()}
                       </div>
-                    );
-                  })()}
+
+                      {/* SHOW REST OF BALANCE UNPAID MONTHS LIST */}
+                      {(() => {
+                        const remainingPendingMonths = pendingMonthsDetected.filter((m) => !selectedMonthsList.includes(m));
+                        if (remainingPendingMonths.length === 0) return null;
+
+                        return (
+                          <div className="pt-0.5 space-y-1">
+                            <div className="flex items-center justify-between text-[10px] text-amber-900 font-bold">
+                              <span>Rest of unpaid months remaining:</span>
+                              <span className="font-mono">{remainingPendingMonths.length} Months</span>
+                            </div>
+                            <div className="flex flex-wrap gap-1 max-h-16 overflow-y-auto">
+                              {remainingPendingMonths.map((m) => (
+                                <span
+                                  key={m}
+                                  className="px-1.5 py-0.5 bg-white border border-amber-300/80 text-amber-900 rounded text-[9.5px] font-bold font-mono"
+                                >
+                                  {m}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </>
+                  )}
                 </div>
               )}
 
-              {/* QUICK CHOOSE PAYMENT OPTIONS & PRESETS */}
-              <div className="space-y-2 bg-slate-50/70 p-3 rounded-2xl border border-slate-200">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-extrabold uppercase text-slate-700">
-                    Choose Payment Option:
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setShowMonthGrid(!showMonthGrid)}
-                    className="text-[10.5px] font-bold text-emerald-800 hover:text-emerald-950 flex items-center gap-1"
-                  >
-                    <i className={`fas ${showMonthGrid ? 'fa-chevron-up' : 'fa-calendar-days'} text-[10px]`}></i>
-                    {showMonthGrid ? 'Hide Custom Picker' : 'Pick Custom Months'}
-                  </button>
-                </div>
+              {/* QUICK CHOOSE PENDING MONTHS (ONLY SHOWN IF PENDING MONTHS EXIST) */}
+              {pendingMonthsDetected.length > 0 && (
+                <div className="space-y-2 bg-slate-50/70 p-3 rounded-2xl border border-slate-200">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-extrabold uppercase text-slate-700">
+                      Pending Month Selection:
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setShowMonthGrid(!showMonthGrid)}
+                      className="text-[10.5px] font-bold text-emerald-800 hover:text-emerald-950 flex items-center gap-1"
+                    >
+                      <i className={`fas ${showMonthGrid ? 'fa-chevron-up' : 'fa-calendar-days'} text-[10px]`}></i>
+                      {showMonthGrid ? 'Hide Pending Months' : 'Select Pending Months'}
+                    </button>
+                  </div>
 
-                {/* CLEAR ALL PENDING BUTTON (IF DUE) */}
-                {pendingMonthsDetected.length > 0 && (
+                  {/* CLEAR ALL PENDING BUTTON */}
                   <button
                     type="button"
                     onClick={handleClearAllPending}
                     className="w-full py-1.5 px-3 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-bold transition flex items-center justify-between shadow-2xs"
                   >
                     <span className="flex items-center gap-1.5">
-                      <i className="fas fa-bolt text-amber-300"></i> Clear All Pending ({pendingMonthsDetected.length} Months)
+                      <i className="fas fa-bolt text-amber-300"></i> Pay All Pending ({pendingMonthsDetected.length} Months)
                     </span>
                     <span className="font-mono font-black">
                       IN ₹{(pendingMonthsDetected.length * (baseMonthlyRate || 100)).toLocaleString('en-IN')}
                     </span>
                   </button>
-                )}
 
-                {/* PRESET CHIPS */}
-                <div className="grid grid-cols-5 gap-1">
-                  {[
-                    { label: '1 Mo', count: 1 },
-                    { label: '2 Mo', count: 2 },
-                    { label: '3 Mo (Qtr)', count: 3 },
-                    { label: '6 Mo (Half)', count: 6 },
-                    { label: '12 Mo (1 Yr)', count: 12 },
-                  ].map((preset) => {
-                    const isSelected = bulkPresetCount === preset.count && !showMonthGrid;
-                    const calculatedCost = preset.count * (baseMonthlyRate || 100);
-                    return (
-                      <button
-                        key={preset.count}
-                        type="button"
-                        onClick={() => {
-                          handleApplyPresetCount(preset.count);
-                          setShowMonthGrid(false);
-                        }}
-                        className={`py-1.5 px-1 rounded-xl text-center transition border ${
-                          isSelected
-                            ? 'bg-[#064E3B] text-[#F4D06F] border-[#D4AF37] shadow-2xs font-extrabold'
-                            : 'bg-white text-slate-700 border-slate-200 hover:bg-emerald-50 hover:border-emerald-300 font-bold'
-                        }`}
-                      >
-                        <span className="block text-[10px] leading-tight">{preset.label}</span>
-                        <span className="block text-[8.5px] opacity-80 font-mono mt-0.5">₹{calculatedCost}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* EXPANDABLE MONTH SELECTION GRID */}
-                {showMonthGrid && (
-                  <div className="pt-2 border-t border-slate-200 mt-2 space-y-1.5 animate-in fade-in duration-100">
-                    <span className="text-[9.5px] font-extrabold uppercase text-slate-500 block">
-                      Click months to toggle selection:
-                    </span>
-                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-1 max-h-32 overflow-y-auto p-1.5 bg-white rounded-xl border border-slate-200">
-                      {AVAILABLE_MONTHS.map((mStr) => {
-                        const isChecked = selectedMonthsList.includes(mStr);
-                        const isPending = pendingMonthsDetected.includes(mStr);
-                        return (
-                          <button
-                            key={mStr}
-                            type="button"
-                            onClick={() => handleToggleMonthSelection(mStr)}
-                            className={`p-1.5 rounded-lg text-[9.5px] font-bold text-left transition flex items-center justify-between border ${
-                              isChecked
-                                ? 'bg-emerald-800 text-white border-emerald-900 shadow-2xs'
-                                : isPending
-                                ? 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100'
-                                : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                            }`}
-                          >
-                            <span className="truncate">{mStr}</span>
-                            {isChecked && <i className="fas fa-check text-[8px] shrink-0 ml-1"></i>}
-                            {!isChecked && isPending && (
-                              <span className="text-[7.5px] bg-amber-200 px-1 rounded text-amber-900 font-extrabold shrink-0 ml-0.5">
-                                DUE
-                              </span>
-                            )}
-                          </button>
-                        );
-                      })}
+                  {/* PRESET CHIPS (ONLY UP TO PENDING COUNT) */}
+                  {pendingMonthsDetected.length > 1 && (
+                    <div className="grid grid-cols-4 gap-1">
+                      {[1, 2, 3, 6]
+                        .filter((cnt) => cnt <= pendingMonthsDetected.length)
+                        .map((cnt) => {
+                          const isSelected = selectedMonthsList.length === cnt && !showMonthGrid;
+                          const calculatedCost = cnt * (baseMonthlyRate || 100);
+                          return (
+                            <button
+                              key={cnt}
+                              type="button"
+                              onClick={() => {
+                                handleApplyPresetCount(cnt);
+                                setShowMonthGrid(false);
+                              }}
+                              className={`py-1.5 px-1 rounded-xl text-center transition border ${
+                                isSelected
+                                  ? 'bg-[#064E3B] text-[#F4D06F] border-[#D4AF37] shadow-2xs font-extrabold'
+                                  : 'bg-white text-slate-700 border-slate-200 hover:bg-emerald-50 hover:border-emerald-300 font-bold'
+                              }`}
+                            >
+                              <span className="block text-[10px] leading-tight">{cnt} Mo</span>
+                              <span className="block text-[8.5px] opacity-80 font-mono mt-0.5">₹{calculatedCost}</span>
+                            </button>
+                          );
+                        })}
                     </div>
-                  </div>
-                )}
-              </div>
+                  )}
+
+                  {/* EXPANDABLE PENDING MONTH SELECTION GRID */}
+                  {showMonthGrid && (
+                    <div className="pt-2 border-t border-slate-200 mt-2 space-y-1.5 animate-in fade-in duration-100">
+                      <span className="text-[9.5px] font-extrabold uppercase text-slate-500 block">
+                        Select Pending Months to Pay:
+                      </span>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-1 max-h-32 overflow-y-auto p-1.5 bg-white rounded-xl border border-slate-200">
+                        {pendingMonthsDetected.map((mStr) => {
+                          const isChecked = selectedMonthsList.includes(mStr);
+                          return (
+                            <button
+                              key={mStr}
+                              type="button"
+                              onClick={() => handleToggleMonthSelection(mStr)}
+                              className={`p-1.5 rounded-lg text-[9.5px] font-bold text-left transition flex items-center justify-between border ${
+                                isChecked
+                                  ? 'bg-emerald-800 text-white border-emerald-900 shadow-2xs'
+                                  : 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100'
+                              }`}
+                            >
+                              <span className="truncate">{mStr}</span>
+                              {isChecked ? (
+                                <i className="fas fa-check text-[8px] shrink-0 ml-1"></i>
+                              ) : (
+                                <span className="text-[7.5px] bg-amber-200 px-1 rounded text-amber-900 font-extrabold shrink-0 ml-0.5">
+                                  DUE
+                                </span>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* AMOUNT & PERIOD (INLINE 2-COLUMN GRID) */}
               <div className="grid grid-cols-2 gap-2.5">
@@ -1248,9 +1258,10 @@ JazakAllah Khair!
                   <input
                     type="number"
                     required
+                    disabled={selectedMemberId ? pendingMonthsDetected.length === 0 : false}
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-black text-slate-900 outline-none focus:border-emerald-700 focus:bg-white"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-black text-slate-900 outline-none focus:border-emerald-700 focus:bg-white disabled:opacity-50"
                   />
                 </div>
 
@@ -1260,10 +1271,11 @@ JazakAllah Khair!
                   </label>
                   <input
                     type="text"
+                    disabled={selectedMemberId ? pendingMonthsDetected.length === 0 : false}
                     value={forMonths}
                     onChange={(e) => setForMonths(e.target.value)}
                     placeholder="e.g. August 2026"
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 outline-none focus:border-emerald-700 focus:bg-white truncate"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 outline-none focus:border-emerald-700 focus:bg-white truncate disabled:opacity-50"
                   />
                 </div>
               </div>
@@ -1279,11 +1291,17 @@ JazakAllah Khair!
                 </button>
                 <button
                   type="submit"
-                  disabled={submitting}
-                  className="px-4 py-2 bg-[#0F3D26] hover:bg-emerald-950 text-white font-extrabold rounded-xl text-xs transition flex items-center gap-1.5 shadow-sm"
+                  disabled={submitting || (selectedMemberId ? pendingMonthsDetected.length === 0 : false)}
+                  className="px-4 py-2 bg-[#0F3D26] hover:bg-emerald-950 text-white font-extrabold rounded-xl text-xs transition flex items-center gap-1.5 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <i className="fab fa-whatsapp text-emerald-400"></i>
-                  <span>{submitting ? 'Recording...' : `Collect ₹${Number(amount || 0).toLocaleString('en-IN')}`}</span>
+                  <span>
+                    {submitting
+                      ? 'Recording...'
+                      : selectedMemberId && pendingMonthsDetected.length === 0
+                      ? 'All Settled — No Extra Payment Accepted'
+                      : `Collect ₹${Number(amount || 0).toLocaleString('en-IN')}`}
+                  </span>
                 </button>
               </div>
             </form>

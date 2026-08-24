@@ -4,6 +4,7 @@ import { requireTenantAccess, requireTenantWriteAccess, getOrResolveMasjid } fro
 import { generateWhatsAppInvoiceUrl } from '@/lib/whatsapp';
 import { recordAuditLog } from '@/lib/audit';
 import { supabaseAdmin } from '@/lib/supabase';
+import { extractPaidMonths, getAllPaidMonthsForMember, getPendingMonthsUpToCurrent } from '@/lib/memberMonths';
 import crypto from 'crypto';
 
 export const dynamic = 'force-dynamic';
@@ -110,6 +111,58 @@ export async function POST(req: NextRequest) {
     const cleanForMonths = forMonths || 'Current Month';
     const cleanMethod = paymentMethod || 'CASH';
     const cleanId = `mc-${crypto.randomUUID()}`;
+
+    // Fetch member and previous collections to validate pending months & prevent duplicates
+    let existingCollections: any[] = [];
+    let memberRecord: any = null;
+
+    try {
+      if (memberId) {
+        memberRecord = await prisma.member.findUnique({ where: { id: memberId } });
+      }
+
+      existingCollections = await prisma.memberCollection.findMany({
+        where: {
+          masjidId: masjid.id,
+          OR: [
+            ...(memberId ? [{ memberId }] : []),
+            { memberPhone: memberPhone.trim() },
+            { memberName: memberName.trim() },
+          ],
+        },
+      });
+    } catch (err) {
+      console.warn('Could not fetch existing collections for validation:', err);
+    }
+
+    const previouslyPaidMonths = getAllPaidMonthsForMember(existingCollections);
+    const requestedMonths = extractPaidMonths(cleanForMonths);
+
+    // 1. Check for duplicate overlapping months
+    const duplicateMonths = requestedMonths.filter((m) => previouslyPaidMonths.includes(m));
+    if (duplicateMonths.length > 0) {
+      return NextResponse.json(
+        {
+          error: `Duplicate payment rejected: The month(s) "${duplicateMonths.join(', ')}" have already been paid for this member.`,
+        },
+        { status: 400 }
+      );
+    }
+
+    // 2. Check if member is already fully paid up to current month
+    const { pendingMonths, isFullyPaid, currentMonthStr } = getPendingMonthsUpToCurrent(
+      memberRecord,
+      existingCollections
+    );
+
+    if (isFullyPaid && previouslyPaidMonths.length > 0 && requestedMonths.length > 0) {
+      return NextResponse.json(
+        {
+          error: `Member is already fully paid up to the current month (${currentMonthStr}). No extra payment accepted.`,
+        },
+        { status: 400 }
+      );
+    }
 
     let collection: any = null;
 

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { generateMemberStatusWhatsAppUrl } from '@/lib/whatsapp';
+import { getAllPaidMonthsForMember, getPendingMonthsUpToCurrent, MONTH_NAMES } from '@/lib/memberMonths';
 
 export default function MonthlyMembersPage() {
   const searchParams = useSearchParams();
@@ -310,57 +311,40 @@ export default function MonthlyMembersPage() {
 
     const totalPaid = collections.reduce((acc, c) => acc + Number(c.amount || 0), 0);
 
-    // List of months paid
-    const paidMonths: string[] = [];
-    collections.forEach((c) => {
-      if (c.forMonths) {
-        const parts = c.forMonths.split(',').map((p: string) => p.trim()).filter(Boolean);
-        paidMonths.push(...parts);
-      }
-    });
+    // List of months paid using robust parser
+    const paidMonths = getAllPaidMonthsForMember(collections);
 
     const now = new Date();
     const currentMonthIdx = now.getMonth(); // 0-11
     const currentYear = now.getFullYear();
-    const monthNames = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
-    ];
 
-    // Expected months up to current month (e.g. Jan 2026 to Aug 2026)
-    const expectedMonths: string[] = [];
-    for (let i = 0; i <= currentMonthIdx; i++) {
-      expectedMonths.push(`${monthNames[i]} ${currentYear}`);
-    }
-
-    const expectedMonthsCount = Math.max(1, expectedMonths.length);
-    const requiredAmountUpToNow = expectedMonthsCount * monthlyRate;
-
-    // Detect unpaid months in current year
-    const pendingMonthsList = expectedMonths.filter(
-      (em) => !paidMonths.some((pm) => pm.toLowerCase().includes(em.toLowerCase()))
+    const { pendingMonths: pendingMonthsList, isFullyPaid, currentMonthStr } = getPendingMonthsUpToCurrent(
+      mbr,
+      collections
     );
+
+    const expectedMonthsCount = Math.max(1, currentMonthIdx + 1);
+    const requiredAmountUpToNow = expectedMonthsCount * monthlyRate;
 
     let statusType: 'ADVANCE' | 'FULLY_PAID' | 'PENDING' = 'FULLY_PAID';
     let statusText = 'Fully Paid (Up to date)';
     let advanceAmount = 0;
     let pendingAmount = 0;
 
-    if (totalPaid > requiredAmountUpToNow) {
-      statusType = 'ADVANCE';
-      advanceAmount = totalPaid - requiredAmountUpToNow;
-      statusText = `Fully Paid (+IN ₹${advanceAmount.toLocaleString('en-IN')} adv)`;
-    } else if (totalPaid === requiredAmountUpToNow && pendingMonthsList.length === 0) {
+    if (isFullyPaid) {
       statusType = 'FULLY_PAID';
       statusText = 'Fully Paid (Up to date)';
     } else {
       statusType = 'PENDING';
-      pendingAmount = Math.max(0, requiredAmountUpToNow - totalPaid);
-      const monthsPendingCount = pendingMonthsList.length || Math.max(1, Math.ceil(pendingAmount / (monthlyRate || 1)));
-      statusText = monthsPendingCount === 1 ? `1 Month Pending (Due: IN ₹${pendingAmount})` : `${monthsPendingCount} Months Pending (Due: IN ₹${pendingAmount})`;
+      pendingAmount = pendingMonthsList.length * monthlyRate;
+      const monthsPendingCount = pendingMonthsList.length;
+      statusText =
+        monthsPendingCount === 1
+          ? `1 Month Pending (Due: IN ₹${pendingAmount})`
+          : `${monthsPendingCount} Months Pending (Due: IN ₹${pendingAmount})`;
     }
 
-    const latestPaidMonth = paidMonths[0] || `${monthNames[currentMonthIdx]} ${currentYear}`;
+    const latestPaidMonth = paidMonths.length > 0 ? paidMonths[paidMonths.length - 1] : currentMonthStr;
     const totalMonthsPaidCount = Math.max(paidMonths.length, Math.floor(totalPaid / (monthlyRate || 1)));
     const progressPercent = Math.min(100, Math.round((totalMonthsPaidCount / expectedMonthsCount) * 100));
 
@@ -677,12 +661,10 @@ export default function MonthlyMembersPage() {
                           IN ₹{metrics.monthlyRate} <span className="text-[10px] font-medium text-slate-400">/mo</span>
                         </div>
 
-                        {/* STATUS BADGE (ADVANCE / FULLY PAID / PENDING) */}
+                        {/* STATUS BADGE (FULLY PAID / PENDING) */}
                         <div
                           className={`px-3 py-1.5 rounded-xl text-xs font-black border transition ${
-                            metrics.statusType === 'ADVANCE'
-                              ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                              : metrics.statusType === 'FULLY_PAID'
+                            metrics.statusType === 'FULLY_PAID'
                               ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
                               : 'bg-amber-50 text-amber-900 border-amber-300'
                           }`}
