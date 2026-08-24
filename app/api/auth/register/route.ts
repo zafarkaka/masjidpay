@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { hashPassword, signToken, TOKEN_NAME, AUTH_COOKIE_OPTIONS } from '@/lib/auth';
 import { recordAuditLog } from '@/lib/audit';
-import { sendIntroMessageEmail } from '@/lib/email';
+import { sendIntroMessageEmail, sendNewRegistrationAlertToSuperAdmin } from '@/lib/email';
 import { ensureDatabaseTables } from '@/lib/db-init';
 
 export const dynamic = 'force-dynamic';
@@ -113,6 +113,26 @@ export async function POST(req: NextRequest) {
       });
     } catch (emailErr) {
       console.warn('Intro email warning:', emailErr);
+    }
+
+    // 6. Send Immediate Registration Notification Email to limratech6@gmail.com
+    try {
+      await sendNewRegistrationAlertToSuperAdmin({
+        masjidId: masjid.id,
+        masjidName: masjid.name,
+        masjidSlug: masjid.slug,
+        adminName: user.name,
+        adminEmail: user.email,
+        adminPhone: user.phone || phone,
+        address,
+        city,
+        state,
+        country: country || 'IN',
+        zipCode,
+        registeredAt: masjid.createdAt || new Date(),
+      });
+    } catch (alertErr) {
+      console.error('Registration alert notification error:', alertErr);
     }
 
     const sessionPayload = {

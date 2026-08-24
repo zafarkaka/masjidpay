@@ -408,3 +408,193 @@ export async function sendDonationReceiptEmail({
   return { sent: true, provider: 'Console Fallback' };
 }
 
+export interface SendNewRegistrationAlertParams {
+  masjidId: string;
+  masjidName: string;
+  masjidSlug: string;
+  adminName: string;
+  adminEmail: string;
+  adminPhone?: string | null;
+  address?: string | null;
+  city?: string | null;
+  state?: string | null;
+  country?: string | null;
+  zipCode?: string | null;
+  registeredAt?: Date | string;
+}
+
+/**
+ * Sends an immediate email notification to limratech6@gmail.com whenever a new Masjid Admin successfully registers.
+ */
+export async function sendNewRegistrationAlertToSuperAdmin(params: SendNewRegistrationAlertParams) {
+  const recipientEmail = 'limratech6@gmail.com';
+  const resendApiKey = process.env.RESEND_API_KEY;
+  const fromEmail = process.env.EMAIL_FROM || 'MasjidPay Alerts <alerts@masjidpay.org>';
+
+  const formattedDate = new Date(params.registeredAt || new Date()).toLocaleString('en-IN', {
+    timeZone: 'Asia/Kolkata',
+    dateStyle: 'full',
+    timeStyle: 'medium',
+  });
+
+  const fullAddress = [
+    params.address,
+    params.city,
+    params.state,
+    params.country,
+    params.zipCode ? `PIN: ${params.zipCode}` : '',
+  ]
+    .filter(Boolean)
+    .join(', ') || 'Not specified';
+
+  const approvalUrl = `${BASE_URL}/super-admin/masjids`;
+
+  const htmlContent = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 620px; margin: 0 auto; padding: 28px; border: 1px solid #D4AF37; border-radius: 20px; background-color: #ffffff; box-shadow: 0 6px 24px rgba(6, 78, 59, 0.08);">
+      <div style="text-align: center; margin-bottom: 24px; border-bottom: 2px solid #064E3B; padding-bottom: 18px;">
+        <div style="font-size: 32px; margin-bottom: 6px;">🕌</div>
+        <h2 style="color: #064E3B; margin: 0; font-size: 24px; font-weight: 900; letter-spacing: -0.5px;">MasjidPay SaaS</h2>
+        <span style="display: inline-block; background-color: #FFF9EC; border: 1px solid #D4AF37; color: #064E3B; font-size: 11px; font-weight: 800; padding: 4px 14px; border-radius: 20px; text-transform: uppercase; margin-top: 8px;">
+          🚨 New Mosque Registration Alert
+        </span>
+      </div>
+
+      <div style="margin-bottom: 22px;">
+        <p style="color: #102A25; font-size: 15px; font-weight: 700; margin: 0 0 8px 0;">Assalamu Alaikum Admin,</p>
+        <p style="color: #475569; font-size: 13.5px; margin: 0; line-height: 1.6;">
+          A new Mosque and Administrator have successfully registered on <strong>MasjidPay</strong> and are waiting for Super Admin verification and approval.
+        </p>
+      </div>
+
+      <div style="background-color: #FFF9EC; border: 1px solid #D4AF37; border-radius: 16px; padding: 20px; margin-bottom: 24px;">
+        <h4 style="margin: 0 0 14px 0; color: #064E3B; font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px dashed #D4AF37; padding-bottom: 8px;">
+          📋 Registration Details
+        </h4>
+        <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+          <tr>
+            <td style="padding: 7px 0; color: #64748b; font-weight: 600; width: 35%;">Masjid Name:</td>
+            <td style="padding: 7px 0; color: #064E3B; font-weight: 800; font-size: 14px;">${params.masjidName}</td>
+          </tr>
+          <tr>
+            <td style="padding: 7px 0; color: #64748b; font-weight: 600;">Admin Name:</td>
+            <td style="padding: 7px 0; color: #102A25; font-weight: 700;">${params.adminName}</td>
+          </tr>
+          <tr>
+            <td style="padding: 7px 0; color: #64748b; font-weight: 600;">Email Address:</td>
+            <td style="padding: 7px 0; color: #102A25; font-weight: 700;">
+              <a href="mailto:${params.adminEmail}" style="color: #0F766E; text-decoration: none;">${params.adminEmail}</a>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 7px 0; color: #64748b; font-weight: 600;">Phone Number:</td>
+            <td style="padding: 7px 0; color: #102A25; font-weight: 700;">
+              ${params.adminPhone ? `<a href="tel:${params.adminPhone}" style="color: #0F766E; text-decoration: none;">${params.adminPhone}</a>` : 'Not provided'}
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 7px 0; color: #64748b; font-weight: 600;">Address / Location:</td>
+            <td style="padding: 7px 0; color: #102A25; font-weight: 600; line-height: 1.4;">${fullAddress}</td>
+          </tr>
+          <tr>
+            <td style="padding: 7px 0; color: #64748b; font-weight: 600;">Registration Date/Time:</td>
+            <td style="padding: 7px 0; color: #102A25; font-weight: 600;">${formattedDate}</td>
+          </tr>
+          <tr>
+            <td style="padding: 7px 0; color: #64748b; font-weight: 600;">Masjid ID:</td>
+            <td style="padding: 7px 0; color: #475569; font-family: monospace; font-size: 11.5px; font-weight: 700;">${params.masjidId}</td>
+          </tr>
+        </table>
+      </div>
+
+      <div style="text-align: center; margin-bottom: 22px;">
+        <a href="${approvalUrl}" style="display: inline-block; background-color: #064E3B; color: #F4D06F; text-decoration: none; padding: 13px 30px; border-radius: 12px; font-size: 13.5px; font-weight: 800; border: 1px solid #D4AF37; box-shadow: 0 4px 14px rgba(6, 78, 59, 0.2);">
+          ⚡ Review & Approve in Super Admin Console →
+        </a>
+      </div>
+
+      <div style="text-align: center; font-size: 11.5px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 16px;">
+        This is an automated operational notification dispatched by <a href="${BASE_URL}" style="color: #064E3B; font-weight: bold; text-decoration: none;">MasjidPay SaaS</a>.
+      </div>
+    </div>
+  `;
+
+  // 1. Resend API Dispatch
+  if (resendApiKey) {
+    try {
+      let resendRes = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${resendApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: fromEmail,
+          to: [recipientEmail],
+          reply_to: params.adminEmail || SUPER_ADMIN_EMAIL,
+          subject: `🕌 New Masjid Registration: ${params.masjidName} - Action Required`,
+          html: htmlContent,
+        }),
+      });
+
+      let resendData = await resendRes.json();
+
+      if (!resendRes.ok && resendData.message?.includes('domain')) {
+        resendRes = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${resendApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            from: 'MasjidPay Alerts <onboarding@resend.dev>',
+            to: [recipientEmail],
+            reply_to: params.adminEmail || SUPER_ADMIN_EMAIL,
+            subject: `🕌 New Masjid Registration: ${params.masjidName} - Action Required`,
+            html: htmlContent,
+          }),
+        });
+        resendData = await resendRes.json();
+      }
+
+      if (resendRes.ok) {
+        console.log(`✅ [REGISTRATION ALERT SENT] Delivered notification for ${params.masjidName} to ${recipientEmail} (ID: ${resendData.id})`);
+        return { sent: true, provider: 'Resend', resendId: resendData.id };
+      }
+    } catch (resendError) {
+      console.error('⚠️ Resend registration alert failed:', resendError);
+    }
+  }
+
+  // 2. Fallback SMTP via Nodemailer if SMTP configured
+  if (process.env.SMTP_HOST && process.env.SMTP_USER) {
+    try {
+      const transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: Number(process.env.SMTP_PORT) || 587,
+        secure: Number(process.env.SMTP_PORT) === 465,
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS || '',
+        },
+      });
+
+      await transporter.sendMail({
+        from: process.env.SMTP_FROM || fromEmail,
+        to: recipientEmail,
+        replyTo: params.adminEmail || SUPER_ADMIN_EMAIL,
+        subject: `🕌 New Masjid Registration: ${params.masjidName} - Action Required`,
+        html: htmlContent,
+      });
+
+      console.log(`✅ [SMTP REGISTRATION ALERT SENT] Delivered to ${recipientEmail} via SMTP`);
+      return { sent: true, provider: 'SMTP' };
+    } catch (smtpErr) {
+      console.error('⚠️ SMTP registration alert failed:', smtpErr);
+    }
+  }
+
+  console.log(`✉️ [REGISTRATION ALERT DISPATCH] To: ${recipientEmail} | Masjid: ${params.masjidName} | Admin: ${params.adminName} | Email: ${params.adminEmail} | Phone: ${params.adminPhone} | Address: ${fullAddress} | Date: ${formattedDate} | Masjid ID: ${params.masjidId}`);
+  return { sent: true, provider: 'Console Fallback' };
+}
+
+
