@@ -44,6 +44,35 @@ export default function SuperAdminMasjidsPage() {
   const [manageSuccess, setManageSuccess] = useState('');
   const [manageError, setManageError] = useState('');
 
+  // DELETE MASJID STATE
+  const [deleteTargetMasjid, setDeleteTargetMasjid] = useState<any | null>(null);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+
+  const handleDeleteMasjid = async () => {
+    if (!deleteTargetMasjid) return;
+    setDeleteLoading(true);
+    setDeleteError('');
+    try {
+      const res = await fetch(`/api/super-admin/masjids?masjidId=${deleteTargetMasjid.id}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setDeleteTargetMasjid(null);
+        setDeleteConfirmText('');
+        fetchMasjids();
+      } else {
+        setDeleteError(data.error || 'Failed to delete masjid');
+      }
+    } catch (err: any) {
+      setDeleteError(err.message || 'Network error');
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
   const fetchMasjids = () => {
     setLoading(true);
     const url = `/api/super-admin/masjids?status=${statusFilter}&q=${encodeURIComponent(searchQuery)}`;
@@ -451,6 +480,22 @@ export default function SuperAdminMasjidsPage() {
                             Reactivate
                           </button>
                         )}
+
+                        {/* DELETE MASJID PROFILE BUTTON */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setDeleteTargetMasjid(masjid);
+                            setDeleteConfirmText('');
+                            setDeleteError('');
+                          }}
+                          disabled={actionLoading}
+                          className="px-2.5 py-1.5 bg-rose-950/80 hover:bg-rose-900 text-rose-300 border border-rose-800/80 font-bold rounded-lg text-xs transition inline-flex items-center gap-1 cursor-pointer"
+                          title="Permanently Delete Masjid Profile"
+                        >
+                          <i className="fas fa-trash-can text-[10px]"></i>
+                          <span>Delete</span>
+                        </button>
                       </td>
                     </tr>
                   );
@@ -1059,6 +1104,86 @@ export default function SuperAdminMasjidsPage() {
                 className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold transition disabled:opacity-50"
               >
                 Confirm Rejection
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PERMANENT DELETE CONFIRMATION MODAL */}
+      {deleteTargetMasjid && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-rose-900/80 rounded-3xl max-w-md w-full p-6 sm:p-8 text-slate-100 shadow-2xl space-y-4">
+            <div className="w-12 h-12 rounded-2xl bg-rose-950 text-rose-400 border border-rose-800 flex items-center justify-center text-xl mx-auto shadow-lg shadow-rose-950/50">
+              <i className="fas fa-triangle-exclamation"></i>
+            </div>
+
+            <div className="text-center space-y-1.5">
+              <h3 className="text-lg font-black text-white">Permanently Delete Masjid?</h3>
+              <p className="text-xs text-rose-300 font-semibold">
+                You are about to delete <strong className="text-white underline">{deleteTargetMasjid.name}</strong> ({deleteTargetMasjid.city || 'No Location'}).
+              </p>
+            </div>
+
+            <div className="p-3.5 bg-rose-950/40 border border-rose-900/60 rounded-2xl text-[11px] text-rose-200/90 space-y-1.5">
+              <p className="font-bold flex items-center gap-1.5 text-rose-300">
+                <i className="fas fa-radiation text-xs"></i> Irreversible Action:
+              </p>
+              <ul className="list-disc list-inside space-y-0.5 text-[10.5px] text-slate-300">
+                <li>All donation, income, expense, and fund balances will be deleted.</li>
+                <li>All registered monthly members and payment receipts will be deleted.</li>
+                <li>All rental units, tenant contracts, and staff payrolls will be deleted.</li>
+                <li>Assigned mosque administrators will lose access.</li>
+              </ul>
+            </div>
+
+            {deleteError && (
+              <div className="p-3 bg-rose-950 border border-rose-800 text-rose-200 text-xs rounded-xl font-bold">
+                <i className="fas fa-circle-exclamation mr-1"></i> {deleteError}
+              </div>
+            )}
+
+            <div className="space-y-2 pt-1">
+              <label className="block text-[10.5px] font-bold text-slate-400">
+                Type <span className="font-mono text-rose-400 select-all font-black">DELETE</span> to confirm:
+              </label>
+              <input
+                type="text"
+                value={deleteConfirmText}
+                onChange={(e) => setDeleteConfirmText(e.target.value.toUpperCase())}
+                placeholder="Type DELETE"
+                className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 focus:border-rose-600 rounded-xl text-xs font-mono font-bold text-white outline-none text-center tracking-widest"
+              />
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setDeleteTargetMasjid(null);
+                  setDeleteConfirmText('');
+                  setDeleteError('');
+                }}
+                disabled={deleteLoading}
+                className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteMasjid}
+                disabled={deleteLoading || deleteConfirmText !== 'DELETE'}
+                className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-extrabold rounded-xl text-xs shadow-lg shadow-rose-600/30 transition flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                {deleteLoading ? (
+                  <>
+                    <i className="fas fa-circle-notch fa-spin text-xs"></i> Deleting...
+                  </>
+                ) : (
+                  <>
+                    <i className="fas fa-trash-can text-xs"></i> Delete Profile
+                  </>
+                )}
               </button>
             </div>
           </div>

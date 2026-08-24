@@ -345,6 +345,60 @@ export async function POST(req: NextRequest) {
       newStatus = 'APPROVED';
     } else if (action === 'ARCHIVE') {
       newStatus = 'ARCHIVED';
+    } else if (action === 'DELETE') {
+      const userIds = masjid.masjidUsers.map((mu) => mu.userId);
+
+      // Cascade delete all dependent records
+      await prisma.$transaction([
+        prisma.memberCollection.deleteMany({ where: { masjidId } }),
+        prisma.member.deleteMany({ where: { masjidId } }),
+        prisma.rentalPayment.deleteMany({ where: { masjidId } }),
+        prisma.rentalShop.deleteMany({ where: { masjidId } }),
+        prisma.payroll.deleteMany({ where: { masjidId } }),
+        prisma.staff.deleteMany({ where: { masjidId } }),
+        prisma.bankTransaction.deleteMany({ where: { masjidId } }),
+        prisma.bankAccount.deleteMany({ where: { masjidId } }),
+        prisma.document.deleteMany({ where: { masjidId } }),
+        prisma.paymentOnboardingRequest.deleteMany({ where: { masjidId } }),
+        prisma.receipt.deleteMany({ where: { masjidId } }),
+        prisma.paymentTransaction.deleteMany({ where: { masjidId } }),
+        prisma.paymentLink.deleteMany({ where: { masjidId } }),
+        prisma.campaign.deleteMany({ where: { masjidId } }),
+        prisma.budget.deleteMany({ where: { masjidId } }),
+        prisma.fundTransfer.deleteMany({ where: { masjidId } }),
+        prisma.income.deleteMany({ where: { masjidId } }),
+        prisma.recurringExpense.deleteMany({ where: { masjidId } }),
+        prisma.expense.deleteMany({ where: { masjidId } }),
+        prisma.recurringDonation.deleteMany({ where: { masjidId } }),
+        prisma.donation.deleteMany({ where: { masjidId } }),
+        prisma.fund.deleteMany({ where: { masjidId } }),
+        prisma.incomeCategory.deleteMany({ where: { masjidId } }),
+        prisma.expenseCategory.deleteMany({ where: { masjidId } }),
+        prisma.donationCategory.deleteMany({ where: { masjidId } }),
+        prisma.donor.deleteMany({ where: { masjidId } }),
+        prisma.setting.deleteMany({ where: { masjidId } }),
+        prisma.notification.deleteMany({ where: { masjidId } }),
+        prisma.auditLog.deleteMany({ where: { masjidId } }),
+        prisma.masjidFinancialYear.deleteMany({ where: { masjidId } }),
+        prisma.masjidUser.deleteMany({ where: { masjidId } }),
+        prisma.masjid.delete({ where: { id: masjidId } }),
+      ]);
+
+      // Clean up orphaned users if they only had access to this masjid and are not SUPER_ADMIN
+      for (const uId of userIds) {
+        const remaining = await prisma.masjidUser.count({ where: { userId: uId } });
+        if (remaining === 0) {
+          const u = await prisma.user.findUnique({ where: { id: uId } });
+          if (u && u.role !== 'SUPER_ADMIN') {
+            await prisma.user.delete({ where: { id: uId } }).catch(() => {});
+          }
+        }
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: `Masjid "${masjid.name}" and all associated data permanently deleted.`,
+      });
     }
 
     const updated = await prisma.masjid.update({
@@ -374,5 +428,88 @@ export async function POST(req: NextRequest) {
     }
     console.error('Super Admin Action API error:', error);
     return NextResponse.json({ error: 'Action failed: ' + (error.message || '') }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const session = requireSuperAdmin();
+    const { searchParams } = new URL(req.url);
+    const masjidId = searchParams.get('masjidId') || searchParams.get('id');
+
+    if (!masjidId) {
+      return NextResponse.json({ error: 'masjidId is required' }, { status: 400 });
+    }
+
+    const masjid = await prisma.masjid.findUnique({
+      where: { id: masjidId },
+      include: {
+        masjidUsers: { select: { userId: true } },
+      },
+    });
+
+    if (!masjid) {
+      return NextResponse.json({ error: 'Masjid not found' }, { status: 404 });
+    }
+
+    const userIds = masjid.masjidUsers.map((mu) => mu.userId);
+
+    // Cascade delete all dependent records
+    await prisma.$transaction([
+      prisma.memberCollection.deleteMany({ where: { masjidId } }),
+      prisma.member.deleteMany({ where: { masjidId } }),
+      prisma.rentalPayment.deleteMany({ where: { masjidId } }),
+      prisma.rentalShop.deleteMany({ where: { masjidId } }),
+      prisma.payroll.deleteMany({ where: { masjidId } }),
+      prisma.staff.deleteMany({ where: { masjidId } }),
+      prisma.bankTransaction.deleteMany({ where: { masjidId } }),
+      prisma.bankAccount.deleteMany({ where: { masjidId } }),
+      prisma.document.deleteMany({ where: { masjidId } }),
+      prisma.paymentOnboardingRequest.deleteMany({ where: { masjidId } }),
+      prisma.receipt.deleteMany({ where: { masjidId } }),
+      prisma.paymentTransaction.deleteMany({ where: { masjidId } }),
+      prisma.paymentLink.deleteMany({ where: { masjidId } }),
+      prisma.campaign.deleteMany({ where: { masjidId } }),
+      prisma.budget.deleteMany({ where: { masjidId } }),
+      prisma.fundTransfer.deleteMany({ where: { masjidId } }),
+      prisma.income.deleteMany({ where: { masjidId } }),
+      prisma.recurringExpense.deleteMany({ where: { masjidId } }),
+      prisma.expense.deleteMany({ where: { masjidId } }),
+      prisma.recurringDonation.deleteMany({ where: { masjidId } }),
+      prisma.donation.deleteMany({ where: { masjidId } }),
+      prisma.fund.deleteMany({ where: { masjidId } }),
+      prisma.incomeCategory.deleteMany({ where: { masjidId } }),
+      prisma.expenseCategory.deleteMany({ where: { masjidId } }),
+      prisma.donationCategory.deleteMany({ where: { masjidId } }),
+      prisma.donor.deleteMany({ where: { masjidId } }),
+      prisma.setting.deleteMany({ where: { masjidId } }),
+      prisma.notification.deleteMany({ where: { masjidId } }),
+      prisma.auditLog.deleteMany({ where: { masjidId } }),
+      prisma.masjidFinancialYear.deleteMany({ where: { masjidId } }),
+      prisma.masjidUser.deleteMany({ where: { masjidId } }),
+      prisma.masjid.delete({ where: { id: masjidId } }),
+    ]);
+
+    // Clean up orphaned users
+    for (const uId of userIds) {
+      const remaining = await prisma.masjidUser.count({ where: { userId: uId } });
+      if (remaining === 0) {
+        const u = await prisma.user.findUnique({ where: { id: uId } });
+        if (u && u.role !== 'SUPER_ADMIN') {
+          await prisma.user.delete({ where: { id: uId } }).catch(() => {});
+        }
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: `Masjid "${masjid.name}" permanently deleted.`,
+    });
+  } catch (error: any) {
+    if (error.name === 'TenantAccessError' || error.name === 'UnauthorizedError') {
+      return NextResponse.json({ error: error.message }, { status: 403 });
+    }
+    console.error('Super Admin Delete Masjid error:', error);
+    return NextResponse.json({ error: 'Delete failed: ' + (error.message || '') }, { status: 500 });
   }
 }
