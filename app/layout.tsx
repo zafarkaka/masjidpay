@@ -2,6 +2,7 @@ import './globals.css';
 import type { Metadata, Viewport } from 'next';
 import PwaInstallPrompt from '@/components/PwaInstallPrompt';
 import { LanguageProvider } from '@/context/LanguageContext';
+import MaintenanceGate from '@/components/MaintenanceGate';
 
 const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://masjidpay.in';
 
@@ -147,10 +148,12 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen bg-[#FFF9EC] text-[#1c2e28] antialiased font-sans">
         <div id="google_translate_element" style={{ display: 'none' }}></div>
-        <LanguageProvider>
-          {children}
-          <PwaInstallPrompt />
-        </LanguageProvider>
+        <MaintenanceGate>
+          <LanguageProvider>
+            {children}
+            <PwaInstallPrompt />
+          </LanguageProvider>
+        </MaintenanceGate>
       </body>
     </html>
   );

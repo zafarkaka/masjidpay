@@ -684,4 +684,12 @@ model PaymentOnboardingRequest {
   masjid                Masjid    @relation(fields: [masjidId], references: [id], onDelete: Cascade)
 }
 
+model SystemSetting {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 

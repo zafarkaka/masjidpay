@@ -103,6 +103,7 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
       badge: pendingPaymentsCount > 0 ? pendingPaymentsCount : null,
     },
     { label: 'System Audit Logs', href: '/super-admin/audit', icon: 'fa-history' },
+    { label: 'Maintenance Mode', href: '/super-admin/maintenance', icon: 'fa-screwdriver-wrench' },
   ];
 
   return (
