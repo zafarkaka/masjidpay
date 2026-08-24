@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireSuperAdmin } from '@/lib/tenant';
 import { recordAuditLog } from '@/lib/audit';
-import { hashPassword } from '@/lib/auth';
+import { hashPassword, signToken, TOKEN_NAME, AUTH_COOKIE_OPTIONS } from '@/lib/auth';
 import { SUPER_ADMIN_EMAIL, sendApprovalWelcomeEmail, BASE_URL } from '@/lib/email';
 
 export const dynamic = 'force-dynamic';
@@ -87,6 +87,30 @@ export async function POST(req: NextRequest) {
 
     if (!masjid) {
       return NextResponse.json({ error: 'Masjid not found' }, { status: 404 });
+    }
+
+    // 0. LOGIN AS MASJID / OPEN DASHBOARD
+    if (action === 'LOGIN_AS_MASJID') {
+      const adminUser = masjid.masjidUsers[0]?.user;
+      const sessionPayload = {
+        userId: adminUser?.id || session.userId,
+        email: adminUser?.email || session.email,
+        name: adminUser?.name || masjid.name,
+        role: 'MASJID_ADMIN',
+        masjidId: masjid.id,
+        masjidSlug: masjid.slug,
+        masjidStatus: masjid.status,
+        masjidName: masjid.name,
+      };
+
+      const token = signToken(sessionPayload);
+      const res = NextResponse.json({
+        success: true,
+        redirectUrl: '/dashboard',
+        message: `Switching to ${masjid.name} dashboard...`,
+      });
+      res.cookies.set(TOKEN_NAME, token, AUTH_COOKIE_OPTIONS);
+      return res;
     }
 
     // 1. RESET ADMIN PASSWORD AS REQUESTED BY MASJID ADMIN

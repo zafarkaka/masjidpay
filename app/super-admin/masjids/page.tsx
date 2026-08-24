@@ -110,6 +110,27 @@ export default function SuperAdminMasjidsPage() {
     }
   };
 
+  const handleOpenMasjidDashboard = async (masjidId: string) => {
+    setActionLoading(true);
+    try {
+      const res = await fetch('/api/super-admin/masjids', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ masjidId, action: 'LOGIN_AS_MASJID' }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        window.location.href = '/dashboard';
+      } else {
+        alert(data.error || 'Failed to open masjid dashboard');
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const openManageModal = (masjid: any) => {
     const adminUser = masjid?.masjidUsers?.[0]?.user;
     const settingsMap: Record<string, string> = {};
@@ -435,14 +456,27 @@ export default function SuperAdminMasjidsPage() {
                       <td className="p-4 text-slate-400">
                         {new Date(masjid.createdAt).toLocaleDateString()}
                       </td>
-                      <td className="p-4 text-right space-x-2">
+                      <td className="p-4 text-right space-x-1.5 whitespace-nowrap">
+                        {/* OPEN MASJID DASHBOARD BUTTON */}
+                        <button
+                          type="button"
+                          onClick={() => handleOpenMasjidDashboard(masjid.id)}
+                          disabled={actionLoading}
+                          className="px-2.5 py-1.5 bg-emerald-950/90 hover:bg-emerald-900 text-emerald-300 border border-emerald-700 font-bold rounded-lg text-xs transition inline-flex items-center gap-1 cursor-pointer"
+                          title={`Open ${masjid.name} Dashboard directly`}
+                        >
+                          <i className="fas fa-arrow-right-to-bracket text-[10px]"></i>
+                          <span>Open Dashboard</span>
+                        </button>
+
                         {/* MANAGE ADMIN & RESET PASSWORD BUTTON */}
                         <button
                           onClick={() => openManageModal(masjid)}
-                          className="px-3 py-1.5 bg-sky-950/80 hover:bg-sky-900 text-sky-300 border border-sky-800/80 font-bold rounded-lg text-xs transition inline-flex items-center gap-1.5"
+                          className="px-2.5 py-1.5 bg-sky-950/80 hover:bg-sky-900 text-sky-300 border border-sky-800/80 font-bold rounded-lg text-xs transition inline-flex items-center gap-1 cursor-pointer"
                           title="Edit Admin Details & Reset Password"
                         >
-                          <i className="fas fa-user-pen"></i> Manage Admin
+                          <i className="fas fa-user-pen text-[10px]"></i>
+                          <span>Manage Admin</span>
                         </button>
 
                         {masjid.status === 'PENDING' && (
