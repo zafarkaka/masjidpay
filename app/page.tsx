@@ -2,10 +2,17 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 export default function HomePage() {
+  const router = useRouter();
   const [activeCategory, setActiveCategory] = useState('ALL');
+  const [showCommunityModal, setShowCommunityModal] = useState(false);
+  const [selectedMasjidForCommunity, setSelectedMasjidForCommunity] = useState<any>(null);
+  const [communityAccessCode, setCommunityAccessCode] = useState('');
+  const [communityError, setCommunityError] = useState('');
+  const [verifyingCommunity, setVerifyingCommunity] = useState(false);
 
   const categories = [
     { id: 'ALL', label: 'All Capabilities', icon: 'fa-mosque' },
@@ -89,6 +96,41 @@ export default function HomePage() {
       })
       .catch(() => {});
   }, []);
+
+  const handleCommunityViewSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!communityAccessCode.trim() || communityAccessCode.trim() === '0') {
+      setCommunityError('Secret Access Code is required to view the mosque dashboard.');
+      return;
+    }
+
+    setVerifyingCommunity(true);
+    setCommunityError('');
+
+    try {
+      const res = await fetch('/api/auth/community-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          slug: selectedMasjidForCommunity?.slug || selectedMasjidForCommunity?.id,
+          masjidId: selectedMasjidForCommunity?.id,
+          communityCode: communityAccessCode.trim(),
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setShowCommunityModal(false);
+        router.push('/dashboard');
+      } else {
+        setCommunityError(data.error || 'Invalid Community Access Code for this mosque.');
+      }
+    } catch (err: any) {
+      setCommunityError(err.message || 'Failed to authenticate community view.');
+    } finally {
+      setVerifyingCommunity(false);
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-[#FFF9EC] text-[#1c2e28] font-sans selection:bg-[#D4AF37]/30">
@@ -319,14 +361,27 @@ export default function HomePage() {
                 </div>
 
                 {/* CARD ACTIONS */}
-                <div className="pt-4 border-t border-[#e8dfc8]">
+                <div className="pt-4 border-t border-[#e8dfc8] grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <Link
-                    href={`/donate/${masjid.id}`}
-                    className="w-full py-3 bg-[#064E3B] hover:bg-[#102A25] text-white font-extrabold rounded-2xl text-xs text-center shadow-md shadow-[#064E3B]/15 transition flex items-center justify-center gap-2"
+                    href={`/donate/${masjid.slug || masjid.id}`}
+                    className="py-2.5 px-3 bg-[#064E3B] hover:bg-[#102A25] text-white font-extrabold rounded-xl text-xs text-center shadow-md shadow-[#064E3B]/15 transition flex items-center justify-center gap-1.5"
                   >
                     <i className="fas fa-hand-holding-heart text-[#F4D06F]"></i>
                     <span>Donate Now</span>
                   </Link>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedMasjidForCommunity(masjid);
+                      setCommunityAccessCode('');
+                      setCommunityError('');
+                      setShowCommunityModal(true);
+                    }}
+                    className="py-2.5 px-3 bg-[#FFF9EC] hover:bg-emerald-50 text-[#064E3B] font-extrabold border border-[#064E3B]/40 hover:border-[#064E3B] rounded-xl text-xs text-center shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <i className="fas fa-eye text-[#064E3B]"></i>
+                    <span>Community View</span>
+                  </button>
                 </div>
               </div>
             </div>
@@ -961,6 +1016,104 @@ export default function HomePage() {
           </div>
         </div>
       </footer>
+
+      {/* COMMUNITY ACCESS CODE MODAL */}
+      {showCommunityModal && selectedMasjidForCommunity && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl border border-[#D4AF37]/40 space-y-5">
+            <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-[#064E3B] text-[#F4D06F] flex items-center justify-center text-lg shadow-sm shrink-0">
+                  <i className="fas fa-eye"></i>
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900 leading-tight">
+                    Community View Access
+                  </h3>
+                  <span className="text-xs font-bold text-[#064E3B] block mt-0.5">
+                    {selectedMasjidForCommunity.name}
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowCommunityModal(false)}
+                className="text-slate-400 hover:text-slate-600 text-sm font-bold w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-100 transition cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-3.5 bg-emerald-50/70 border border-emerald-200 rounded-2xl text-xs text-emerald-900 leading-relaxed space-y-1">
+              <p className="font-bold flex items-center gap-1.5 text-emerald-800">
+                <i className="fas fa-lock text-[#D4AF37]"></i> Secret Access Code Required
+              </p>
+              <p className="text-[11.5px] text-slate-600">
+                Enter the secret access code configured for <strong>{selectedMasjidForCommunity.name}</strong> to view live financial reports, monthly member collections, and transparent mosque ledgers.
+              </p>
+            </div>
+
+            {communityError && (
+              <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-2xl text-xs font-bold text-rose-700 flex items-center gap-2">
+                <i className="fas fa-circle-exclamation text-rose-500 shrink-0"></i>
+                <span>{communityError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleCommunityViewSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1.5">
+                  Community Secret Access Code *
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
+                    <i className="fas fa-key"></i>
+                  </span>
+                  <input
+                    type="password"
+                    required
+                    autoFocus
+                    placeholder="Enter Access Code (e.g. 7860)"
+                    value={communityAccessCode}
+                    onChange={(e) => {
+                      setCommunityAccessCode(e.target.value);
+                      setCommunityError('');
+                    }}
+                    className="w-full pl-10 pr-4 py-3 bg-[#FFF9EC] border-2 border-[#D4AF37]/50 rounded-2xl text-sm font-black text-slate-900 outline-none focus:border-[#064E3B] focus:bg-white tracking-widest transition"
+                  />
+                </div>
+                <p className="text-[10.5px] text-slate-500 mt-1">
+                  Obtain this code from your mosque administration committee.
+                </p>
+              </div>
+
+              <div className="flex justify-end gap-2.5 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowCommunityModal(false)}
+                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={verifyingCommunity}
+                  className="px-5 py-2.5 bg-[#064E3B] hover:bg-[#102A25] text-white font-extrabold rounded-xl text-xs shadow-md shadow-[#064E3B]/20 transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                >
+                  {verifyingCommunity ? (
+                    <>
+                      <i className="fas fa-circle-notch fa-spin"></i> Verifying...
+                    </>
+                  ) : (
+                    <>
+                      <i className="fas fa-shield-halved text-[#F4D06F]"></i> Verify & View Dashboard
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
