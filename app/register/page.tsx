@@ -57,8 +57,8 @@ export default function RegisterPage() {
     setError('');
     setOtpModalError('');
 
-    if (!masjidName.trim() || !address.trim() || !email.trim() || !password.trim()) {
-      setError('Please fill in all required fields.');
+    if (!masjidName.trim() || !address.trim() || !email.trim() || !phone.trim() || !password.trim()) {
+      setError('Please fill in all mandatory fields marked with an asterisk (*).');
       return;
     }
 
@@ -252,7 +252,7 @@ export default function RegisterPage() {
               {/* MOSQUE NAME */}
               <div>
                 <label className="block text-[11px] sm:text-xs font-bold text-slate-700 mb-0.5 sm:mb-1">
-                  Mosque Name
+                  Mosque Name <span className="text-rose-500 font-black">*</span>
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
@@ -272,7 +272,7 @@ export default function RegisterPage() {
               {/* ADDRESS */}
               <div>
                 <label className="block text-[11px] sm:text-xs font-bold text-slate-700 mb-0.5 sm:mb-1">
-                  Address
+                  Address <span className="text-rose-500 font-black">*</span>
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
@@ -292,7 +292,7 @@ export default function RegisterPage() {
               {/* COUNTRY */}
               <div>
                 <label className="block text-[11px] sm:text-xs font-bold text-slate-700 mb-0.5 sm:mb-1">
-                  Country
+                  Country <span className="text-rose-500 font-black">*</span>
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
@@ -318,10 +318,11 @@ export default function RegisterPage() {
                 </span>
               </div>
 
-              {/* COMMUNITY ACCESS CODE */}
+              {/* COMMUNITY ACCESS CODE (OPTIONAL - NO ASTERISK) */}
               <div>
-                <label className="block text-[11px] sm:text-xs font-bold text-slate-700 mb-0.5 sm:mb-1">
-                  Community Access Code
+                <label className="block text-[11px] sm:text-xs font-bold text-slate-700 mb-0.5 sm:mb-1 flex items-center justify-between">
+                  <span>Community Access Code</span>
+                  <span className="text-slate-400 font-normal text-[10px] lowercase">(optional)</span>
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
@@ -343,7 +344,7 @@ export default function RegisterPage() {
               {/* EMAIL ADDRESS */}
               <div>
                 <label className="block text-[11px] sm:text-xs font-bold text-slate-700 mb-0.5 sm:mb-1">
-                  Email Address
+                  Email Address <span className="text-rose-500 font-black">*</span>
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
@@ -352,6 +353,7 @@ export default function RegisterPage() {
                   <input
                     type="email"
                     required
+                    autoComplete="email"
                     placeholder="admin@jamamasjid.org"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -360,10 +362,10 @@ export default function RegisterPage() {
                 </div>
               </div>
 
-              {/* PHONE NUMBER (OPTIONAL) */}
+              {/* PHONE NUMBER (MANDATORY) */}
               <div>
                 <label className="block text-[11px] sm:text-xs font-bold text-slate-700 mb-0.5 sm:mb-1">
-                  Phone Number (Optional)
+                  Phone Number <span className="text-rose-500 font-black">*</span>
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
@@ -371,7 +373,9 @@ export default function RegisterPage() {
                   </div>
                   <input
                     type="tel"
-                    placeholder="Enter phone number"
+                    required
+                    autoComplete="tel"
+                    placeholder="e.g. +91 98765 43210"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     className="w-full pl-9 pr-3 py-2 sm:py-2.5 bg-[#FAF8F5] border border-slate-200 rounded-xl sm:rounded-2xl text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#064E3B] transition"
@@ -382,7 +386,7 @@ export default function RegisterPage() {
               {/* PASSWORD */}
               <div>
                 <label className="block text-[11px] sm:text-xs font-bold text-slate-700 mb-0.5 sm:mb-1">
-                  Password
+                  Password <span className="text-rose-500 font-black">*</span>
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
@@ -392,6 +396,7 @@ export default function RegisterPage() {
                     type={showPassword ? 'text' : 'password'}
                     required
                     minLength={6}
+                    autoComplete="new-password"
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -410,7 +415,7 @@ export default function RegisterPage() {
               {/* CONFIRM PASSWORD */}
               <div>
                 <label className="block text-[11px] sm:text-xs font-bold text-slate-700 mb-0.5 sm:mb-1">
-                  Confirm Password
+                  Confirm Password <span className="text-rose-500 font-black">*</span>
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
@@ -420,6 +425,7 @@ export default function RegisterPage() {
                     type={showConfirmPassword ? 'text' : 'password'}
                     required
                     minLength={6}
+                    autoComplete="new-password"
                     placeholder="Confirm password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
