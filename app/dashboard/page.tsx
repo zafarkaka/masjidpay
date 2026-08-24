@@ -109,23 +109,7 @@ export default function DashboardPage() {
 
       {/* 1. FINANCIAL OVERVIEW SECTION */}
       <div className="space-y-3.5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <h3 className="text-xs font-extrabold uppercase tracking-widest text-slate-500">Financial Overview</h3>
-          <div className="flex items-center gap-2">
-            <Link
-              href="/dashboard/income"
-              className="px-3 py-1 bg-[#064E3B] hover:bg-[#043327] text-white font-extrabold text-[11px] rounded-lg transition flex items-center gap-1 shadow-xs"
-            >
-              <i className="fas fa-plus text-[9px]"></i> Add Income
-            </Link>
-            <Link
-              href="/dashboard/expenses"
-              className="px-3 py-1 bg-[#881337] hover:bg-[#70102e] text-white font-extrabold text-[11px] rounded-lg transition flex items-center gap-1 shadow-xs"
-            >
-              <i className="fas fa-plus text-[9px]"></i> Add Expense
-            </Link>
-          </div>
-        </div>
+        <h3 className="text-xs font-extrabold uppercase tracking-widest text-slate-500">Financial Overview</h3>
 
         {/* ROW 1: PRIMARY CURRENT BALANCES & ACTUAL TOTAL */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -253,25 +237,9 @@ export default function DashboardPage() {
 
       {/* 2. MEMBER OVERVIEW SECTION */}
       <div className="space-y-3.5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div>
-            <h3 className="text-xs font-extrabold uppercase tracking-widest text-slate-500">Member Overview</h3>
-            <p className="text-xs text-slate-500 mt-0.5">Monthly members are community members who donate a fixed monthly contribution to support the Masjid&apos;s running expenses.</p>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <Link
-              href="/dashboard/monthly-members?tab=add"
-              className="px-3 py-1 bg-[#115E59] hover:bg-[#0d4844] text-white font-extrabold text-[11px] rounded-lg transition flex items-center gap-1 shadow-xs"
-            >
-              <i className="fas fa-plus text-[9px]"></i> Add Member
-            </Link>
-            <Link
-              href="/dashboard/member-collections"
-              className="px-3 py-1 bg-[#92400E] hover:bg-[#78350f] text-[#FDE68A] font-extrabold text-[11px] rounded-lg transition flex items-center gap-1 shadow-xs"
-            >
-              <i className="fas fa-receipt text-[9px]"></i> Record Member Amount
-            </Link>
-          </div>
+        <div>
+          <h3 className="text-xs font-extrabold uppercase tracking-widest text-slate-500">Member Overview</h3>
+          <p className="text-xs text-slate-500 mt-0.5">Monthly members are community members who donate a fixed monthly contribution to support the Masjid&apos;s running expenses.</p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -323,17 +291,9 @@ export default function DashboardPage() {
 
       {/* 3. PAYROLL OVERVIEW SECTION */}
       <div className="space-y-3.5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div>
-            <h3 className="text-xs font-extrabold uppercase tracking-widest text-slate-500">Payroll Overview</h3>
-            <p className="text-xs text-slate-500 mt-0.5">Track monthly payroll expenses, active staff members, and outstanding salary payouts.</p>
-          </div>
-          <Link
-            href="/dashboard/payroll"
-            className="px-3.5 py-1 bg-[#064E3B] hover:bg-[#043327] text-white font-extrabold text-[11px] rounded-lg transition flex items-center gap-1.5 shadow-xs self-start sm:self-auto"
-          >
-            <i className="fas fa-user-gear text-[9px]"></i> Manage Payroll
-          </Link>
+        <div>
+          <h3 className="text-xs font-extrabold uppercase tracking-widest text-slate-500">Payroll Overview</h3>
+          <p className="text-xs text-slate-500 mt-0.5">Track monthly payroll expenses, active staff members, and outstanding salary payouts.</p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -394,28 +354,11 @@ export default function DashboardPage() {
 
       {/* 4. RENTAL OVERVIEW SECTION */}
       <div className="space-y-3.5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div>
-            <h3 className="text-xs font-extrabold uppercase tracking-widest text-slate-500">Rental Overview</h3>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Track mosque commercial properties, security advances held, rent collections, and pending tenant dues.
-            </p>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <Link
-              href="/dashboard/rentals"
-              className="px-3.5 py-1 bg-[#0F3D26] hover:bg-emerald-950 text-white font-extrabold text-[11px] rounded-lg transition flex items-center gap-1.5 shadow-xs"
-            >
-              <i className="fas fa-store text-[9px] text-[#F4D06F]"></i> Manage Rentals
-            </Link>
-            <Link
-              href="/dashboard/rentals/print"
-              target="_blank"
-              className="px-3 py-1 bg-white hover:bg-slate-50 text-slate-700 font-extrabold text-[11px] rounded-lg border border-slate-200 transition flex items-center gap-1"
-            >
-              <i className="fas fa-print text-[9px] text-emerald-800"></i> Statement
-            </Link>
-          </div>
+        <div>
+          <h3 className="text-xs font-extrabold uppercase tracking-widest text-slate-500">Rental Overview</h3>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Track mosque commercial properties, security advances held, rent collections, and pending tenant dues.
+          </p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
