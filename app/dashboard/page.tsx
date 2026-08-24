@@ -559,62 +559,6 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
-
-        {/* RECENT DONOR COLLECTIONS MINI TABLE */}
-        {donorOverview.recentCollections && donorOverview.recentCollections.length > 0 && (
-          <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden">
-            <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-              <span className="text-xs font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-2">
-                <i className="fas fa-clock-rotate-left text-emerald-700"></i> Recent Donor Collections
-              </span>
-              <Link href="/dashboard/donations" className="text-xs font-bold text-emerald-700 hover:underline">
-                View Full Log →
-              </Link>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-slate-50/70 border-b border-slate-200 text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider">
-                    <th className="px-5 py-2.5">Receipt No</th>
-                    <th className="px-4 py-2.5">Date</th>
-                    <th className="px-4 py-2.5">Donor Name</th>
-                    <th className="px-4 py-2.5">Fund / Category</th>
-                    <th className="px-4 py-2.5">Amount</th>
-                    <th className="px-4 py-2.5">Method</th>
-                    <th className="px-5 py-2.5 text-right">Receipt</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
-                  {donorOverview.recentCollections.slice(0, 5).map((don: any) => (
-                    <tr key={don.id} className="hover:bg-slate-50/60 transition">
-                      <td className="px-5 py-3 font-bold text-emerald-800">{don.receiptNo}</td>
-                      <td className="px-4 py-3 text-slate-500">{new Date(don.date).toLocaleDateString('en-GB')}</td>
-                      <td className="px-4 py-3 font-semibold text-slate-900">{don.donorName}</td>
-                      <td className="px-4 py-3">
-                        <span className="font-bold text-slate-800">{don.categoryName}</span>
-                        <span className="text-[10px] text-emerald-700 block">{don.fundName}</span>
-                      </td>
-                      <td className="px-4 py-3 font-extrabold text-slate-900">₹{don.amount.toLocaleString('en-IN')}</td>
-                      <td className="px-4 py-3">
-                        <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 font-bold text-[10px]">
-                          {don.paymentMethod}
-                        </span>
-                      </td>
-                      <td className="px-5 py-3 text-right">
-                        <Link
-                          href={`/dashboard/receipts/${don.id}`}
-                          className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-lg font-bold text-[11px] transition inline-flex items-center gap-1 border border-emerald-200"
-                        >
-                          <i className="fas fa-receipt text-xs"></i> View
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
