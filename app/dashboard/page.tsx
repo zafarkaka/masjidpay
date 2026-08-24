@@ -43,6 +43,14 @@ export default function DashboardPage() {
     rentPendingThisMonth: 0,
     recentPayments: [],
   };
+  const donorOverview = data?.donorOverview || {
+    totalCollected: 0,
+    monthCollected: 0,
+    totalCount: 0,
+    monthCount: 0,
+    categoryCount: 0,
+    recentCollections: [],
+  };
 
   const currentDateFormatted = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
@@ -446,6 +454,167 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* 5. DONOR COLLECTIONS OVERVIEW SECTION */}
+      <div className="space-y-3.5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <h3 className="text-xs font-extrabold uppercase tracking-widest text-slate-500">Donor Collections Overview</h3>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Live tracking of incoming donor contributions, general collections, Zakat vaults, and issued receipts.
+            </p>
+          </div>
+          <Link
+            href="/dashboard/donations"
+            className="text-xs font-bold text-emerald-800 hover:text-emerald-950 hover:underline flex items-center gap-1 self-start sm:self-auto"
+          >
+            <span>View All Donor Collections</span>
+            <i className="fas fa-arrow-right text-[10px]"></i>
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* TOTAL DONOR COLLECTIONS */}
+          <div className="bg-white border border-slate-200/90 rounded-3xl p-5 shadow-xs flex flex-col justify-between space-y-4 hover:border-emerald-300 transition">
+            <div className="flex items-center justify-between">
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center text-base">
+                <i className="fas fa-hand-holding-heart"></i>
+              </div>
+              <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200">
+                All-Time Total
+              </span>
+            </div>
+            <div>
+              <span className="text-2xl font-black text-slate-900 block">
+                IN ₹{donorOverview.totalCollected.toLocaleString('en-IN')}
+              </span>
+              <span className="text-xs font-bold text-slate-600 block mt-0.5">Total Donor Collections</span>
+              <span className="text-[11px] font-semibold text-slate-400 block mt-0.5">
+                Across all active funds
+              </span>
+            </div>
+          </div>
+
+          {/* THIS MONTH'S COLLECTIONS */}
+          <div className="bg-white border border-slate-200/90 rounded-3xl p-5 shadow-xs flex flex-col justify-between space-y-4 hover:border-emerald-300 transition">
+            <div className="flex items-center justify-between">
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-800 flex items-center justify-center text-base">
+                <i className="fas fa-calendar-check"></i>
+              </div>
+              <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200">
+                This Month
+              </span>
+            </div>
+            <div>
+              <span className="text-2xl font-black text-emerald-800 block">
+                IN ₹{donorOverview.monthCollected.toLocaleString('en-IN')}
+              </span>
+              <span className="text-xs font-bold text-slate-600 block mt-0.5">Collected This Month</span>
+              <span className="text-[11px] font-semibold text-emerald-700 block mt-0.5">
+                {donorOverview.monthCount} receipts logged this month
+              </span>
+            </div>
+          </div>
+
+          {/* TOTAL RECEIPTS ISSUED */}
+          <div className="bg-white border border-slate-200/90 rounded-3xl p-5 shadow-xs flex flex-col justify-between space-y-4 hover:border-amber-300 transition">
+            <div className="flex items-center justify-between">
+              <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center text-base">
+                <i className="fas fa-receipt"></i>
+              </div>
+              <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200">
+                Receipts
+              </span>
+            </div>
+            <div>
+              <span className="text-2xl font-black text-slate-900 block">
+                {donorOverview.totalCount} Receipts
+              </span>
+              <span className="text-xs font-bold text-slate-600 block mt-0.5">Total Receipts Issued</span>
+              <span className="text-[11px] font-semibold text-slate-400 block mt-0.5">
+                Average: ₹{donorOverview.totalCount > 0 ? Math.round(donorOverview.totalCollected / donorOverview.totalCount).toLocaleString('en-IN') : 0} / receipt
+              </span>
+            </div>
+          </div>
+
+          {/* ACTIVE CATEGORIES & FUNDS */}
+          <div className="bg-white border border-slate-200/90 rounded-3xl p-5 shadow-xs flex flex-col justify-between space-y-4 hover:border-teal-300 transition">
+            <div className="flex items-center justify-between">
+              <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center text-base">
+                <i className="fas fa-folder-tree"></i>
+              </div>
+              <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-teal-50 text-teal-800 border border-teal-200">
+                Active Vaults
+              </span>
+            </div>
+            <div>
+              <span className="text-2xl font-black text-slate-900 block">
+                {donorOverview.categoryCount} Categories
+              </span>
+              <span className="text-xs font-bold text-slate-600 block mt-0.5">Active Donation Funds</span>
+              <span className="text-[11px] font-semibold text-slate-400 block mt-0.5">
+                General, Zakat, Construction & more
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* RECENT DONOR COLLECTIONS MINI TABLE */}
+        {donorOverview.recentCollections && donorOverview.recentCollections.length > 0 && (
+          <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden">
+            <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+              <span className="text-xs font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                <i className="fas fa-clock-rotate-left text-emerald-700"></i> Recent Donor Collections
+              </span>
+              <Link href="/dashboard/donations" className="text-xs font-bold text-emerald-700 hover:underline">
+                View Full Log →
+              </Link>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50/70 border-b border-slate-200 text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider">
+                    <th className="px-5 py-2.5">Receipt No</th>
+                    <th className="px-4 py-2.5">Date</th>
+                    <th className="px-4 py-2.5">Donor Name</th>
+                    <th className="px-4 py-2.5">Fund / Category</th>
+                    <th className="px-4 py-2.5">Amount</th>
+                    <th className="px-4 py-2.5">Method</th>
+                    <th className="px-5 py-2.5 text-right">Receipt</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
+                  {donorOverview.recentCollections.slice(0, 5).map((don: any) => (
+                    <tr key={don.id} className="hover:bg-slate-50/60 transition">
+                      <td className="px-5 py-3 font-bold text-emerald-800">{don.receiptNo}</td>
+                      <td className="px-4 py-3 text-slate-500">{new Date(don.date).toLocaleDateString('en-GB')}</td>
+                      <td className="px-4 py-3 font-semibold text-slate-900">{don.donorName}</td>
+                      <td className="px-4 py-3">
+                        <span className="font-bold text-slate-800">{don.categoryName}</span>
+                        <span className="text-[10px] text-emerald-700 block">{don.fundName}</span>
+                      </td>
+                      <td className="px-4 py-3 font-extrabold text-slate-900">₹{don.amount.toLocaleString('en-IN')}</td>
+                      <td className="px-4 py-3">
+                        <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 font-bold text-[10px]">
+                          {don.paymentMethod}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3 text-right">
+                        <Link
+                          href={`/dashboard/receipts/${don.id}`}
+                          className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-lg font-bold text-[11px] transition inline-flex items-center gap-1 border border-emerald-200"
+                        >
+                          <i className="fas fa-receipt text-xs"></i> View
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
