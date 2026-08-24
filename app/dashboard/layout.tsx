@@ -141,8 +141,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       group: 'DONATIONS & PAYMENTS',
       items: [
         { label: 'Donor Collections', href: '/dashboard/donations', icon: 'fa-hand-holding-heart' },
-        { label: 'Recurring Donations', href: '/dashboard/recurring-donations', icon: 'fa-rotate' },
-        { label: 'Campaigns', href: '/dashboard/campaigns', icon: 'fa-bullhorn' },
         { label: 'Payment Links & QR', href: '/dashboard/payment-links', icon: 'fa-qrcode' },
         { label: 'Donor Directory', href: '/dashboard/donors', icon: 'fa-address-book' },
       ],
@@ -283,16 +281,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
           </div>
 
-          {/* SHARE APP BUTTON */}
-          <button
-            type="button"
-            onClick={handleShareApp}
-            className="w-full flex items-center gap-2 px-2.5 py-1.5 text-[11px] font-bold text-slate-700 hover:bg-slate-200/60 rounded-lg transition"
-          >
-            <i className="fas fa-share-nodes text-slate-600 text-xs"></i>
-            <span>{shareCopied ? '✓ Link Copied!' : 'Share App'}</span>
-          </button>
-
           {/* USER PROFILE FOOTER */}
           <div className="pt-1.5 border-t border-slate-200/80 flex items-center justify-between">
             <div className="flex items-center gap-2 overflow-hidden">
@@ -425,16 +413,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <i className="fas fa-globe absolute left-0 top-1 text-slate-400 text-xs pointer-events-none"></i>
                 </div>
               </div>
-
-              {/* SHARE APP BUTTON */}
-              <button
-                type="button"
-                onClick={handleShareApp}
-                className="w-full flex items-center gap-2 px-2.5 py-1.5 text-[11px] font-bold text-slate-700 hover:bg-slate-200/60 rounded-lg transition"
-              >
-                <i className="fas fa-share-nodes text-slate-600 text-xs"></i>
-                <span>{shareCopied ? '✓ Link Copied!' : 'Share App'}</span>
-              </button>
 
               {/* USER PROFILE FOOTER */}
               <div className="pt-1.5 border-t border-slate-200/80 flex items-center justify-between">
