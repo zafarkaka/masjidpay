@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import MemberSoaModal from '@/components/MemberSoaModal';
 import { generateMemberStatusWhatsAppUrl } from '@/lib/whatsapp';
 import { getAllPaidMonthsForMember, getPendingMonthsUpToCurrent, MONTH_NAMES } from '@/lib/memberMonths';
 
@@ -15,6 +16,8 @@ export default function MonthlyMembersPage() {
   const [masjidSlug, setMasjidSlug] = useState('jama-masjid');
   const [masjidName, setMasjidName] = useState('Newtown Masjid');
   const [loading, setLoading] = useState(false);
+  const [soaModalMember, setSoaModalMember] = useState<any | null>(null);
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'PAID' | 'PENDING' | 'PARTIALLY_PAID'>('ALL');
 
   // Expanded Member State (For Details / Hide)
   const [expandedMemberId, setExpandedMemberId] = useState<string | null>(null);
@@ -293,17 +296,6 @@ export default function MonthlyMembersPage() {
     })
     .slice(0, 6);
 
-  const filteredMembers = members.filter((m) => {
-    if (!searchQuery) return true;
-    const q = searchQuery.toLowerCase();
-    return (
-      m.name?.toLowerCase().includes(q) ||
-      m.phone?.includes(q) ||
-      m.memberNo?.toLowerCase().includes(q) ||
-      m.address?.toLowerCase().includes(q)
-    );
-  });
-
   // COMPUTE LIVE MONTHLY STATS, ADVANCE, PENDING & WHATSAPP URL FOR A MEMBER
   const getMemberMetrics = (mbr: any) => {
     const monthlyRate = Number(mbr.monthlyAmount || 100);
@@ -370,6 +362,7 @@ export default function MonthlyMembersPage() {
       advanceAmount,
       statusType,
       statusText,
+      isFullyPaid,
       paidMonths,
       pendingMonthsList,
       expectedMonthsCount,
@@ -380,6 +373,51 @@ export default function MonthlyMembersPage() {
       whatsappUrl,
     };
   };
+
+  // Pre-calculate member metrics map for filtering & summary statistics
+  const memberMetricsMap = new Map<string, any>();
+  let totalOverallMonthlyTarget = 0;
+  let totalOverallPaid = 0;
+  let totalOverallPending = 0;
+  let countFullyPaid = 0;
+  let countPending = 0;
+  let countPartiallyPaid = 0;
+
+  members.forEach((m) => {
+    const met = getMemberMetrics(m);
+    memberMetricsMap.set(m.id, met);
+    totalOverallMonthlyTarget += Number(m.monthlyAmount || 100);
+    totalOverallPaid += met.totalPaid;
+    totalOverallPending += met.pendingAmount;
+
+    if (met.isFullyPaid || met.pendingMonthsList.length === 0) {
+      countFullyPaid++;
+    } else if (met.totalPaid > 0) {
+      countPartiallyPaid++;
+    } else {
+      countPending++;
+    }
+  });
+
+  const filteredMembers = members.filter((m) => {
+    const matchesSearch =
+      !searchQuery ||
+      m.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      m.phone?.includes(searchQuery) ||
+      m.memberNo?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      m.address?.toLowerCase().includes(searchQuery.toLowerCase());
+
+    if (!matchesSearch) return false;
+
+    if (statusFilter === 'ALL') return true;
+    const met = memberMetricsMap.get(m.id);
+    if (!met) return true;
+
+    if (statusFilter === 'PAID') return met.isFullyPaid || met.pendingMonthsList.length === 0;
+    if (statusFilter === 'PENDING') return !met.isFullyPaid && met.totalPaid === 0;
+    if (statusFilter === 'PARTIALLY_PAID') return !met.isFullyPaid && met.totalPaid > 0;
+    return true;
+  });
 
   return (
     <div className="space-y-5 max-w-6xl mx-auto text-slate-800 font-sans pb-10">
@@ -570,22 +608,120 @@ export default function MonthlyMembersPage() {
       {/* 3. DIRECTORY TAB VIEW (WITH SHOW DETAILS & HIDE TRANSITION) */}
       {activeTab === 'directory' && (
         <div className="bg-white border border-slate-200 shadow-sm rounded-3xl overflow-hidden space-y-4">
-          <div className="p-5 border-b border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-extrabold text-slate-900">Registered Monthly Members</span>
-                <span className="px-2.5 py-0.5 bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-full text-[10px] font-black">
-                  {filteredMembers.length} ACTIVE
-                </span>
+          
+          {/* SUMMARY STATISTICS CARDS */}
+          <div className="p-5 border-b border-slate-100 space-y-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-extrabold text-slate-900">Registered Monthly Members</span>
+                  <span className="px-2.5 py-0.5 bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-full text-[10px] font-black">
+                    {members.length} MEMBERS
+                  </span>
+                </div>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Track monthly member dues, statements of accounts (SOA), and instant PDF/WhatsApp receipts
+                </p>
               </div>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Click <strong>Details</strong> to view all month collection history, pending dues, or advance payments
-              </p>
+
+              <span className="text-xs font-bold text-slate-500">
+                Showing: {filteredMembers.length} of {members.length} Members
+              </span>
             </div>
 
-            <span className="text-xs font-bold text-slate-500">
-              Total: {filteredMembers.length} of {members.length} Members
-            </span>
+            {/* 4-METRICS STATS BAR */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl">
+                <span className="text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider block">
+                  Total Members
+                </span>
+                <span className="text-lg font-black text-slate-800 font-mono">
+                  {members.length}
+                </span>
+                <span className="text-[9px] text-slate-400 block">Registered Donors</span>
+              </div>
+
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl">
+                <span className="text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider block">
+                  Monthly Expected
+                </span>
+                <span className="text-lg font-black text-slate-900 font-mono">
+                  IN ₹{totalOverallMonthlyTarget.toLocaleString('en-IN')}
+                </span>
+                <span className="text-[9px] text-slate-400 block">Per Month Target</span>
+              </div>
+
+              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl">
+                <span className="text-[9.5px] font-extrabold text-emerald-800 uppercase tracking-wider block">
+                  Total Collected
+                </span>
+                <span className="text-lg font-black text-emerald-950 font-mono">
+                  IN ₹{totalOverallPaid.toLocaleString('en-IN')}
+                </span>
+                <span className="text-[9px] text-emerald-700 block">{countFullyPaid} Fully Settled</span>
+              </div>
+
+              <div className={`p-3 rounded-2xl border ${totalOverallPending > 0 ? 'bg-amber-50 border-amber-300' : 'bg-emerald-50 border-emerald-200'}`}>
+                <span className={`text-[9.5px] font-extrabold uppercase tracking-wider block ${totalOverallPending > 0 ? 'text-amber-900' : 'text-emerald-800'}`}>
+                  Pending Dues
+                </span>
+                <span className={`text-lg font-black font-mono ${totalOverallPending > 0 ? 'text-rose-700' : 'text-emerald-950'}`}>
+                  IN ₹{totalOverallPending.toLocaleString('en-IN')}
+                </span>
+                <span className={`text-[9px] font-bold block ${totalOverallPending > 0 ? 'text-amber-800' : 'text-emerald-700'}`}>
+                  {countPending + countPartiallyPaid} Members Pending
+                </span>
+              </div>
+            </div>
+
+            {/* STATUS FILTER TABS */}
+            <div className="flex flex-wrap items-center gap-1.5 pt-1">
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mr-1">Filter:</span>
+              <button
+                type="button"
+                onClick={() => setStatusFilter('ALL')}
+                className={`px-3 py-1 rounded-xl text-xs font-bold transition cursor-pointer ${
+                  statusFilter === 'ALL'
+                    ? 'bg-[#0F3D26] text-white shadow-2xs'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                All ({members.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setStatusFilter('PAID')}
+                className={`px-3 py-1 rounded-xl text-xs font-bold transition cursor-pointer ${
+                  statusFilter === 'PAID'
+                    ? 'bg-emerald-800 text-white shadow-2xs'
+                    : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200'
+                }`}
+              >
+                ✓ Fully Paid ({countFullyPaid})
+              </button>
+              <button
+                type="button"
+                onClick={() => setStatusFilter('PENDING')}
+                className={`px-3 py-1 rounded-xl text-xs font-bold transition cursor-pointer ${
+                  statusFilter === 'PENDING'
+                    ? 'bg-rose-700 text-white shadow-2xs'
+                    : 'bg-rose-50 text-rose-800 hover:bg-rose-100 border border-rose-200'
+                }`}
+              >
+                ⚠️ Pending ({countPending})
+              </button>
+              <button
+                type="button"
+                onClick={() => setStatusFilter('PARTIALLY_PAID')}
+                className={`px-3 py-1 rounded-xl text-xs font-bold transition cursor-pointer ${
+                  statusFilter === 'PARTIALLY_PAID'
+                    ? 'bg-amber-700 text-white shadow-2xs'
+                    : 'bg-amber-50 text-amber-900 hover:bg-amber-100 border border-amber-200'
+                }`}
+              >
+                ⚡ Partially Paid ({countPartiallyPaid})
+              </button>
+            </div>
           </div>
 
           {/* SEARCH BOX */}
@@ -607,7 +743,7 @@ export default function MonthlyMembersPage() {
                 <button
                   type="button"
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs p-1"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs p-1 cursor-pointer"
                 >
                   <i className="fas fa-times"></i>
                 </button>
@@ -622,7 +758,7 @@ export default function MonthlyMembersPage() {
             </div>
           ) : filteredMembers.length === 0 ? (
             <div className="p-12 text-center text-slate-400 text-xs font-semibold">
-              No registered members found. Use &quot;Add Member&quot; to add new records.
+              No matching members found for the selected filter.
             </div>
           ) : (
             <div className="divide-y divide-slate-100">
@@ -632,7 +768,7 @@ export default function MonthlyMembersPage() {
 
                 return (
                   <div key={mbr.id} className="transition">
-                    {/* MEMBER ROW (EXACTLY MATCHING USER SCREENSHOT) */}
+                    {/* MEMBER ROW */}
                     <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-slate-50/70 transition">
                       {/* MEMBER AVATAR & INFO */}
                       <div className="flex items-center gap-3.5 min-w-0">
@@ -646,6 +782,9 @@ export default function MonthlyMembersPage() {
                             <span className="px-2 py-0.2 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-md text-[10px] font-bold">
                               Active
                             </span>
+                            <span className="font-mono text-[10px] text-slate-400 font-semibold">
+                              ({mbr.memberNo || 'MBR'})
+                            </span>
                           </div>
                           <p className="text-xs text-slate-500 font-medium truncate mt-0.5">
                             <span className="font-mono text-slate-700">{mbr.phone}</span>
@@ -655,7 +794,7 @@ export default function MonthlyMembersPage() {
                       </div>
 
                       {/* STATS & ACTIONS (RIGHT SIDE) */}
-                      <div className="flex flex-wrap items-center gap-2.5 self-end md:self-auto shrink-0">
+                      <div className="flex flex-wrap items-center gap-2 self-end md:self-auto shrink-0">
                         {/* MONTHLY RATE PILL */}
                         <div className="px-3 py-1.5 bg-slate-100 border border-slate-200 rounded-xl text-xs font-extrabold text-slate-800">
                           IN ₹{metrics.monthlyRate} <span className="text-[10px] font-medium text-slate-400">/mo</span>
@@ -672,6 +811,17 @@ export default function MonthlyMembersPage() {
                           {metrics.statusText}
                         </div>
 
+                        {/* VIEW FULL SOA BUTTON */}
+                        <button
+                          type="button"
+                          onClick={() => setSoaModalMember(mbr)}
+                          className="px-2.5 py-1.5 bg-[#0F3D26] hover:bg-emerald-950 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                          title="View Full Statement of Account (SOA)"
+                        >
+                          <i className="fas fa-file-invoice text-[#F4D06F] text-[11px]"></i>
+                          <span className="hidden xs:inline">View Full SOA</span>
+                        </button>
+
                         {/* DETAILS / HIDE TOGGLE BUTTON */}
                         <button
                           type="button"
@@ -683,10 +833,10 @@ export default function MonthlyMembersPage() {
 
                         {/* DOWNLOAD STATEMENT BUTTON */}
                         <Link
-                          href={`/dashboard/reports/print?memberId=${mbr.id}`}
+                          href={`/dashboard/monthly-members/soa?memberId=${mbr.id}`}
                           target="_blank"
                           className="w-8 h-8 rounded-xl bg-white hover:bg-slate-100 text-slate-600 border border-slate-200 flex items-center justify-center text-xs transition cursor-pointer"
-                          title="Download Statement"
+                          title="Open Printable Statement Page"
                         >
                           <i className="fas fa-download"></i>
                         </Link>
@@ -1119,6 +1269,15 @@ export default function MonthlyMembersPage() {
           </div>
         </div>
       )}
+
+      {/* 7. STATEMENT OF ACCOUNT (SOA) MODAL */}
+      <MemberSoaModal
+        member={soaModalMember}
+        collections={soaModalMember?.memberCollections || []}
+        masjidName={masjidName}
+        isOpen={!!soaModalMember}
+        onClose={() => setSoaModalMember(null)}
+      />
     </div>
   );
 }

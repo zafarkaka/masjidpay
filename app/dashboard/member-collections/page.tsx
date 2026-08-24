@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import MemberSoaModal from '@/components/MemberSoaModal';
 import {
   extractPaidMonths,
   getAllPaidMonthsForMember,
@@ -15,6 +16,8 @@ export default function AllCollectionsPage() {
   const [members, setMembers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [masjidName, setMasjidName] = useState('Newtown Masjid');
+  const [soaModalMember, setSoaModalMember] = useState<any | null>(null);
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'PAID' | 'PENDING' | 'PARTIALLY_PAID'>('ALL');
 
   // Filter States
   const [searchQuery, setSearchQuery] = useState('');
@@ -405,6 +408,63 @@ JazakAllah Khair!
     setShowModalSuggestions(false);
   };
 
+  // Helper to open Member Full SOA Modal
+  const handleOpenMemberSoa = (col: any) => {
+    let member = members.find((m) => m.id === col.memberId);
+    if (!member) {
+      const cleanPhone = col.memberPhone ? col.memberPhone.replace(/[^0-9]/g, '') : '';
+      member = members.find(
+        (m) =>
+          (cleanPhone && m.phone && m.phone.replace(/[^0-9]/g, '') === cleanPhone) ||
+          (m.name && m.name.toLowerCase().trim() === col.memberName?.toLowerCase().trim())
+      );
+    }
+    if (!member) {
+      member = {
+        id: col.memberId || col.id,
+        name: col.memberName,
+        phone: col.memberPhone || '',
+        monthlyAmount: baseMonthlyRate || 100,
+        memberNo: 'MBR',
+        address: col.memberAddress || '',
+        createdAt: col.paymentDate || new Date().toISOString(),
+      };
+    }
+    setSoaModalMember(member);
+  };
+
+  // Pre-calculate member metrics map for filtering & summary statistics
+  const memberMetricsMap = new Map<string, any>();
+  let totalOverallPaid = 0;
+  let totalOverallPending = 0;
+  let countFullyPaid = 0;
+  let countPending = 0;
+  let countPartiallyPaid = 0;
+
+  members.forEach((m) => {
+    const { pendingMonths, isFullyPaid, paidMonths } = getPendingMonthsUpToCurrent(m, collections);
+    const rate = Number(m.monthlyAmount || 100);
+    const memberPaid = collections
+      .filter((c) => c.memberId === m.id || (m.phone && c.memberPhone === m.phone))
+      .reduce((sum, c) => sum + Number(c.amount || 0), 0);
+
+    totalOverallPaid += memberPaid;
+    totalOverallPending += pendingMonths.length * rate;
+
+    let sType: 'FULLY_PAID' | 'PARTIALLY_PAID' | 'PENDING' = 'PENDING';
+    if (isFullyPaid || pendingMonths.length === 0) {
+      sType = 'FULLY_PAID';
+      countFullyPaid++;
+    } else if (paidMonths.length > 0 || memberPaid > 0) {
+      sType = 'PARTIALLY_PAID';
+      countPartiallyPaid++;
+    } else {
+      sType = 'PENDING';
+      countPending++;
+    }
+    memberMetricsMap.set(m.id, { sType, isFullyPaid, pendingMonths, paidMonths });
+  });
+
   // FILTERED COLLECTIONS
   const filteredCollections = collections.filter((col) => {
     const matchesSearch =
@@ -413,8 +473,30 @@ JazakAllah Khair!
       col.memberPhone?.includes(searchQuery) ||
       col.forMonths?.toLowerCase().includes(searchQuery.toLowerCase());
 
-    return matchesSearch;
+    if (!matchesSearch) return false;
+
+    if (statusFilter === 'ALL') return true;
+
+    const cleanPhone = col.memberPhone ? col.memberPhone.replace(/[^0-9]/g, '') : '';
+    const member = members.find(
+      (m) =>
+        m.id === col.memberId ||
+        (cleanPhone && m.phone && m.phone.replace(/[^0-9]/g, '') === cleanPhone) ||
+        (m.name && m.name.toLowerCase().trim() === col.memberName?.toLowerCase().trim())
+    );
+
+    if (!member) return true;
+    const met = memberMetricsMap.get(member.id);
+    if (!met) return true;
+
+    if (statusFilter === 'PAID') return met.sType === 'FULLY_PAID';
+    if (statusFilter === 'PENDING') return met.sType === 'PENDING';
+    if (statusFilter === 'PARTIALLY_PAID') return met.sType === 'PARTIALLY_PAID';
+
+    return true;
   });
+
+  const totalFilteredAmount = filteredCollections.reduce((sum, c) => sum + (Number(c.amount) || 0), 0);
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto font-sans text-slate-800">
@@ -423,7 +505,7 @@ JazakAllah Khair!
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Collection Records</h1>
           <p className="text-slate-500 text-xs sm:text-sm mt-0.5">
-            Manage member donations, rental receipts, and download PDF slips & reports for donors & management
+            Manage member dues, view full statements of account (SOA), and download PDF/WhatsApp receipts
           </p>
         </div>
 
@@ -433,11 +515,56 @@ JazakAllah Khair!
               setModalMemberSearch('');
               setShowAddModal(true);
             }}
-            className="px-5 py-3 bg-[#0F3D26] hover:bg-emerald-950 text-white font-extrabold text-xs rounded-2xl shadow-md transition flex items-center gap-2"
+            className="px-5 py-3 bg-[#0F3D26] hover:bg-emerald-950 text-white font-extrabold text-xs rounded-2xl shadow-md transition flex items-center gap-2 cursor-pointer"
           >
             <i className="fas fa-plus"></i> Record New Payment
           </button>
         )}
+      </div>
+
+      {/* SUMMARY STATISTICS CARDS */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="p-4 bg-white border border-slate-200 shadow-2xs rounded-2xl">
+          <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">
+            Total Collections
+          </span>
+          <span className="text-lg font-black text-slate-900 font-mono mt-0.5 block">
+            IN ₹{totalOverallPaid.toLocaleString('en-IN')}
+          </span>
+          <span className="text-[9.5px] text-slate-400 block">{collections.length} Total Receipts</span>
+        </div>
+
+        <div className="p-4 bg-white border border-slate-200 shadow-2xs rounded-2xl">
+          <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">
+            Total Members
+          </span>
+          <span className="text-lg font-black text-slate-800 font-mono mt-0.5 block">
+            {members.length}
+          </span>
+          <span className="text-[9.5px] text-slate-400 block">Registered Donors</span>
+        </div>
+
+        <div className="p-4 bg-emerald-50 border border-emerald-200 shadow-2xs rounded-2xl">
+          <span className="text-[10px] font-extrabold text-emerald-800 uppercase tracking-wider block">
+            Fully Paid
+          </span>
+          <span className="text-lg font-black text-emerald-950 font-mono mt-0.5 block">
+            {countFullyPaid} Members
+          </span>
+          <span className="text-[9.5px] text-emerald-700 block">0 Dues Outstanding</span>
+        </div>
+
+        <div className={`p-4 rounded-2xl shadow-2xs border ${totalOverallPending > 0 ? 'bg-amber-50 border-amber-300' : 'bg-emerald-50 border-emerald-200'}`}>
+          <span className={`text-[10px] font-extrabold uppercase tracking-wider block ${totalOverallPending > 0 ? 'text-amber-900' : 'text-emerald-800'}`}>
+            Total Pending Dues
+          </span>
+          <span className={`text-lg font-black font-mono mt-0.5 block ${totalOverallPending > 0 ? 'text-rose-700' : 'text-emerald-950'}`}>
+            IN ₹{totalOverallPending.toLocaleString('en-IN')}
+          </span>
+          <span className={`text-[9.5px] font-bold block ${totalOverallPending > 0 ? 'text-amber-800' : 'text-emerald-700'}`}>
+            {countPending + countPartiallyPaid} Members Pending
+          </span>
+        </div>
       </div>
 
       {/* VIEWER CALLOUT */}
@@ -462,6 +589,61 @@ JazakAllah Khair!
 
       {/* FILTER SECTION MATCHING SCREENSHOT */}
       <div className="masjid-card p-6 bg-[#faf8f5] border border-slate-200/80 shadow-sm rounded-3xl space-y-4">
+        {/* STATUS FILTER TABS */}
+        <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-200/60">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mr-1">Status:</span>
+            <button
+              type="button"
+              onClick={() => setStatusFilter('ALL')}
+              className={`px-3 py-1 rounded-xl text-xs font-bold transition cursor-pointer ${
+                statusFilter === 'ALL'
+                  ? 'bg-[#0F3D26] text-white shadow-2xs'
+                  : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
+              }`}
+            >
+              All Records ({collections.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setStatusFilter('PAID')}
+              className={`px-3 py-1 rounded-xl text-xs font-bold transition cursor-pointer ${
+                statusFilter === 'PAID'
+                  ? 'bg-emerald-800 text-white shadow-2xs'
+                  : 'bg-white text-emerald-800 border border-emerald-200 hover:bg-emerald-50'
+              }`}
+            >
+              ✓ Fully Paid ({countFullyPaid})
+            </button>
+            <button
+              type="button"
+              onClick={() => setStatusFilter('PENDING')}
+              className={`px-3 py-1 rounded-xl text-xs font-bold transition cursor-pointer ${
+                statusFilter === 'PENDING'
+                  ? 'bg-rose-700 text-white shadow-2xs'
+                  : 'bg-white text-rose-800 border border-rose-200 hover:bg-rose-50'
+              }`}
+            >
+              ⚠️ Pending Dues ({countPending})
+            </button>
+            <button
+              type="button"
+              onClick={() => setStatusFilter('PARTIALLY_PAID')}
+              className={`px-3 py-1 rounded-xl text-xs font-bold transition cursor-pointer ${
+                statusFilter === 'PARTIALLY_PAID'
+                  ? 'bg-amber-700 text-white shadow-2xs'
+                  : 'bg-white text-amber-900 border border-amber-200 hover:bg-amber-50'
+              }`}
+            >
+              ⚡ Partially Paid ({countPartiallyPaid})
+            </button>
+          </div>
+
+          <span className="text-xs font-mono font-bold text-slate-500">
+            Total: <strong className="text-emerald-900">IN ₹{totalFilteredAmount.toLocaleString('en-IN')}</strong>
+          </span>
+        </div>
+
         {/* ROW 1: SEARCH & CATEGORY */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="md:col-span-3 relative">
@@ -745,11 +927,22 @@ JazakAllah Khair!
 
                     {/* ACTIONS */}
                     <td className="py-2.5 px-3.5 text-right whitespace-nowrap space-x-1">
+                      {/* VIEW FULL SOA BUTTON */}
+                      <button
+                        type="button"
+                        onClick={() => handleOpenMemberSoa(col)}
+                        className="px-2 py-1 bg-[#0F3D26] hover:bg-emerald-950 text-white rounded-lg text-[10px] font-extrabold transition inline-flex items-center gap-1 shadow-2xs cursor-pointer"
+                        title="View Full Statement of Account (SOA)"
+                      >
+                        <i className="fas fa-file-invoice text-[#F4D06F] text-[9px]"></i>
+                        <span className="text-[10px]">SOA</span>
+                      </button>
+
                       {/* PDF SLIP BUTTON */}
                       <button
                         type="button"
                         onClick={() => handleDownloadPDF(col)}
-                        className="px-2 py-1 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-lg text-[11px] font-bold transition inline-flex items-center gap-1"
+                        className="px-2 py-1 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-lg text-[11px] font-bold transition inline-flex items-center gap-1 cursor-pointer"
                         title="Print / Download PDF Receipt"
                       >
                         <i className="fas fa-file-pdf text-emerald-800 text-[10px]"></i>
@@ -760,7 +953,7 @@ JazakAllah Khair!
                       <button
                         type="button"
                         onClick={() => handleWhatsAppShare(col)}
-                        className="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-lg text-[11px] font-bold transition inline-flex items-center gap-1"
+                        className="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-lg text-[11px] font-bold transition inline-flex items-center gap-1 cursor-pointer"
                         title="Send WhatsApp Receipt"
                       >
                         <i className="fab fa-whatsapp text-emerald-600 text-[11px]"></i>
@@ -772,7 +965,7 @@ JazakAllah Khair!
                         <button
                           type="button"
                           onClick={() => handleStartEdit(col)}
-                          className="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200/70 rounded-lg text-[11px] font-bold transition inline-flex items-center gap-1"
+                          className="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200/70 rounded-lg text-[11px] font-bold transition inline-flex items-center gap-1 cursor-pointer"
                           title="Edit transaction"
                         >
                           <i className="fas fa-pen text-[10px]"></i>
@@ -784,7 +977,7 @@ JazakAllah Khair!
                         <button
                           type="button"
                           onClick={() => setDeletingId(col.id)}
-                          className="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/70 rounded-lg text-[11px] font-bold transition inline-flex items-center gap-1"
+                          className="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/70 rounded-lg text-[11px] font-bold transition inline-flex items-center gap-1 cursor-pointer"
                           title="Delete transaction"
                         >
                           <i className="fas fa-trash-can text-[10px]"></i>
@@ -827,8 +1020,16 @@ JazakAllah Khair!
                 <div className="flex items-center justify-end gap-1.5 pt-1 border-t border-slate-100">
                   <button
                     type="button"
+                    onClick={() => handleOpenMemberSoa(col)}
+                    className="px-2 py-1 bg-[#0F3D26] text-white rounded text-[10px] font-extrabold flex items-center gap-1 cursor-pointer"
+                  >
+                    <i className="fas fa-file-invoice text-[#F4D06F]"></i> SOA
+                  </button>
+
+                  <button
+                    type="button"
                     onClick={() => handleDownloadPDF(col)}
-                    className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[10px] font-bold flex items-center gap-1"
+                    className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[10px] font-bold flex items-center gap-1 cursor-pointer"
                   >
                     <i className="fas fa-file-pdf text-emerald-800"></i> PDF
                   </button>
@@ -836,7 +1037,7 @@ JazakAllah Khair!
                   <button
                     type="button"
                     onClick={() => handleWhatsAppShare(col)}
-                    className="px-2 py-1 bg-emerald-100/70 hover:bg-emerald-100 text-emerald-800 rounded text-[10px] font-bold flex items-center gap-1"
+                    className="px-2 py-1 bg-emerald-100/70 hover:bg-emerald-100 text-emerald-800 rounded text-[10px] font-bold flex items-center gap-1 cursor-pointer"
                   >
                     <i className="fab fa-whatsapp text-emerald-700"></i> WhatsApp
                   </button>
@@ -846,14 +1047,14 @@ JazakAllah Khair!
                       <button
                         type="button"
                         onClick={() => handleStartEdit(col)}
-                        className="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded text-[10px] font-bold"
+                        className="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded text-[10px] font-bold cursor-pointer"
                       >
                         <i className="fas fa-pen"></i>
                       </button>
                       <button
                         type="button"
                         onClick={() => setDeletingId(col.id)}
-                        className="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded text-[10px] font-bold"
+                        className="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded text-[10px] font-bold cursor-pointer"
                       >
                         <i className="fas fa-trash-can"></i>
                       </button>
@@ -1311,12 +1512,31 @@ JazakAllah Khair!
               <p className="text-xs text-slate-500 mt-1">This action will remove the collection entry from financial reports.</p>
             </div>
             <div className="flex justify-center gap-3 pt-2">
-              <button onClick={() => setDeletingId(null)} className="px-4 py-2 bg-slate-100 text-slate-700 font-bold rounded-xl text-xs">Cancel</button>
-              <button onClick={handleDeleteConfirm} className="px-4 py-2 bg-rose-600 text-white font-extrabold rounded-xl text-xs">Delete Record</button>
+              <button
+                onClick={() => setDeletingId(null)}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteConfirm}
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-extrabold rounded-xl text-xs cursor-pointer"
+              >
+                Delete Record
+              </button>
             </div>
           </div>
         </div>
       )}
+
+      {/* STATEMENT OF ACCOUNT (SOA) MODAL */}
+      <MemberSoaModal
+        member={soaModalMember}
+        collections={collections}
+        masjidName={masjidName}
+        isOpen={!!soaModalMember}
+        onClose={() => setSoaModalMember(null)}
+      />
     </div>
   );
 }
