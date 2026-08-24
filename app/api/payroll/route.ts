@@ -165,7 +165,7 @@ export async function POST(req: NextRequest) {
           where: {
             masjidId: masjid.id,
             staffId,
-            monthPaid: cleanMonth,
+            monthPaid: { equals: cleanMonth, mode: 'insensitive' },
           },
         });
       } catch (e) {}
@@ -176,7 +176,7 @@ export async function POST(req: NextRequest) {
           .select('id, receiptNo, paymentDate, amount, netSalary')
           .eq('masjidId', masjid.id)
           .eq('staffId', staffId)
-          .or(`monthPaid.eq.${cleanMonth},month.eq.${cleanMonth}`)
+          .or(`monthPaid.ilike.${cleanMonth},month.ilike.${cleanMonth}`)
           .maybeSingle();
 
         if (sbExisting) existingPayroll = sbExisting;

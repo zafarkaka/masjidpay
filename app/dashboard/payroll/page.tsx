@@ -572,23 +572,38 @@ export default function PayrollPage() {
                       setMonthPaid(e.target.value);
                       setPayError('');
                     }}
-                    className="w-full px-3.5 py-2.5 border rounded-xl text-xs outline-none focus:border-[#064E3B] font-extrabold text-slate-900 bg-[#FFF9EC] cursor-pointer"
+                    className={`w-full px-3.5 py-2.5 border rounded-xl text-xs outline-none font-extrabold cursor-pointer transition ${
+                      isMonthAlreadyPaid
+                        ? 'border-rose-300 bg-rose-50 text-rose-900 focus:border-rose-500'
+                        : 'border-slate-200 bg-[#FFF9EC] text-slate-900 focus:border-[#064E3B]'
+                    }`}
                   >
                     {MONTH_OPTIONS.map((m) => {
                       const alreadyPaidThisMonth = payrolls.some(
                         (p) =>
-                          p.staffId === activeStaff.id &&
+                          p.staffId === activeStaff?.id &&
                           ((p.monthPaid && p.monthPaid.trim().toLowerCase() === m.toLowerCase()) ||
                            (p.month && p.month.trim().toLowerCase() === m.toLowerCase()))
                       );
 
                       return (
-                        <option key={m} value={m}>
+                        <option
+                          key={m}
+                          value={m}
+                          disabled={alreadyPaidThisMonth}
+                          className={alreadyPaidThisMonth ? 'text-slate-400 bg-slate-100 italic' : 'text-slate-900 font-bold'}
+                        >
                           {m} {alreadyPaidThisMonth ? '— (Already Paid ✓)' : ''}
                         </option>
                       );
                     })}
                   </select>
+                  {isMonthAlreadyPaid && (
+                    <p className="text-[11px] font-bold text-rose-600 mt-1 flex items-center gap-1">
+                      <i className="fas fa-circle-exclamation"></i>
+                      <span>Salary for <strong>{monthPaid}</strong> is already paid. Select another month.</span>
+                    </p>
+                  )}
                 </div>
 
                 <div>
