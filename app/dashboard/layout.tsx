@@ -24,6 +24,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // PWA INSTALL PROMPT STATE
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isPwaInstalled, setIsPwaInstalled] = useState(false);
+  const [allMasjids, setAllMasjids] = useState<any[]>([]);
+  const [switchingMasjid, setSwitchingMasjid] = useState(false);
 
   useEffect(() => {
     fetch('/api/auth/me')
@@ -31,17 +33,35 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       .then((data) => {
         if (!data.user) {
           router.push('/login');
-        } else if (data.user.role === 'SUPER_ADMIN') {
-          router.push('/super-admin/masjids');
         } else if (data.user.masjidStatus && data.user.masjidStatus === 'PENDING') {
           router.push('/status');
         } else {
           setUser(data.user);
+          setAllMasjids(data.masjids || []);
           setLoading(false);
         }
       })
       .catch(() => router.push('/login'));
   }, [router]);
+
+  const handleSwitchMasjid = async (masjidId: string) => {
+    if (!masjidId || masjidId === user?.masjidId) return;
+    setSwitchingMasjid(true);
+    try {
+      const res = await fetch('/api/super-admin/masjids', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ masjidId, action: 'LOGIN_AS_MASJID' }),
+      });
+      if (res.ok) {
+        window.location.reload();
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setSwitchingMasjid(false);
+    }
+  };
 
   // LISTEN TO PWA INSTALL EVENT FOR MOBILE & DESKTOP PC
   useEffect(() => {
@@ -469,12 +489,47 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             >
               <i className="fas fa-bars"></i>
             </button>
-            <span className="font-extrabold text-slate-900 text-sm hidden sm:inline truncate max-w-[250px] lg:max-w-none">
-              {user?.masjidName || 'Mosque Financial Control Center'}
-            </span>
+
+            {/* ACTIVE MOSQUE SELECTOR (SWITCH ACTIVE MOSQUE ANYTIME) */}
+            {allMasjids.length > 1 ? (
+              <div className="relative flex items-center">
+                <i className="fas fa-mosque absolute left-3 text-emerald-800 text-xs pointer-events-none"></i>
+                <select
+                  value={user?.masjidId || ''}
+                  onChange={(e) => handleSwitchMasjid(e.target.value)}
+                  disabled={switchingMasjid}
+                  aria-label="Select active mosque"
+                  className="pl-8 pr-7 py-1.5 bg-emerald-50/90 hover:bg-emerald-100/90 border border-emerald-300 text-emerald-950 rounded-xl text-xs font-black outline-none cursor-pointer max-w-[180px] xs:max-w-[240px] sm:max-w-[320px] truncate shadow-2xs transition"
+                  title="Switch Active Mosque Dashboard"
+                >
+                  {allMasjids.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name} {m.city ? `(${m.city})` : ''}
+                    </option>
+                  ))}
+                </select>
+                <i className="fas fa-chevron-down absolute right-2.5 text-[9px] text-emerald-700 pointer-events-none"></i>
+              </div>
+            ) : (
+              <span className="font-extrabold text-slate-900 text-sm hidden sm:inline truncate max-w-[250px] lg:max-w-none">
+                {user?.masjidName || 'Mosque Financial Control Center'}
+              </span>
+            )}
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
+            {/* SUPER ADMIN PORTAL SHORTCUT */}
+            {(user?.role === 'SUPER_ADMIN' || user?.email === 'admin@masjidpay.org' || user?.email === 'zafukaka@gmail.com') && (
+              <Link
+                href="/super-admin/masjids"
+                className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 rounded-xl text-[11px] font-black transition flex items-center gap-1.5 shadow-2xs shrink-0"
+                title="Return to Super Admin Portal"
+              >
+                <i className="fas fa-crown text-amber-600 text-[10px]"></i>
+                <span className="hidden sm:inline">Super Admin</span>
+              </Link>
+            )}
+
             <LanguageSwitcher />
 
             {/* PWA TOP INSTALL BUTTON */}

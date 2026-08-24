@@ -90,18 +90,35 @@ export async function getOrResolveMasjid(sessionMasjidId?: string | null, paramM
   const { prisma } = await import('./prisma');
   let masjid = null;
   try {
-    masjid = await prisma.masjid.findFirst({
-      where: {
-        OR: [
-          { id: sessionMasjidId || 'none' },
-          { id: paramMasjidId || 'none' },
-          { slug: sessionMasjidId || 'none' },
-          { slug: paramMasjidId || 'none' },
-          { slug: 'jama-masjid' },
-        ],
-      },
-    });
+    // 1. Direct query with valid ID or slug
+    if (sessionMasjidId && sessionMasjidId !== 'none') {
+      masjid = await prisma.masjid.findFirst({
+        where: {
+          OR: [{ id: sessionMasjidId }, { slug: sessionMasjidId }],
+        },
+      });
+    }
 
+    if (!masjid && paramMasjidId && paramMasjidId !== 'none') {
+      masjid = await prisma.masjid.findFirst({
+        where: {
+          OR: [{ id: paramMasjidId }, { slug: paramMasjidId }],
+        },
+      });
+    }
+
+    // 2. Fallback to active masjid with data (members or collections)
+    if (!masjid) {
+      masjid = await prisma.masjid.findFirst({
+        where: {
+          status: 'APPROVED',
+          members: { some: {} },
+        },
+        orderBy: { createdAt: 'asc' },
+      });
+    }
+
+    // 3. Fallback to any approved masjid
     if (!masjid) {
       masjid = await prisma.masjid.findFirst({ where: { status: 'APPROVED' } });
     }
