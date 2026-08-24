@@ -89,30 +89,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Masjid not found' }, { status: 404 });
     }
 
-    // 0. LOGIN AS MASJID / OPEN DASHBOARD
-    if (action === 'LOGIN_AS_MASJID') {
-      const adminUser = masjid.masjidUsers[0]?.user;
-      const sessionPayload = {
-        userId: adminUser?.id || session.userId,
-        email: adminUser?.email || session.email,
-        name: adminUser?.name || masjid.name,
-        role: 'MASJID_ADMIN',
-        masjidId: masjid.id,
-        masjidSlug: masjid.slug,
-        masjidStatus: masjid.status,
-        masjidName: masjid.name,
-      };
-
-      const token = signToken(sessionPayload);
-      const res = NextResponse.json({
-        success: true,
-        redirectUrl: '/dashboard',
-        message: `Switching to ${masjid.name} dashboard...`,
-      });
-      res.cookies.set(TOKEN_NAME, token, AUTH_COOKIE_OPTIONS);
-      return res;
-    }
-
     // 1. RESET ADMIN PASSWORD AS REQUESTED BY MASJID ADMIN
     if (action === 'RESET_ADMIN_PASSWORD') {
       if (!newPassword || newPassword.length < 6) {
