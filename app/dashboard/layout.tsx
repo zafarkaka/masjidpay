@@ -140,7 +140,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     {
       group: 'DONATIONS & PAYMENTS',
       items: [
-        { label: 'Donations', href: '/dashboard/donations', icon: 'fa-heart' },
+        { label: 'Donor Collections', href: '/dashboard/donations', icon: 'fa-hand-holding-heart' },
         { label: 'Recurring Donations', href: '/dashboard/recurring-donations', icon: 'fa-rotate' },
         { label: 'Campaigns', href: '/dashboard/campaigns', icon: 'fa-bullhorn' },
         { label: 'Payment Links & QR', href: '/dashboard/payment-links', icon: 'fa-qrcode' },
@@ -178,6 +178,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     {
       group: 'COMMUNITY & OPERATIONS',
       items: [
+        { label: 'Donor Collections', href: '/dashboard/donations', icon: 'fa-hand-holding-heart' },
         { label: 'Monthly Member Collection', href: '/dashboard/member-collections', icon: 'fa-hand-holding-dollar' },
         { label: 'Monthly Members', href: '/dashboard/monthly-members', icon: 'fa-users' },
         { label: 'Staff Management & Payroll', href: '/dashboard/payroll', icon: 'fa-id-card' },

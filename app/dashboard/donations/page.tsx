@@ -131,12 +131,12 @@ export default function DonationsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200/80">
         <div>
           <div className="flex items-center gap-2.5">
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight">Donation Management</h1>
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight">Donor Collections</h1>
             <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-200 text-[11px] font-extrabold rounded-full">
               Total: ₹{totalDonationAmount.toLocaleString('en-IN')}
             </span>
           </div>
-          <p className="text-slate-500 text-xs sm:text-sm mt-1">Record incoming donations, issue receipts, and manage contributions</p>
+          <p className="text-slate-500 text-xs sm:text-sm mt-1">Record incoming donor contributions, issue receipts, and manage collections</p>
         </div>
 
         {!isViewer && (
@@ -144,7 +144,7 @@ export default function DonationsPage() {
             onClick={() => setShowModal(true)}
             className="px-4 py-2 bg-emerald-800 hover:bg-emerald-900 text-white font-bold rounded-xl shadow-xs text-xs transition flex items-center gap-2 self-start sm:self-auto cursor-pointer"
           >
-            <i className="fas fa-plus text-emerald-300"></i> Record New Donation
+            <i className="fas fa-plus text-emerald-300"></i> Record Donor Collection
           </button>
         )}
       </div>
@@ -188,14 +188,14 @@ export default function DonationsPage() {
       <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
         {loading ? (
           <div className="p-10 text-center text-slate-400 text-xs font-medium">
-            <i className="fas fa-circle-notch fa-spin text-emerald-700 text-lg mr-2"></i> Loading donations...
+            <i className="fas fa-circle-notch fa-spin text-emerald-700 text-lg mr-2"></i> Loading donor collections...
           </div>
         ) : donations.length === 0 ? (
           <div className="p-12 text-center text-slate-500 space-y-2">
-            <i className="fas fa-hand-holding-dollar text-3xl text-slate-300 block"></i>
-            <p className="text-sm font-bold text-slate-700">No donation records found</p>
+            <i className="fas fa-hand-holding-heart text-3xl text-slate-300 block"></i>
+            <p className="text-sm font-bold text-slate-700">No donor collection records found</p>
             <p className="text-xs text-slate-400">
-              {isViewer ? 'No donation records found.' : 'Click "Record New Donation" to log your first donation entry.'}
+              {isViewer ? 'No donor collection records found.' : 'Click "Record Donor Collection" to log your first donor contribution.'}
             </p>
           </div>
         ) : (
@@ -283,7 +283,7 @@ export default function DonationsPage() {
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="text-base font-extrabold text-slate-900">Record New Donation</h3>
+              <h3 className="text-base font-extrabold text-slate-900">Record Donor Collection</h3>
               <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600 text-sm">
                 ✕
               </button>
@@ -377,7 +377,7 @@ export default function DonationsPage() {
                   disabled={actionLoading}
                   className="px-5 py-2 bg-emerald-800 hover:bg-emerald-900 text-white font-bold rounded-xl text-xs shadow-xs transition disabled:opacity-50 cursor-pointer"
                 >
-                  {actionLoading ? 'Saving...' : 'Save Donation'}
+                  {actionLoading ? 'Saving...' : 'Save Donor Collection'}
                 </button>
               </div>
             </form>
