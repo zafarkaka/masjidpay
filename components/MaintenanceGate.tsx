@@ -155,24 +155,5 @@ export default function MaintenanceGate({ children }: { children: React.ReactNod
     );
   }
 
-  return (
-    <>
-      {/* SUPER ADMIN NOTICE BAR IF MAINTENANCE IS ON */}
-      {checked && maintenance?.enabled && isSuperAdmin && (
-        <div className="bg-amber-500 text-slate-950 px-4 py-1.5 text-center text-xs font-extrabold flex items-center justify-center gap-2 sticky top-0 z-50 shadow-md">
-          <i className="fas fa-triangle-exclamation animate-pulse"></i>
-          <span>
-            Maintenance Mode is currently <strong>ACTIVE</strong> for public visitors. (Super Admin Bypass Enabled)
-          </span>
-          <Link
-            href="/super-admin/maintenance"
-            className="underline font-black hover:text-white ml-2"
-          >
-            Manage Settings →
-          </Link>
-        </div>
-      )}
-      {children}
-    </>
-  );
+  return <>{children}</>;
 }
