@@ -15,10 +15,21 @@ export interface AuditParams {
 
 export async function recordAuditLog(params: AuditParams) {
   try {
+    let validUserId: string | null = null;
+    if (params.userId && params.userId !== 'usr_superadmin') {
+      try {
+        const userExists = await prisma.user.findUnique({
+          where: { id: params.userId },
+          select: { id: true },
+        });
+        if (userExists) validUserId = userExists.id;
+      } catch (e) {}
+    }
+
     await prisma.auditLog.create({
       data: {
         masjidId: params.masjidId || null,
-        userId: params.userId || null,
+        userId: validUserId,
         userEmail: params.userEmail || null,
         userRole: params.userRole || null,
         action: params.action,
@@ -30,6 +41,6 @@ export async function recordAuditLog(params: AuditParams) {
       },
     });
   } catch (error) {
-    console.error('Failed to record audit log:', error);
+    console.warn('Non-fatal: Failed to record audit log:', error);
   }
 }

@@ -59,26 +59,40 @@ export async function POST(req: NextRequest) {
       updatedBy: session.email,
     };
 
-    await prisma.systemSetting.upsert({
-      where: { key: 'MAINTENANCE_MODE' },
-      update: {
-        value: JSON.stringify(payload),
-      },
-      create: {
-        key: 'MAINTENANCE_MODE',
-        value: JSON.stringify(payload),
-      },
-    });
+    try {
+      await prisma.systemSetting.upsert({
+        where: { key: 'MAINTENANCE_MODE' },
+        update: {
+          value: JSON.stringify(payload),
+        },
+        create: {
+          key: 'MAINTENANCE_MODE',
+          value: JSON.stringify(payload),
+        },
+      });
+    } catch (upsertErr) {
+      console.warn('Prisma upsert failed, attempting raw upsert:', upsertErr);
+      await prisma.$executeRawUnsafe(
+        `INSERT INTO "SystemSetting" ("id", "key", "value", "createdAt", "updatedAt")
+         VALUES (gen_random_uuid(), 'MAINTENANCE_MODE', $1, NOW(), NOW())
+         ON CONFLICT ("key") DO UPDATE SET "value" = $1, "updatedAt" = NOW()`,
+        JSON.stringify(payload)
+      );
+    }
 
-    await recordAuditLog({
-      userId: session.userId,
-      userEmail: session.email,
-      userRole: session.role,
-      action: enabled ? 'ENABLE_MAINTENANCE_MODE' : 'DISABLE_MAINTENANCE_MODE',
-      entity: 'SystemSetting',
-      entityId: 'MAINTENANCE_MODE',
-      afterState: payload,
-    });
+    try {
+      await recordAuditLog({
+        userId: session.userId,
+        userEmail: session.email,
+        userRole: session.role,
+        action: enabled ? 'ENABLE_MAINTENANCE_MODE' : 'DISABLE_MAINTENANCE_MODE',
+        entity: 'SystemSetting',
+        entityId: 'MAINTENANCE_MODE',
+        afterState: payload,
+      });
+    } catch (auditErr) {
+      console.warn('Non-fatal audit log failure:', auditErr);
+    }
 
     return NextResponse.json({
       success: true,
@@ -92,6 +106,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 403 });
     }
     console.error('Super Admin update maintenance error:', error);
-    return NextResponse.json({ error: 'Failed to update maintenance mode' }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Failed to update maintenance mode' }, { status: 500 });
   }
 }
