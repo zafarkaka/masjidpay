@@ -1151,101 +1151,59 @@ JazakAllah Khair!
                 </div>
               )}
 
-              {/* QUICK CHOOSE PENDING MONTHS (ONLY SHOWN IF PENDING MONTHS EXIST) */}
+              {/* DIRECT MONTHLY SELECTION (KEEP ONLY PENDING MONTHS) */}
               {pendingMonthsDetected.length > 0 && (
-                <div className="space-y-2 bg-slate-50/70 p-3 rounded-2xl border border-slate-200">
+                <div className="space-y-2 bg-slate-50/80 p-3 rounded-2xl border border-slate-200">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-extrabold uppercase text-slate-700">
-                      Pending Month Selection:
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                      <i className="fas fa-calendar-check text-emerald-700 text-xs"></i> Select Months to Pay:
                     </span>
                     <button
                       type="button"
-                      onClick={() => setShowMonthGrid(!showMonthGrid)}
-                      className="text-[10.5px] font-bold text-emerald-800 hover:text-emerald-950 flex items-center gap-1"
+                      onClick={() => {
+                        if (selectedMonthsList.length === pendingMonthsDetected.length) {
+                          setSelectedMonthsList([]);
+                          setAmount('0');
+                          setForMonths('');
+                        } else {
+                          handleClearAllPending();
+                        }
+                      }}
+                      className="text-[10.5px] font-bold text-emerald-800 hover:text-emerald-950 underline cursor-pointer"
                     >
-                      <i className={`fas ${showMonthGrid ? 'fa-chevron-up' : 'fa-calendar-days'} text-[10px]`}></i>
-                      {showMonthGrid ? 'Hide Pending Months' : 'Select Pending Months'}
+                      {selectedMonthsList.length === pendingMonthsDetected.length
+                        ? 'Clear Selection'
+                        : `Select All (${pendingMonthsDetected.length} Months)`}
                     </button>
                   </div>
 
-                  {/* CLEAR ALL PENDING BUTTON */}
-                  <button
-                    type="button"
-                    onClick={handleClearAllPending}
-                    className="w-full py-1.5 px-3 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-bold transition flex items-center justify-between shadow-2xs"
-                  >
-                    <span className="flex items-center gap-1.5">
-                      <i className="fas fa-bolt text-amber-300"></i> Pay All Pending ({pendingMonthsDetected.length} Months)
-                    </span>
-                    <span className="font-mono font-black">
-                      IN ₹{(pendingMonthsDetected.length * (baseMonthlyRate || 100)).toLocaleString('en-IN')}
-                    </span>
-                  </button>
-
-                  {/* PRESET CHIPS (ONLY UP TO PENDING COUNT) */}
-                  {pendingMonthsDetected.length > 1 && (
-                    <div className="grid grid-cols-4 gap-1">
-                      {[1, 2, 3, 6]
-                        .filter((cnt) => cnt <= pendingMonthsDetected.length)
-                        .map((cnt) => {
-                          const isSelected = selectedMonthsList.length === cnt && !showMonthGrid;
-                          const calculatedCost = cnt * (baseMonthlyRate || 100);
-                          return (
-                            <button
-                              key={cnt}
-                              type="button"
-                              onClick={() => {
-                                handleApplyPresetCount(cnt);
-                                setShowMonthGrid(false);
-                              }}
-                              className={`py-1.5 px-1 rounded-xl text-center transition border ${
-                                isSelected
-                                  ? 'bg-[#064E3B] text-[#F4D06F] border-[#D4AF37] shadow-2xs font-extrabold'
-                                  : 'bg-white text-slate-700 border-slate-200 hover:bg-emerald-50 hover:border-emerald-300 font-bold'
-                              }`}
-                            >
-                              <span className="block text-[10px] leading-tight">{cnt} Mo</span>
-                              <span className="block text-[8.5px] opacity-80 font-mono mt-0.5">₹{calculatedCost}</span>
-                            </button>
-                          );
-                        })}
-                    </div>
-                  )}
-
-                  {/* EXPANDABLE PENDING MONTH SELECTION GRID */}
-                  {showMonthGrid && (
-                    <div className="pt-2 border-t border-slate-200 mt-2 space-y-1.5 animate-in fade-in duration-100">
-                      <span className="text-[9.5px] font-extrabold uppercase text-slate-500 block">
-                        Select Pending Months to Pay:
-                      </span>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-1 max-h-32 overflow-y-auto p-1.5 bg-white rounded-xl border border-slate-200">
-                        {pendingMonthsDetected.map((mStr) => {
-                          const isChecked = selectedMonthsList.includes(mStr);
-                          return (
-                            <button
-                              key={mStr}
-                              type="button"
-                              onClick={() => handleToggleMonthSelection(mStr)}
-                              className={`p-1.5 rounded-lg text-[9.5px] font-bold text-left transition flex items-center justify-between border ${
-                                isChecked
-                                  ? 'bg-emerald-800 text-white border-emerald-900 shadow-2xs'
-                                  : 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100'
-                              }`}
-                            >
-                              <span className="truncate">{mStr}</span>
-                              {isChecked ? (
-                                <i className="fas fa-check text-[8px] shrink-0 ml-1"></i>
-                              ) : (
-                                <span className="text-[7.5px] bg-amber-200 px-1 rounded text-amber-900 font-extrabold shrink-0 ml-0.5">
-                                  DUE
-                                </span>
-                              )}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
+                  {/* DIRECT MONTHLY SELECTION GRID */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-40 overflow-y-auto p-1 bg-white rounded-xl border border-slate-200">
+                    {pendingMonthsDetected.map((mStr) => {
+                      const isChecked = selectedMonthsList.includes(mStr);
+                      return (
+                        <button
+                          key={mStr}
+                          type="button"
+                          onClick={() => handleToggleMonthSelection(mStr)}
+                          className={`p-2 rounded-xl text-[10px] font-bold text-left transition flex items-center justify-between border cursor-pointer ${
+                            isChecked
+                              ? 'bg-emerald-800 text-white border-emerald-900 shadow-2xs'
+                              : 'bg-amber-50/70 text-amber-950 border-amber-200 hover:bg-amber-100/80'
+                          }`}
+                        >
+                          <span className="truncate">{mStr}</span>
+                          {isChecked ? (
+                            <i className="fas fa-check text-[9px] shrink-0 ml-1 text-emerald-200"></i>
+                          ) : (
+                            <span className="text-[8px] bg-amber-200 px-1 py-0.2 rounded text-amber-900 font-extrabold shrink-0 ml-0.5">
+                              DUE
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
 
