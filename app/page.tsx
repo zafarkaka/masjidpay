@@ -160,8 +160,16 @@ export default function HomePage() {
             <LanguageSwitcher />
 
             <Link
+              href="/demo"
+              className="text-xs font-black bg-[#FFF9EC] hover:bg-[#D4AF37]/20 text-[#064E3B] border-2 border-[#D4AF37] px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 shadow-sm"
+            >
+              <i className="fas fa-play-circle text-[#D4AF37] text-sm animate-pulse"></i>
+              <span>View Demo</span>
+            </Link>
+
+            <Link
               href="/login"
-              className="text-xs font-extrabold text-[#102A25] hover:text-[#064E3B] px-3.5 py-2 rounded-xl hover:bg-[#D4AF37]/10 transition"
+              className="text-xs font-extrabold text-[#102A25] hover:text-[#064E3B] px-3 py-2 rounded-xl hover:bg-[#D4AF37]/10 transition hidden sm:inline-block"
             >
               Log in
             </Link>
@@ -220,8 +228,28 @@ export default function HomePage() {
             Replace manual registers. Track monthly member collections, Zakat vaults, construction donations, staff payroll, and dispatch automated WhatsApp & PDF receipts with 100% audit integrity.
           </p>
 
+          {/* PROMINENT HERO CTA ACTION BUTTONS */}
+          <div className="pt-2 flex flex-wrap items-center justify-center gap-3.5">
+            <Link
+              href="/demo"
+              className="px-6 sm:px-8 py-3.5 bg-gradient-to-r from-[#D4AF37] via-amber-400 to-[#F4D06F] hover:from-amber-400 hover:to-amber-300 text-[#102A25] font-black text-sm rounded-2xl shadow-xl shadow-amber-950/40 transition transform hover:scale-105 flex items-center gap-2.5 border border-[#FFF9EC]/40 cursor-pointer"
+            >
+              <i className="fas fa-play-circle text-base"></i>
+              <span>Watch Interactive Demo</span>
+              <i className="fas fa-arrow-right text-xs"></i>
+            </Link>
+
+            <Link
+              href="/register"
+              className="px-6 sm:px-7 py-3.5 bg-[#102A25]/90 hover:bg-[#064E3B] text-[#FFF9EC] border-2 border-[#D4AF37]/80 font-extrabold text-sm rounded-2xl shadow-lg transition backdrop-blur-md flex items-center gap-2"
+            >
+              <i className="fas fa-mosque text-[#F4D06F]"></i>
+              <span>Register Your Mosque</span>
+            </Link>
+          </div>
+
           {/* 4 LIVE KPI TRUST BADGES */}
-          <div className="pt-6 grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-3xl mx-auto text-xs text-[#FFF9EC]/90 font-bold">
+          <div className="pt-4 grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-3xl mx-auto text-xs text-[#FFF9EC]/90 font-bold">
             <div className="flex items-center justify-center gap-2 bg-[#102A25]/60 border border-[#D4AF37]/30 rounded-xl p-2.5 backdrop-blur-xs">
               <i className="fas fa-shield-halved text-[#F4D06F]"></i>
               <span>100% Tax Compliant</span>

@@ -449,14 +449,24 @@ export default function LoginPage() {
           </div>
 
           {/* VIEW AS COMMUNITY (READ ONLY) BUTTON */}
-          <button
-            type="button"
-            onClick={() => setShowCommunityModal(true)}
-            className="w-full py-2 sm:py-2.5 px-3 bg-white hover:bg-[#FAF8F5] text-slate-800 font-bold rounded-xl sm:rounded-2xl border border-slate-300 transition text-xs flex items-center justify-center gap-2 shadow-xs"
-          >
-            <i className="fas fa-key text-slate-600 text-xs"></i>
-            <span>View as Community (Read Only)</span>
-          </button>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => setShowCommunityModal(true)}
+              className="w-full py-2 sm:py-2.5 px-3 bg-white hover:bg-[#FAF8F5] text-slate-800 font-bold rounded-xl sm:rounded-2xl border border-slate-300 transition text-xs flex items-center justify-center gap-2 shadow-xs"
+            >
+              <i className="fas fa-key text-slate-600 text-xs"></i>
+              <span>Community View</span>
+            </button>
+
+            <Link
+              href="/demo"
+              className="w-full py-2 sm:py-2.5 px-3 bg-amber-50 hover:bg-amber-100 text-[#064E3B] font-black rounded-xl sm:rounded-2xl border border-amber-300 transition text-xs flex items-center justify-center gap-1.5 shadow-xs"
+            >
+              <i className="fas fa-play-circle text-amber-600 text-xs animate-pulse"></i>
+              <span>View Live Demo</span>
+            </Link>
+          </div>
         </div>
 
         {/* FOOTER LINKS */}
